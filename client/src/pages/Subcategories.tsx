@@ -27,6 +27,9 @@ export default function Subcategories() {
         </div>
       </header>
       <main className="flex-1 max-w-[1400px] mx-auto px-8 py-8 w-full">
+        <div className="mb-8">
+          <Button variant="ghost" onClick={() => setLocation("/categories")} className="text-slate-300 hover:text-white hover:bg-slate-800/50 flex items-center gap-2 rounded-lg px-4">← Back to Sports</Button>
+        </div>
         <h1 className="text-4xl font-bold mb-4 text-center">{category.name}</h1>
         <p className="text-center text-slate-300 mb-12">Choose a specific sport or activity</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">

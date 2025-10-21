@@ -29,6 +29,10 @@ export default function Motions() {
         </div>
       </header>
       <main className="flex-1 max-w-[1400px] mx-auto px-8 py-8 w-full">
+        <div className="flex items-center justify-between mb-8">
+          <Button variant="ghost" onClick={() => setLocation(`/subcategories/${categoryId}`)} className="text-slate-300 hover:text-white hover:bg-slate-800/50 flex items-center gap-2 rounded-lg px-4">← Back to {category.name}</Button>
+          <p className="text-slate-300">{category.name} · {subcategory.name}</p>
+        </div>
         <h1 className="text-4xl font-bold mb-4 text-center">{subcategory.name}</h1>
         <p className="text-center text-slate-300 mb-12">Select the specific motion to analyze</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
