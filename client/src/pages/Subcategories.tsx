@@ -32,7 +32,7 @@ export default function Subcategories() {
         </div>
         <h1 className="text-4xl font-bold mb-4 text-center">{category.name}</h1>
         <p className="text-center text-slate-300 mb-12">Choose a specific sport or activity</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl mx-auto mb-16">
           {category.subcategories.map((subcategory) => (
             <div key={subcategory.id} onClick={() => setLocation(`/motions/${categoryId}/${subcategory.id}`)} className="bg-slate-900/40 border border-slate-700 rounded-2xl p-8 cursor-pointer hover:bg-slate-900/60 hover:border-slate-600 transition-all">
               <h3 className="text-2xl font-bold mb-3">{subcategory.name}</h3>

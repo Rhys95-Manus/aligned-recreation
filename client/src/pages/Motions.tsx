@@ -35,7 +35,7 @@ export default function Motions() {
         </div>
         <h1 className="text-4xl font-bold mb-4 text-center">{subcategory.name}</h1>
         <p className="text-center text-slate-300 mb-12">Select the specific motion to analyze</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl mx-auto mb-16">
           {subcategory.motions.map((motion) => (
             <div key={motion.id} onClick={() => setLocation(`/analysis/${categoryId}/${subcategoryId}/${motion.id}`)} className="relative bg-slate-900/40 border border-slate-700 rounded-2xl p-8 cursor-pointer hover:bg-slate-900/60 hover:border-slate-600 transition-all group min-h-[220px] flex flex-col">
               <div className="flex items-start justify-between mb-4">
