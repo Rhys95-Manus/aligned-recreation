@@ -13,6 +13,7 @@ export default function Home() {
         <div className="text-xl font-semibold">Aligned</div>
 
         <div className="flex gap-3">
+          {/* Audio:On - Green background with white text */}
           <Button
             variant="outline"
             onClick={() => setAudioOn(!audioOn)}
@@ -20,21 +21,27 @@ export default function Home() {
           >
             Audio: {audioOn ? "On" : "Off"}
           </Button>
+          
+          {/* High Contrast - White text with white border, no background */}
           <Button
             variant="outline"
-            className="border-2 border-yellow-500 bg-transparent text-yellow-500 hover:bg-yellow-500/10 rounded-full px-5"
+            className="border-2 border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5"
           >
             High Contrast
           </Button>
+          
+          {/* Community - White text with white border, no background */}
           <Button
             variant="outline"
-            className="border-2 border-pink-500 bg-transparent text-pink-500 hover:bg-pink-500/10 rounded-full px-5"
+            className="border-2 border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5"
           >
             Community
           </Button>
+          
+          {/* Pricing - Light cyan text with cyan border, no background */}
           <Button
             variant="outline"
-            className="border-2 border-cyan-500 bg-transparent text-cyan-500 hover:bg-cyan-500/10 rounded-full px-5"
+            className="border-2 border-cyan-400 bg-transparent text-cyan-400 hover:bg-cyan-400/10 rounded-full px-5"
           >
             Pricing
           </Button>
@@ -128,4 +135,3 @@ export default function Home() {
     </div>
   );
 }
-

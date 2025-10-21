@@ -1,51 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
-
-const categories = [
-  {
-    id: "sports",
-    name: "Sports",
-    description: "Professional sports techniques and form analysis",
-    subcategories: 8,
-  },
-  {
-    id: "weightlifting",
-    name: "Weightlifting",
-    description: "Strength training and powerlifting techniques",
-    subcategories: 3,
-  },
-  {
-    id: "yoga",
-    name: "Yoga",
-    description: "Yoga poses and flow sequences",
-    subcategories: 4,
-  },
-  {
-    id: "dance",
-    name: "Dance",
-    description: "Dance moves and choreography",
-    subcategories: 4,
-  },
-  {
-    id: "martial-arts",
-    name: "Martial Arts",
-    description: "Martial arts techniques and forms",
-    subcategories: 1,
-  },
-  {
-    id: "gymnastics",
-    name: "Gymnastics",
-    description: "Gymnastics skills and techniques",
-    subcategories: 4,
-  },
-  {
-    id: "recovery",
-    name: "Recovery",
-    description: "Recovery and mobility exercises",
-    subcategories: 3,
-  },
-];
+import { categoriesData } from "@/lib/motionsData";
 
 export default function Categories() {
   const [audioOn, setAudioOn] = useState(true);
@@ -67,19 +23,19 @@ export default function Categories() {
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-yellow-500 bg-transparent text-yellow-500 hover:bg-yellow-500/10 rounded-full px-5"
+            className="border-2 border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5"
           >
             High Contrast
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-pink-500 bg-transparent text-pink-500 hover:bg-pink-500/10 rounded-full px-5"
+            className="border-2 border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5"
           >
             Community
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-cyan-500 bg-transparent text-cyan-500 hover:bg-cyan-500/10 rounded-full px-5"
+            className="border-2 border-cyan-400 bg-transparent text-cyan-400 hover:bg-cyan-400/10 rounded-full px-5"
           >
             Pricing
           </Button>
@@ -88,7 +44,7 @@ export default function Categories() {
 
       {/* Main Content */}
       <main className="max-w-[1400px] mx-auto px-8 py-8">
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center justify-between mb-8">
           <Button
             variant="ghost"
             onClick={() => setLocation("/")}
@@ -99,36 +55,28 @@ export default function Categories() {
           <h2 className="text-lg text-slate-300">Choose Your Category</h2>
         </div>
 
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4">Select Category</h1>
-          <p className="text-xl text-slate-300">
-            Choose the type of movement you want to analyze
-          </p>
-        </div>
+        <h1 className="text-4xl font-bold mb-4 text-center">Select Category</h1>
+        <p className="text-center text-slate-300 mb-12">
+          Choose the type of movement you want to analyze
+        </p>
 
-        {/* Category Cards - NO colored borders, NO badges */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-24">
-          {categories.map((category) => (
-            <button
+        {/* Categories Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {categoriesData.map((category) => (
+            <div
               key={category.id}
-              onClick={() => setLocation(`/category/${category.id}`)}
-              className="text-left p-6 rounded-2xl border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all duration-300"
+              onClick={() => setLocation(`/subcategories/${category.id}`)}
+              className="bg-slate-900/40 border border-slate-700 rounded-2xl p-8 cursor-pointer hover:bg-slate-900/60 hover:border-slate-600 transition-all"
             >
               <h3 className="text-2xl font-bold mb-3">{category.name}</h3>
-              <p className="text-slate-300 mb-3">{category.description}</p>
-              <p className="text-sm text-slate-400">
-                {category.subcategories} subcategories
+              <p className="text-slate-300 text-sm mb-4">{category.description}</p>
+              <p className="text-slate-400 text-xs">
+                {category.subcategories.length} subcategories
               </p>
-            </button>
+            </div>
           ))}
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="text-center py-10 text-slate-400">
-        <p className="text-base mb-2">Total Points: 0</p>
-        <p className="text-sm">Made with Manus</p>
-      </footer>
 
       {/* Fixed bottom-right badge */}
       <div className="fixed bottom-6 right-6 bg-white text-black px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 shadow-lg">
