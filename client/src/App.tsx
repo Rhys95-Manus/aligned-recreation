@@ -9,6 +9,7 @@ import Categories from "./pages/Categories";
 import Subcategories from "./pages/Subcategories";
 import Motions from "./pages/Motions";
 import Analysis from "./pages/Analysis";
+import Pricing from "./pages/Pricing";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path={"/subcategories/:categoryId"} component={Subcategories} />
       <Route path={"/motions/:categoryId/:subcategoryId"} component={Motions} />
       <Route path={"/analysis/:categoryId/:subcategoryId/:motionId"} component={Analysis} />
+      <Route path={"/pricing"} component={Pricing} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
