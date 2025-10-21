@@ -11,12 +11,12 @@ export default function Home() {
       <header className="bg-[#050810] flex items-center justify-between px-8 py-6 border-b border-slate-800/50">
         <div className="text-xl font-semibold cursor-pointer" onClick={() => setLocation("/")}>Aligned</div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => setAudioOn(!audioOn)} className="border-2 border-blue-500 bg-transparent text-white hover:bg-blue-500/10 rounded-full px-5">
+          <Button variant="outline" onClick={() => setAudioOn(!audioOn)} className="!border-2 !border-green-500 bg-transparent text-white hover:bg-green-500/10 rounded-full px-5">
             Audio: {audioOn ? "On" : "Off"}
           </Button>
-          <Button variant="outline" className="border-2 border-orange-400 bg-transparent text-white hover:bg-orange-400/10 rounded-full px-5">High Contrast</Button>
-          <Button variant="outline" className="border-2 border-purple-500 bg-transparent text-white hover:bg-purple-500/10 rounded-full px-5">Community</Button>
-          <Button variant="outline" onClick={() => setLocation("/pricing")} className="border-2 border-cyan-400 bg-transparent text-white hover:bg-cyan-400/10 rounded-full px-5">Pricing</Button>
+          <Button variant="outline" className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5">High Contrast</Button>
+          <Button variant="outline" className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5">Community</Button>
+          <Button variant="outline" onClick={() => setLocation("/pricing")} className="!border-2 !border-purple-500 bg-transparent text-white hover:bg-purple-500/10 rounded-full px-5">Pricing</Button>
         </div>
       </header>
 

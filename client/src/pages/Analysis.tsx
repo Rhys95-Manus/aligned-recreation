@@ -56,7 +56,7 @@ export default function Analysis() {
           <Button
             variant="outline"
             onClick={() => setAudioOn(!audioOn)}
-            className="border-2 border-blue-500 bg-transparent text-white hover:bg-blue-500/10 rounded-full px-5"
+            className="!border-2 !border-green-500 bg-transparent text-white hover:bg-blue-500/10 rounded-full px-5"
           >
             Audio: {audioOn ? "On" : "Off"}
           </Button>
