@@ -23,7 +23,7 @@ export default function Subcategories() {
           <Button variant="outline" onClick={() => setAudioOn(!audioOn)} className="!border-2 !border-green-500 bg-transparent text-white hover:bg-blue-500/10 rounded-full px-5">Audio: {audioOn ? "On" : "Off"}</Button>
           <Button variant="outline" className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5">High Contrast</Button>
           <Button variant="outline" className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5">Community</Button>
-          <Button variant="outline" onClick={() => setLocation("/pricing")} className="!border-2 !border-purple-500 bg-transparent text-white hover:bg-purple-500/10 rounded-full px-5">Pricing</Button>
+          <Button variant="outline" onClick={() => setLocation("/pricing")} className="!border-2 !border-cyan-400 bg-transparent !text-cyan-400 hover:bg-cyan-400/10 rounded-full px-5">Pricing</Button>
         </div>
       </header>
       <main className="flex-1 max-w-[1400px] mx-auto px-8 py-8 w-full">
