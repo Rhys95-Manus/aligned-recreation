@@ -48,33 +48,33 @@ export default function Analysis() {
 
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-slate-100">
-      {/* Header */}
-      <header className="flex items-center justify-between px-8 py-6">
+      {/* Header with darker background */}
+      <header className="bg-[#050810] flex items-center justify-between px-8 py-6 border-b border-slate-800/50">
         <div className="text-xl font-semibold">Aligned</div>
 
         <div className="flex gap-3">
           <Button
             variant="outline"
             onClick={() => setAudioOn(!audioOn)}
-            className="border-2 border-green-500 bg-transparent text-green-500 hover:bg-green-500/10 rounded-full px-5"
+            className="border-2 border-green-500 bg-green-500 text-white hover:bg-green-600 hover:border-green-600 rounded-full px-5"
           >
             Audio: {audioOn ? "On" : "Off"}
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-full px-5"
+            className="border-2 border-yellow-500 bg-transparent text-yellow-500 hover:bg-yellow-500/10 rounded-full px-5"
           >
             High Contrast
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-full px-5"
+            className="border-2 border-pink-500 bg-transparent text-pink-500 hover:bg-pink-500/10 rounded-full px-5"
           >
             Community
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-full px-5"
+            className="border-2 border-cyan-500 bg-transparent text-cyan-500 hover:bg-cyan-500/10 rounded-full px-5"
           >
             Pricing
           </Button>
@@ -87,7 +87,7 @@ export default function Analysis() {
           <Button
             variant="ghost"
             onClick={() => window.history.back()}
-            className="text-slate-300 hover:text-white flex items-center gap-2 border-2 border-pink-500 rounded-full px-4"
+            className="text-slate-300 hover:text-white hover:bg-slate-800/50 flex items-center gap-2 rounded-lg px-4"
           >
             ← Back
           </Button>
@@ -184,7 +184,11 @@ export default function Analysis() {
           </div>
         </div>
       </main>
+
+      {/* Fixed bottom-right badge */}
+      <div className="fixed bottom-6 right-6 bg-white text-black px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 shadow-lg">
+        <span>✎</span> Tweak
+      </div>
     </div>
   );
 }
-
