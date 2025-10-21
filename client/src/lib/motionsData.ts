@@ -272,9 +272,21 @@ export const categoriesData: Category[] = [
           { id: "hook", name: "Hook", level: "Intermediate", description: "Boxing hook punch", duration: "0.5-1 second", keyPoints: "Circular motion, Elbow position, Body rotation" },
           { id: "uppercut", name: "Uppercut", level: "Intermediate", description: "Upward boxing punch", duration: "0.5-1 second", keyPoints: "Knee bend, Upward drive, Hip thrust" },
           { id: "overhand", name: "Overhand", level: "Advanced", description: "Looping overhand punch", duration: "0.5-1 second", keyPoints: "Arc motion, Shoulder over, Power generation" },
+          { id: "backfist", name: "Backfist", level: "Intermediate", description: "Reverse knuckle strike", duration: "0.5-1 second", keyPoints: "Whipping motion, Back of hand, Snap back" },
+          { id: "hammer-fist", name: "Hammer Fist", level: "Beginner", description: "Downward striking technique", duration: "0.5-1 second", keyPoints: "Bottom of fist, Downward arc, Full body weight" },
+          { id: "horizontal-elbow", name: "Horizontal Elbow", level: "Intermediate", description: "Side elbow strike", duration: "0.5-1 second", keyPoints: "Hip rotation, Elbow point, Close range" },
+          { id: "upward-elbow", name: "Upward Elbow", level: "Intermediate", description: "Rising elbow strike", duration: "0.5-1 second", keyPoints: "Drive upward, Hip thrust, Close distance" },
+          { id: "downward-elbow", name: "Downward Elbow", level: "Advanced", description: "Downward elbow strike", duration: "0.5-1 second", keyPoints: "Overhead position, Downward drive, Full body weight" },
           { id: "front-kick", name: "Front Kick", level: "Beginner", description: "Straight forward kick", duration: "1-2 seconds", keyPoints: "Knee chamber, Hip drive, Ball of foot" },
           { id: "roundhouse", name: "Roundhouse Kick", level: "Intermediate", description: "Circular kicking technique", duration: "1-2 seconds", keyPoints: "Hip turn, Knee chamber, Snap through" },
-          { id: "side-kick", name: "Side Kick", level: "Intermediate", description: "Lateral kicking technique", duration: "1-2 seconds", keyPoints: "Hip turn, Blade of foot, Chamber high" }
+          { id: "side-kick", name: "Side Kick", level: "Intermediate", description: "Lateral kicking technique", duration: "1-2 seconds", keyPoints: "Hip turn, Blade of foot, Chamber high" },
+          { id: "back-kick", name: "Back Kick", level: "Advanced", description: "Reverse kicking technique", duration: "1-2 seconds", keyPoints: "Look back, Hip thrust, Heel strike" },
+          { id: "axe-kick", name: "Axe Kick", level: "Advanced", description: "Downward chopping kick", duration: "1-2 seconds", keyPoints: "High chamber, Straight leg, Heel down" },
+          { id: "crescent-kick", name: "Crescent Kick", level: "Intermediate", description: "Arcing kick technique", duration: "1-2 seconds", keyPoints: "Arc motion, Inside edge, Hip flexibility" },
+          { id: "spinning-heel", name: "Spinning Heel Kick", level: "Expert", description: "Spinning back kick variation", duration: "1-2 seconds", keyPoints: "Spin timing, Hip turn, Heel contact" },
+          { id: "straight-knee", name: "Straight Knee", level: "Beginner", description: "Direct knee strike", duration: "0.5-1 second", keyPoints: "Drive upward, Hip thrust, Clinch position" },
+          { id: "diagonal-knee", name: "Diagonal Knee", level: "Intermediate", description: "Angled knee strike", duration: "0.5-1 second", keyPoints: "Angle entry, Hip rotation, Target ribs" },
+          { id: "jumping-knee", name: "Jumping Knee", level: "Advanced", description: "Explosive jumping knee", duration: "1-2 seconds", keyPoints: "Jump timing, Knee drive, Landing control" }
         ]
       }
     ]
@@ -330,7 +342,14 @@ export const categoriesData: Category[] = [
         motions: [
           { id: "glute-bridge", name: "Glute Bridge", level: "Beginner", description: "Hip extension strengthening", duration: "10-15 reps", keyPoints: "Squeeze glutes, Neutral spine, Controlled movement" },
           { id: "clamshells", name: "Clamshells", level: "Beginner", description: "Hip abductor strengthening", duration: "10-15 reps", keyPoints: "Side lying, Controlled opening, Stable pelvis" },
-          { id: "bird-dog", name: "Bird Dog", level: "Beginner", description: "Core stability exercise", duration: "Hold 10-30s", keyPoints: "Opposite arm/leg, Stable spine, Controlled movement" }
+          { id: "bird-dog", name: "Bird Dog", level: "Beginner", description: "Core stability exercise", duration: "Hold 10-30s", keyPoints: "Opposite arm/leg, Stable spine, Controlled movement" },
+          { id: "wall-slides", name: "Wall Slides", level: "Beginner", description: "Shoulder blade mobility", duration: "10-15 reps", keyPoints: "Back to wall, Smooth sliding, Full range" },
+          { id: "heel-raises", name: "Heel Raises", level: "Beginner", description: "Calf strengthening", duration: "10-20 reps", keyPoints: "Rise on toes, Controlled descent, Balance" },
+          { id: "side-steps", name: "Side Steps", level: "Beginner", description: "Hip abductor strengthening", duration: "10-15 steps", keyPoints: "Resistance band, Controlled steps, Stable posture" },
+          { id: "marching", name: "Marching in Place", level: "Beginner", description: "Balance and coordination", duration: "30-60 seconds", keyPoints: "High knees, Stable core, Rhythmic movement" },
+          { id: "single-leg-stand", name: "Single Leg Stand", level: "Intermediate", description: "Balance training", duration: "Hold 30-60s", keyPoints: "One foot, Stable core, Eyes forward" },
+          { id: "step-ups", name: "Step-Ups", level: "Intermediate", description: "Functional leg strengthening", duration: "10-15 reps", keyPoints: "Full step up, Controlled descent, Stable platform" },
+          { id: "resistance-rows", name: "Resistance Band Rows", level: "Beginner", description: "Upper back strengthening", duration: "10-15 reps", keyPoints: "Squeeze shoulder blades, Controlled pull, Stable posture" }
         ]
       },
       {
@@ -339,7 +358,9 @@ export const categoriesData: Category[] = [
         motions: [
           { id: "hip-flexor-stretch", name: "Hip Flexor Stretch", level: "Beginner", description: "Deep hip flexor mobility", duration: "Hold 30-60s", keyPoints: "Hip extension, Neutral pelvis, Gentle pressure" },
           { id: "hamstring-stretch", name: "Hamstring Stretch", level: "Beginner", description: "Posterior chain flexibility", duration: "Hold 30-60s", keyPoints: "Straight leg, Hip hinge, Gentle pull" },
-          { id: "calf-stretch", name: "Calf Stretch", level: "Beginner", description: "Lower leg flexibility", duration: "Hold 30-60s", keyPoints: "Straight leg, Heel down, Wall support" }
+          { id: "calf-stretch", name: "Calf Stretch", level: "Beginner", description: "Lower leg flexibility", duration: "Hold 30-60s", keyPoints: "Straight leg, Heel down, Wall support" },
+          { id: "quad-stretch", name: "Quadriceps Stretch", level: "Beginner", description: "Front thigh flexibility", duration: "Hold 30-60s", keyPoints: "Heel to glute, Hip extension, Balance support" },
+          { id: "shoulder-crossbody", name: "Shoulder Cross-Body Stretch", level: "Beginner", description: "Shoulder and upper back mobility", duration: "Hold 30-60s", keyPoints: "Arm across body, Gentle pull, Relaxed shoulders" }
         ]
       },
       {
@@ -348,7 +369,9 @@ export const categoriesData: Category[] = [
         motions: [
           { id: "thoracic-rotation", name: "Thoracic Spine Rotation", level: "Beginner", description: "Upper back mobility exercise", duration: "10-15 reps", keyPoints: "Controlled rotation, Stable hips, Full range" },
           { id: "hip-circles", name: "Hip Circles", level: "Beginner", description: "Hip joint mobility", duration: "10-15 circles", keyPoints: "Smooth circles, Full range, Both directions" },
-          { id: "ankle-circles", name: "Ankle Circles", level: "Beginner", description: "Ankle joint mobility", duration: "10-15 circles", keyPoints: "Full circles, Point and flex, Both directions" }
+          { id: "ankle-circles", name: "Ankle Circles", level: "Beginner", description: "Ankle joint mobility", duration: "10-15 circles", keyPoints: "Full circles, Point and flex, Both directions" },
+          { id: "neck-rolls", name: "Neck Rolls", level: "Beginner", description: "Cervical spine mobility", duration: "5-10 rolls", keyPoints: "Slow movement, Gentle pressure, Avoid forcing" },
+          { id: "arm-circles", name: "Arm Circles", level: "Beginner", description: "Shoulder joint mobility", duration: "10-15 circles", keyPoints: "Full circles, Controlled movement, Both directions" }
         ]
       }
     ]
