@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -318,43 +319,7 @@ export default function Analysis() {
   if (showDetailedAnalysis && detailedAnalysis) {
     return (
       <div className="min-h-screen bg-[#0a0e1a] text-white flex flex-col">
-        {/* Header */}
-        <header className="bg-[#050810] border-b border-gray-800 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-2xl font-bold hover:text-blue-400 transition-colors">
-              Aligned
-            </Link>
-            
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="rounded-full !border-emerald-600 bg-emerald-600/30 text-white hover:bg-emerald-700"
-              >
-                Audio: On
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-full !border-orange-400 bg-transparent text-white hover:bg-orange-400/10"
-              >
-                High Contrast
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-full !border-purple-500 bg-transparent text-white hover:bg-purple-500/10"
-              >
-                Community
-              </Button>
-              <Link href="/pricing">
-                <Button
-                  variant="outline"
-                  className="rounded-full !border-cyan-400 bg-transparent !text-cyan-400 hover:bg-cyan-400/10"
-                >
-                  Pricing
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </header>
+        <Header />
 
         {/* Detailed Analysis Content */}
         <main className="flex-1 px-6 py-8 overflow-y-auto">
@@ -478,44 +443,7 @@ export default function Analysis() {
   
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-white flex flex-col">
-      {/* Header */}
-      <header className="bg-[#050810] border-b border-gray-800 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold hover:text-blue-400 transition-colors">
-            Aligned
-          </Link>
-          
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setVoiceEnabled(!voiceEnabled)}
-              className="rounded-full !border-emerald-600 bg-emerald-600/30 text-white hover:bg-emerald-700"
-            >
-              Audio: {voiceEnabled ? 'On' : 'Off'}
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-full !border-orange-400 bg-transparent text-white hover:bg-orange-400/10"
-            >
-              High Contrast
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-full !border-purple-500 bg-transparent text-white hover:bg-purple-500/10"
-            >
-              Community
-            </Button>
-            <Link href="/pricing">
-              <Button
-                variant="outline"
-                className="rounded-full !border-cyan-400 bg-transparent !text-cyan-400 hover:bg-cyan-400/10"
-              >
-                Pricing
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="flex-1 px-6 py-8">

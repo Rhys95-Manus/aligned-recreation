@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
@@ -19,15 +20,7 @@ export default function Motions() {
 
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-slate-100 flex flex-col">
-      <header className="bg-[#050810] flex items-center justify-between px-8 py-6 border-b border-slate-800/50">
-        <div className="text-xl font-semibold cursor-pointer" onClick={() => setLocation("/")}>Aligned</div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => setAudioOn(!audioOn)} className="!border-2 !border-green-500 bg-transparent text-white hover:bg-blue-500/10 rounded-full px-5">Audio: {audioOn ? "On" : "Off"}</Button>
-          <Button variant="outline" className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5">High Contrast</Button>
-          <Button variant="outline" className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5">Community</Button>
-          <Button variant="outline" onClick={() => setLocation("/pricing")} className="!border-2 !border-cyan-400 bg-transparent !text-cyan-400 hover:bg-cyan-400/10 rounded-full px-5">Pricing</Button>
-        </div>
-      </header>
+      <Header />
       <main className="flex-1 max-w-[1400px] mx-auto px-8 py-8 w-full">
         <div className="flex items-center justify-between mb-8">
           <Button variant="ghost" onClick={() => setLocation(`/subcategories/${categoryId}`)} className="text-slate-300 hover:text-white hover:bg-slate-800/50 flex items-center gap-2 rounded-lg px-4">← Back to {category.name}</Button>
