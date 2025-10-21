@@ -17,7 +17,7 @@ export default function Categories() {
           <Button
             variant="outline"
             onClick={() => setAudioOn(!audioOn)}
-            className="border-2 border-green-500 bg-green-500 text-white hover:bg-green-600 hover:border-green-600 rounded-full px-5"
+            className="border-2 border-blue-500 bg-transparent text-white hover:bg-blue-500/10 rounded-full px-5"
           >
             Audio: {audioOn ? "On" : "Off"}
           </Button>
@@ -35,7 +35,7 @@ export default function Categories() {
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-cyan-400 bg-transparent text-cyan-400 hover:bg-cyan-400/10 rounded-full px-5"
+            className="border-2 border-cyan-400 bg-transparent text-white hover:bg-cyan-400/10 rounded-full px-5"
           >
             Pricing
           </Button>
