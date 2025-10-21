@@ -8,46 +8,60 @@ export default function Categories() {
 
   const categories = [
     {
-      id: 1,
+      id: "sports",
       name: "Sports",
       description: "Professional sports techniques and form analysis",
       subcategories: 8,
+      borderColor: "border-purple-500",
+      badge: 7,
     },
     {
-      id: 2,
+      id: "weightlifting",
       name: "Weightlifting",
       description: "Strength training and powerlifting techniques",
       subcategories: 3,
+      borderColor: "border-orange-500",
+      badge: 8,
     },
     {
-      id: 3,
+      id: "yoga",
       name: "Yoga",
       description: "Yoga poses and flow sequences",
       subcategories: 4,
+      borderColor: "border-teal-500",
+      badge: 9,
     },
     {
-      id: 4,
+      id: "dance",
       name: "Dance",
       description: "Dance moves and choreography",
       subcategories: 4,
+      borderColor: "border-pink-500",
+      badge: 10,
     },
     {
-      id: 5,
+      id: "martial-arts",
       name: "Martial Arts",
       description: "Martial arts techniques and forms",
       subcategories: 1,
+      borderColor: "border-blue-500",
+      badge: 11,
     },
     {
-      id: 6,
+      id: "gymnastics",
       name: "Gymnastics",
       description: "Gymnastics skills and techniques",
       subcategories: 4,
+      borderColor: "border-red-500",
+      badge: 12,
     },
     {
-      id: 7,
+      id: "recovery",
       name: "Recovery",
       description: "Recovery and mobility exercises",
       subcategories: 3,
+      borderColor: "border-green-500",
+      badge: 13,
     },
   ];
 
@@ -61,25 +75,25 @@ export default function Categories() {
           <Button
             variant="outline"
             onClick={() => setAudioOn(!audioOn)}
-            className="border-2 border-green-500 bg-transparent text-green-500 hover:bg-green-500/10 rounded-lg"
+            className="border-2 border-green-500 bg-transparent text-green-500 hover:bg-green-500/10 rounded-full px-5"
           >
             Audio: {audioOn ? "On" : "Off"}
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-lg"
+            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-full px-5"
           >
             High Contrast
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-lg"
+            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-full px-5"
           >
             Community
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-lg"
+            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-full px-5"
           >
             Pricing
           </Button>
@@ -92,7 +106,7 @@ export default function Categories() {
           <Button
             variant="ghost"
             onClick={() => setLocation("/")}
-            className="text-slate-300 hover:text-white flex items-center gap-2"
+            className="text-slate-300 hover:text-white flex items-center gap-2 border-2 border-pink-500 rounded-full px-4"
           >
             ← Back
           </Button>
@@ -111,8 +125,12 @@ export default function Categories() {
           {categories.map((category) => (
             <button
               key={category.id}
-              className="text-left p-6 rounded-2xl border border-slate-700 bg-slate-900/60 hover:bg-slate-800/60 transition-all duration-300"
+              onClick={() => setLocation(`/category/${category.id}`)}
+              className={`relative text-left p-6 rounded-2xl border-2 ${category.borderColor} bg-slate-900/60 hover:bg-slate-800/60 transition-all duration-300`}
             >
+              <span className="absolute top-3 right-3 bg-slate-800/90 text-white text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center border-2 border-slate-600">
+                {category.badge}
+              </span>
               <h3 className="text-2xl font-bold mb-3">{category.name}</h3>
               <p className="text-slate-300 mb-3">{category.description}</p>
               <p className="text-sm text-slate-400">

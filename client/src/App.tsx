@@ -6,12 +6,18 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Categories from "./pages/Categories";
+import Subcategories from "./pages/Subcategories";
+import Motions from "./pages/Motions";
+import Analysis from "./pages/Analysis";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path="/categories" component={Categories} />
+      <Route path="/category/:categoryId" component={Subcategories} />
+      <Route path="/category/:categoryId/:subcategoryId" component={Motions} />
+      <Route path="/analyze/:motionId" component={Analysis} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

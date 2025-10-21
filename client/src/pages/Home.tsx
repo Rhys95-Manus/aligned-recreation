@@ -43,25 +43,25 @@ export default function Home() {
           <Button
             variant="outline"
             onClick={() => setAudioOn(!audioOn)}
-            className="border-2 border-green-500 bg-transparent text-green-500 hover:bg-green-500/10 rounded-lg"
+            className="border-2 border-green-500 bg-transparent text-green-500 hover:bg-green-500/10 rounded-full px-5"
           >
             Audio: {audioOn ? "On" : "Off"}
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-lg"
+            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-full px-5"
           >
             High Contrast
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-lg"
+            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-full px-5"
           >
             Community
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-lg"
+            className="border-2 border-slate-600 bg-transparent text-slate-300 hover:bg-slate-600/10 rounded-full px-5"
           >
             Pricing
           </Button>
