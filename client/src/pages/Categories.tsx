@@ -66,7 +66,7 @@ export default function Categories() {
             <div
               key={category.id}
               onClick={() => setLocation(`/subcategories/${category.id}`)}
-              className="bg-slate-900/40 border border-slate-700 rounded-2xl p-8 cursor-pointer hover:bg-slate-900/60 hover:border-slate-600 transition-all"
+              className="bg-slate-900/40 border border-slate-700 rounded-2xl p-6 cursor-pointer hover:bg-slate-900/60 hover:border-slate-600 transition-all"
             >
               <h3 className="text-2xl font-bold mb-3">{category.name}</h3>
               <p className="text-slate-300 text-sm mb-4">{category.description}</p>

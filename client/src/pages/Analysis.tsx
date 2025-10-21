@@ -56,25 +56,26 @@ export default function Analysis() {
           <Button
             variant="outline"
             onClick={() => setAudioOn(!audioOn)}
-            className="!border-2 !border-green-500 bg-transparent text-white hover:bg-blue-500/10 rounded-full px-5"
+            className="!border-2 !border-emerald-600 !bg-emerald-600/30 text-white hover:!bg-emerald-600/50 rounded-full px-5"
           >
             Audio: {audioOn ? "On" : "Off"}
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-yellow-500 bg-transparent text-yellow-500 hover:bg-yellow-500/10 rounded-full px-5"
+            className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5"
           >
             High Contrast
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-pink-500 bg-transparent text-pink-500 hover:bg-pink-500/10 rounded-full px-5"
+            className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-5"
           >
             Community
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-cyan-500 bg-transparent text-cyan-500 hover:bg-cyan-500/10 rounded-full px-5"
+            onClick={() => setLocation("/pricing")}
+            className="!border-2 !border-cyan-400 bg-transparent !text-cyan-400 hover:bg-cyan-400/10 rounded-full px-5"
           >
             Pricing
           </Button>
