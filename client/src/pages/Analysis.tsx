@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { Pose, Results } from "@mediapipe/pose";
 
 // Detailed analysis data structure
 interface DetailedAnalysisData {
@@ -49,6 +50,7 @@ export default function Analysis() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const poseRef = useRef<Pose | null>(null);
   
   // Detection state
   const [landmarksDetected, setLandmarksDetected] = useState(0);
@@ -57,7 +59,7 @@ export default function Analysis() {
   const [rightHandRaised, setRightHandRaised] = useState(false);
   const [leftHandRaised, setLeftHandRaised] = useState(false);
   const [rightFootLifted, setRightFootLifted] = useState(false);
-  const [leftFootLifted, setLeftFootLifted] = useState(false);
+  const [leftFootLifted] = useState(false);
   
   // Session state
   const [sessionState, setSessionState] = useState<'idle' | 'ready' | 'capturing' | 'complete'>('idle');
@@ -88,6 +90,9 @@ export default function Analysis() {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
+      if (poseRef.current) {
+        poseRef.current.close();
+      }
     };
   }, [stream]);
   
@@ -115,6 +120,93 @@ export default function Analysis() {
     }
   };
   
+  const onResults = (results: Results) => {
+    if (!canvasRef.current || !videoRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (results.poseLandmarks) {
+      const landmarks = results.poseLandmarks;
+      setLandmarksDetected(landmarks.length);
+      
+      // Calculate body scale and distance
+      const leftShoulder = landmarks[11];
+      const rightShoulder = landmarks[12];
+      const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+      setBodyScale(shoulderWidth);
+      
+      const avgDepth = (leftShoulder.z + rightShoulder.z) / 2;
+      const distanceMeters = Math.abs(avgDepth * 2);
+      setDistance(`${distanceMeters.toFixed(1)}m`);
+      
+      // Check hand positions (wrists above shoulders)
+      const leftWrist = landmarks[15];
+      const rightWrist = landmarks[16];
+      setRightHandRaised(rightWrist.y < rightShoulder.y - 0.1);
+      setLeftHandRaised(leftWrist.y < leftShoulder.y - 0.1);
+      
+      // Check foot positions (ankles lifted)
+      const leftAnkle = landmarks[27];
+      const rightAnkle = landmarks[28];
+      const leftHip = landmarks[23];
+      const rightHip = landmarks[24];
+      setRightFootLifted(rightAnkle.y < rightHip.y - 0.3);
+      
+      // Draw skeleton
+      drawSkeleton(ctx, landmarks, canvas.width, canvas.height);
+      
+      // Set session to ready if pose detected
+      if (sessionState === 'idle') {
+        setSessionState('ready');
+      }
+    } else {
+      setLandmarksDetected(0);
+      setDistance("No pose detected");
+    }
+  };
+  
+  const drawSkeleton = (ctx: CanvasRenderingContext2D, landmarks: any[], width: number, height: number) => {
+    // Draw connections
+    const connections = [
+      // Face
+      [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
+      // Torso
+      [9, 10], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+      [11, 23], [12, 24], [23, 24],
+      // Left leg
+      [23, 25], [25, 27], [27, 29], [27, 31], [29, 31],
+      // Right leg
+      [24, 26], [26, 28], [28, 30], [28, 32], [30, 32]
+    ];
+    
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    
+    connections.forEach(([start, end]) => {
+      const startPoint = landmarks[start];
+      const endPoint = landmarks[end];
+      if (startPoint && endPoint) {
+        ctx.beginPath();
+        ctx.moveTo(startPoint.x * width, startPoint.y * height);
+        ctx.lineTo(endPoint.x * width, endPoint.y * height);
+        ctx.stroke();
+      }
+    });
+    
+    // Draw landmarks
+    ctx.fillStyle = '#ff0000';
+    landmarks.forEach(landmark => {
+      ctx.beginPath();
+      ctx.arc(landmark.x * width, landmark.y * height, 4, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+  };
+  
   const startVideo = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -122,43 +214,46 @@ export default function Analysis() {
         audio: false
       });
       
-      if (videoRef.current) {
+      if (videoRef.current && canvasRef.current) {
         videoRef.current.srcObject = mediaStream;
-        videoRef.current.play();
+        await videoRef.current.play();
         setStream(mediaStream);
         setCameraActive(true);
         
-        speak("Camera has started. Position yourself and press start capture when ready");
+        // Initialize MediaPipe Pose
+        const pose = new Pose({
+          locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+          }
+        });
         
-        // Simulate pose detection after 1 second
-        setTimeout(() => {
-          simulatePoseDetection();
-        }, 1000);
+        pose.setOptions({
+          modelComplexity: 1,
+          smoothLandmarks: true,
+          enableSegmentation: false,
+          smoothSegmentation: false,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+        
+        pose.onResults(onResults);
+        poseRef.current = pose;
+        
+        // Process video frames
+        const processFrame = async () => {
+          if (videoRef.current && poseRef.current && cameraActive) {
+            await poseRef.current.send({ image: videoRef.current });
+            requestAnimationFrame(processFrame);
+          }
+        };
+        
+        speak("Camera has started. Position yourself and press start capture when ready");
+        processFrame();
       }
     } catch (error) {
       console.error("Error starting camera:", error);
       alert("Failed to start camera. Please ensure camera permissions are granted.");
     }
-  };
-  
-  const simulatePoseDetection = () => {
-    // Simulate MediaPipe detection
-    setLandmarksDetected(33);
-    setBodyScale(0.15);
-    setDistance("1.5m");
-    setSessionState('ready');
-    
-    // Removed - no audio cue here
-    
-    // Randomly update detection status
-    const interval = setInterval(() => {
-      setRightHandRaised(Math.random() > 0.5);
-      setLeftHandRaised(Math.random() > 0.5);
-      setRightFootLifted(Math.random() > 0.7);
-      setLeftFootLifted(Math.random() > 0.7);
-    }, 500);
-    
-    return () => clearInterval(interval);
   };
   
   const startCapture = () => {
@@ -295,19 +390,19 @@ export default function Analysis() {
     setSessionState('complete');
     setShowDetailedAnalysis(true);
     
-    // Add points to total
-    const newTotal = totalPoints + analysis.overallScore;
+    // Award points
+    const points = analysis.overallScore;
+    const newTotal = totalPoints + points;
     setTotalPoints(newTotal);
     localStorage.setItem('totalPoints', newTotal.toString());
-    
-    speak("Analysis complete. Your score is " + analysis.overallScore + " out of 100.");
   };
   
   const resetSession = () => {
-    setDetailedAnalysis(null);
+    setSessionState('idle');
     setShowDetailedAnalysis(false);
-    setSessionState('ready');
-    speak("Ready for another capture.");
+    setDetailedAnalysis(null);
+    setLandmarksDetected(0);
+    setDistance("No pose detected");
   };
   
   const getButtonText = () => {
@@ -345,44 +440,41 @@ export default function Analysis() {
     return (
       <div className="min-h-screen bg-[#0a0e1a] text-white flex flex-col">
         <Header />
-
-        {/* Detailed Analysis Content */}
-        <main className="flex-1 px-6 py-8 overflow-y-auto">
-          <Button
-            variant="outline"
-            onClick={() => setShowDetailedAnalysis(false)}
-            className="mb-6 rounded-full border-2 border-white/20 bg-transparent text-white hover:bg-white/10"
-          >
-            ← Back to Video
-          </Button>
-          
+        
+        <main className="flex-1 container mx-auto py-8 px-4">
           <div className="max-w-4xl mx-auto space-y-6">
+            {/* Back button */}
+            <Link href={`/motions?category=${params.get('category')}&subcategory=${params.get('subcategory')}`}>
+              <Button variant="outline" className="mb-4">
+                ← Back to Motions
+              </Button>
+            </Link>
+
             {/* Overall Performance */}
-            <div className="bg-[#1a1f2e] rounded-lg p-8">
+            <div className="bg-[#1a1f2e] rounded-lg p-6">
               <h2 className="text-2xl font-bold mb-4">Overall Performance</h2>
               <div className="text-6xl font-bold mb-6">{detailedAnalysis.overallScore}/100</div>
-              <div className="bg-yellow-900/30 border border-yellow-600 rounded-lg p-4">
+              <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4">
                 <h3 className="text-yellow-400 font-bold mb-2">Priority Focus:</h3>
                 <p className="text-yellow-200">{detailedAnalysis.priorityFocus}</p>
               </div>
             </div>
 
-            {/* Detailed Analysis Header */}
+            {/* Detailed Analysis */}
             <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Detailed Analysis</h2>
-                <button className="text-blue-400 hover:text-blue-300">Show Details</button>
               </div>
             </div>
 
             {/* Your Strengths */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-green-400 mb-4">Your Strengths</h2>
+            <div className="bg-green-900/20 border border-green-600/50 rounded-lg p-6">
+              <h2 className="text-2xl font-bold text-green-400 mb-6">Your Strengths</h2>
               <div className="space-y-4">
                 {detailedAnalysis.strengths.map((strength, idx) => (
                   <div key={idx}>
                     <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-lg font-semibold">{strength.title} ({strength.score}/100)</h3>
+                      <h3 className="text-xl font-semibold text-green-300">{strength.title} ({strength.score}/100)</h3>
                     </div>
                     <p className="text-gray-300">{strength.description}</p>
                   </div>
@@ -392,15 +484,15 @@ export default function Analysis() {
 
             {/* Detailed Analysis - All Areas */}
             <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h2 className="text-2xl font-bold mb-6">Detailed Analysis - All Areas</h2>
-              <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-blue-400 mb-6">Detailed Analysis - All Areas</h2>
+              <div className="space-y-4">
                 {detailedAnalysis.detailedAreas.map((area, idx) => (
                   <div key={idx} className="border-l-4 border-blue-500 pl-4">
                     <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-xl font-semibold text-blue-400">{area.title}</h3>
-                      <span className="text-lg font-bold">{area.score}/100</span>
+                      <h3 className="text-xl font-semibold text-blue-300">{area.title}</h3>
+                      <span className="bg-blue-900/50 px-3 py-1 rounded text-sm">{area.score}/100</span>
                     </div>
-                    <p className="text-gray-300 mb-2">{area.description}</p>
+                    <p className="text-gray-300 mb-1">{area.description}</p>
                     <p className="text-sm text-gray-400">Priority: {area.priority}</p>
                   </div>
                 ))}
@@ -452,15 +544,21 @@ export default function Analysis() {
                 <span className="text-gray-400">Trend: {detailedAnalysis.consistency.trend}</span>
               </div>
             </div>
+
+            {/* Try Again Button */}
+            <Button
+              onClick={() => setShowDetailedAnalysis(false)}
+              className="w-full py-6 text-lg bg-blue-600 hover:bg-blue-700"
+            >
+              Analyze Another Motion
+            </Button>
           </div>
         </main>
 
         {/* Footer */}
-        <footer className="bg-[#050810] border-t border-gray-800 px-6 py-4">
-          <div className="flex justify-between items-center">
-            <p className="text-gray-400">Total Points: {totalPoints}</p>
-            <p className="text-gray-500 text-sm">Made with Manus</p>
-          </div>
+        <footer className="bg-[#050810] py-4 text-center text-gray-400">
+          <p>Total Points: {totalPoints}</p>
+          <p className="text-sm">Made with Manus</p>
         </footer>
       </div>
     );
@@ -469,151 +567,78 @@ export default function Analysis() {
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-white flex flex-col">
       <Header />
+      
+      <main className="flex-1 container mx-auto py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          {/* Back button */}
+          <Link href={`/motions?category=${params.get('category')}&subcategory=${params.get('subcategory')}`}>
+            <Button variant="outline" className="mb-4">
+              ← Back to Motions
+            </Button>
+          </Link>
 
-      {/* Main Content */}
-      <main className="flex-1 px-6 py-8">
-        <Button
-          variant="outline"
-          onClick={() => window.history.back()}
-          className="mb-6 rounded-full border-2 border-white/20 bg-transparent text-white hover:bg-white/10"
-        >
-          ← Back
-        </Button>
-        
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-4xl font-bold">{motionName}</h1>
-          <p className="text-gray-400">{motionDescription}</p>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Video Section */}
-          <div className="lg:col-span-2">
+          {/* Motion Info */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold mb-2">{motionName}</h1>
+            <p className="text-gray-400">{motionDescription}</p>
+          </div>
+
+          {/* Video Feed */}
+          <div className="bg-[#1a1f2e] rounded-lg p-6 mb-6">
             <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
               <video
                 ref={videoRef}
-                className="absolute inset-0 w-full h-full object-cover"
-                style={{ display: cameraActive ? 'block' : 'none' }}
-                autoPlay
+                className="w-full h-full object-cover"
                 playsInline
+                muted
               />
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none"
-                style={{ display: cameraActive ? 'block' : 'none' }}
+                className="absolute top-0 left-0 w-full h-full"
+                width={640}
+                height={480}
               />
               {!cameraActive && (
-                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <p className="text-sm mb-2">Live · IDLE · Ghost: default</p>
-                    <p>Camera will appear here</p>
-                  </div>
-                </div>
-              )}
-              {sessionState === 'complete' && detailedAnalysis && !showDetailedAnalysis && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-                  <div className="text-center">
-                    <h2 className="text-6xl font-bold text-green-400 mb-4">{detailedAnalysis.overallScore}</h2>
-                    <p className="text-2xl mb-4">Points Earned!</p>
-                    <Button
-                      onClick={() => setShowDetailedAnalysis(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg"
-                    >
-                      View Detailed Analysis
-                    </Button>
-                  </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
+                  <p className="text-xl">Camera not started</p>
                 </div>
               )}
             </div>
-            
+
+            {/* Control Button */}
             <Button
               onClick={handleButtonClick}
               className={getButtonClass()}
+              disabled={sessionState === 'idle' && cameraActive}
             >
               {getButtonText()}
             </Button>
           </div>
-          
-          {/* Side Panels */}
-          <div className="space-y-6">
-            {/* Controls */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h3 className="text-xl font-bold mb-3">Controls</h3>
-              <p className="text-gray-400 text-sm">
-                Use the smart button below the video to control your session
-              </p>
+
+          {/* Detection Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-[#1a1f2e] rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Real-Time Detection</h3>
+              <p className="text-sm text-gray-400">Landmarks: {landmarksDetected}/33</p>
+              <p className="text-sm text-gray-400">Body Scale: {bodyScale.toFixed(2)}</p>
+              <p className="text-sm text-gray-400">Distance: {distance}</p>
             </div>
-            
-            {/* Real-time Detection Status */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h3 className="text-xl font-bold mb-4">Real-time Detection Status</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span>Right Hand Raised</span>
-                  <span className={rightHandRaised ? "text-green-400" : "text-red-400"}>
-                    {rightHandRaised ? "✓" : "✗"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Left Hand Raised</span>
-                  <span className={leftHandRaised ? "text-green-400" : "text-red-400"}>
-                    {leftHandRaised ? "✓" : "✗"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Right Foot Lifted</span>
-                  <span className={rightFootLifted ? "text-green-400" : "text-red-400"}>
-                    {rightFootLifted ? "✓" : "✗"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Left Foot Lifted</span>
-                  <span className={leftFootLifted ? "text-green-400" : "text-red-400"}>
-                    {leftFootLifted ? "✓" : "✗"}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Positioning Feedback */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h3 className="text-xl font-bold mb-4">Positioning Feedback</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span>Landmarks Detected:</span>
-                  <span className="text-blue-400">{landmarksDetected}/33</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Body Scale:</span>
-                  <span className="text-blue-400">{bodyScale.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Distance:</span>
-                  <span className="text-yellow-400">{distance}</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Pro Tips */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h3 className="text-xl font-bold mb-4">Pro Tips · {motionName}</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li>• Film in good light, full body in frame</li>
-                <li>• Warm up joints; test range before effort</li>
-                <li>• Two reps at moderate pace help models segment phases</li>
-                <li>• Focus on form over speed</li>
-                <li>• Keep consistent distance from camera</li>
-              </ul>
+
+            <div className="bg-[#1a1f2e] rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Positioning Feedback</h3>
+              <p className="text-sm text-gray-400">Right Hand: {rightHandRaised ? '✓ Raised' : '✗ Down'}</p>
+              <p className="text-sm text-gray-400">Left Hand: {leftHandRaised ? '✓ Raised' : '✗ Down'}</p>
+              <p className="text-sm text-gray-400">Right Foot: {rightFootLifted ? '✓ Lifted' : '✗ Down'}</p>
+              <p className="text-sm text-gray-400">Left Foot: {leftFootLifted ? '✓ Lifted' : '✗ Down'}</p>
             </div>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#050810] border-t border-gray-800 px-6 py-4">
-        <div className="flex justify-between items-center">
-          <p className="text-gray-400">Total Points: {totalPoints}</p>
-          <p className="text-gray-500 text-sm">Made with Manus</p>
-        </div>
+      <footer className="bg-[#050810] py-4 text-center text-gray-400">
+        <p>Total Points: {totalPoints}</p>
+        <p className="text-sm">Made with Manus</p>
       </footer>
     </div>
   );
