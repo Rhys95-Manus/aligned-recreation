@@ -233,10 +233,10 @@ export default function Analysis() {
       // Calculate distance from knee to ankle
       const rightKneeToAnkleDist = rightAnkle && rightKnee ? Math.abs(rightAnkle.y - rightKnee.y) : 999;
       
-      // Foot is lifted if ankle is much closer to knee than normal (< 0.15 in normalized coords)
+      // Foot is lifted if ankle is much closer to knee than normal (< 0.25 in normalized coords)
       const rightFootLiftedDetected = rightAnkle && rightKnee && 
         rightAnkleVis > 0.3 && rightKneeVis > 0.3 && 
-        rightKneeToAnkleDist < 0.15; // Lifted when ankle-knee distance is small
+        rightKneeToAnkleDist < 0.25; // More lenient threshold for easier detection
       
       const leftAnkleVis = leftAnkle?.visibility ?? 0;
       const leftKneeVis = leftKnee?.visibility ?? 0;
@@ -245,7 +245,7 @@ export default function Analysis() {
       
       const leftFootLiftedDetected = leftAnkle && leftKnee && 
         leftAnkleVis > 0.3 && leftKneeVis > 0.3 && 
-        leftKneeToAnkleDist < 0.15; // Lifted when ankle-knee distance is small
+        leftKneeToAnkleDist < 0.25; // More lenient threshold for easier detection
       
       console.log('Foot detection:', {
         rightAnkleVis: rightAnkleVis.toFixed(2),
@@ -367,12 +367,10 @@ export default function Analysis() {
   };
   
   const drawSkeleton = (ctx: CanvasRenderingContext2D, landmarks: any[], width: number, height: number) => {
-    // Draw connections
+    // Draw connections (NO FACE LINES)
     const connections = [
-      // Face
-      [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
       // Torso
-      [9, 10], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+      [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
       [11, 23], [12, 24], [23, 24],
       // Left leg
       [23, 25], [25, 27], [27, 29], [27, 31], [29, 31],
@@ -407,11 +405,11 @@ export default function Analysis() {
       }
     });
     
-    // Add HEAD landmark (top of head) - estimated above nose
+    // Add HEAD landmark (top of head) - GREEN dot at very top
     const nose = landmarks[0];
     if (nose && (nose.visibility ?? 0) > 0.3) {
-      const headY = nose.y - 0.08; // Position above nose
-      ctx.fillStyle = '#FF6B6B'; // Red for head
+      const headY = nose.y - 0.15; // Position well above nose at TOP of head
+      ctx.fillStyle = '#00ff00'; // GREEN like other body landmarks
       ctx.beginPath();
       ctx.arc(nose.x * width, headY * height, 8, 0, 2 * Math.PI);
       ctx.fill();
@@ -425,7 +423,7 @@ export default function Analysis() {
     const rightShoulder = landmarks[12];
     if (leftShoulder && rightShoulder) {
       const neckX = (leftShoulder.x + rightShoulder.x) / 2;
-      const neckY = (leftShoulder.y + rightShoulder.y) / 2 - 0.03; // Slightly above shoulders
+      const neckY = (leftShoulder.y + rightShoulder.y) / 2 - 0.08; // Raised to middle of neck
       ctx.fillStyle = '#4ECDC4'; // Teal for neck
       ctx.beginPath();
       ctx.arc(neckX * width, neckY * height, 8, 0, 2 * Math.PI);
