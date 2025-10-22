@@ -60,7 +60,7 @@ export default function Analysis() {
   const [rightHandRaised, setRightHandRaised] = useState(false);
   const [leftHandRaised, setLeftHandRaised] = useState(false);
   const [rightFootLifted, setRightFootLifted] = useState(false);
-  const [leftFootLifted] = useState(false);
+  const [leftFootLifted, setLeftFootLifted] = useState(false);
   
   // Session state
   const [sessionState, setSessionState] = useState<'idle' | 'ready' | 'capturing' | 'complete'>('idle');
@@ -133,36 +133,75 @@ export default function Analysis() {
     
     if (results.poseLandmarks) {
       const landmarks = results.poseLandmarks;
-      setLandmarksDetected(landmarks.length);
+      
+      // Count landmarks with visibility > 0.5 (reference threshold)
+      const visibleLandmarks = landmarks.filter(landmark => 
+        landmark && (landmark.visibility ?? 0) > 0.5
+      ).length;
+      setLandmarksDetected(visibleLandmarks);
       
       // Calculate body scale and distance
       const leftShoulder = landmarks[11];
       const rightShoulder = landmarks[12];
-      const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
-      setBodyScale(shoulderWidth);
       
-      const avgDepth = (leftShoulder.z + rightShoulder.z) / 2;
-      const distanceMeters = Math.abs(avgDepth * 2);
-      setDistance(`${distanceMeters.toFixed(1)}m`);
+      if (leftShoulder && rightShoulder) {
+        const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+        setBodyScale(shoulderWidth);
+        
+        // Update distance based on landmark count (reference logic)
+        if (visibleLandmarks >= 30) {
+          setDistance("Optimal distance");
+        } else if (visibleLandmarks >= 25) {
+          setDistance("Good distance");
+        } else if (visibleLandmarks >= 15) {
+          setDistance("Move closer to camera");
+        } else {
+          setDistance("No pose detected");
+        }
+      }
       
-      // Check hand positions (wrists above shoulders)
+      // Check hand positions with reference thresholds
       const leftWrist = landmarks[15];
       const rightWrist = landmarks[16];
-      setRightHandRaised(rightWrist.y < rightShoulder.y - 0.1);
-      setLeftHandRaised(leftWrist.y < leftShoulder.y - 0.1);
       
-      // Check foot positions (ankles lifted)
+      const rightHandRaisedDetected = rightWrist && rightShoulder && 
+        (rightWrist.visibility ?? 0) > 0.5 && (rightShoulder.visibility ?? 0) > 0.5 &&
+        rightWrist.y < rightShoulder.y + 0.1; // Reference threshold
+      
+      const leftHandRaisedDetected = leftWrist && leftShoulder && 
+        (leftWrist.visibility ?? 0) > 0.5 && (leftShoulder.visibility ?? 0) > 0.5 &&
+        leftWrist.y < leftShoulder.y + 0.1; // Reference threshold
+      
+      setRightHandRaised(rightHandRaisedDetected);
+      setLeftHandRaised(leftHandRaisedDetected);
+      
+      // Check foot positions with reference thresholds
       const leftAnkle = landmarks[27];
       const rightAnkle = landmarks[28];
-      const leftHip = landmarks[23];
-      const rightHip = landmarks[24];
-      setRightFootLifted(rightAnkle.y < rightHip.y - 0.3);
+      const leftKnee = landmarks[25];
+      const rightKnee = landmarks[26];
+      
+      const rightFootLiftedDetected = rightAnkle && rightKnee && 
+        (rightAnkle.visibility ?? 0) > 0.5 && (rightKnee.visibility ?? 0) > 0.5 &&
+        rightAnkle.y < rightKnee.y + 0.15; // Reference threshold
+      
+      const leftFootLiftedDetected = leftAnkle && leftKnee && 
+        (leftAnkle.visibility ?? 0) > 0.5 && (leftKnee.visibility ?? 0) > 0.5 &&
+        leftAnkle.y < leftKnee.y + 0.15; // Reference threshold
+      
+      setRightFootLifted(rightFootLiftedDetected);
+      setLeftFootLifted(leftFootLiftedDetected);
       
       // Draw skeleton
       drawSkeleton(ctx, landmarks, canvas.width, canvas.height);
     } else {
       setLandmarksDetected(0);
+      setBodyScale(0);
       setDistance("No pose detected");
+      setRightHandRaised(false);
+      setLeftHandRaised(false);
+      setRightFootLifted(false);
+      setLeftFootLifted(false);
     }
   };
   
@@ -186,7 +225,8 @@ export default function Analysis() {
     connections.forEach(([start, end]) => {
       const startPoint = landmarks[start];
       const endPoint = landmarks[end];
-      if (startPoint && endPoint) {
+      if (startPoint && endPoint && 
+          (startPoint.visibility ?? 0) > 0.5 && (endPoint.visibility ?? 0) > 0.5) {
         ctx.beginPath();
         ctx.moveTo(startPoint.x * width, startPoint.y * height);
         ctx.lineTo(endPoint.x * width, endPoint.y * height);
@@ -194,12 +234,14 @@ export default function Analysis() {
       }
     });
     
-    // Draw landmarks
-    ctx.fillStyle = '#ff0000';
+    // Draw landmarks (only visible ones)
+    ctx.fillStyle = '#00ff00';
     landmarks.forEach(landmark => {
-      ctx.beginPath();
-      ctx.arc(landmark.x * width, landmark.y * height, 4, 0, 2 * Math.PI);
-      ctx.fill();
+      if (landmark && (landmark.visibility ?? 0) > 0.5) {
+        ctx.beginPath();
+        ctx.arc(landmark.x * width, landmark.y * height, 6, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     });
   };
   
@@ -587,9 +629,9 @@ export default function Analysis() {
           </div>
 
           {/* Video Feed and Detection Status */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-6 mb-6">
             {/* Video Feed */}
-            <div className="md:col-span-2 bg-[#1a1f2e] rounded-lg p-6">
+            <div className="flex-1 lg:w-2/3 bg-[#1a1f2e] rounded-lg p-6">
               <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
                 <video
                   ref={videoRef}
@@ -621,7 +663,7 @@ export default function Analysis() {
             </div>
 
             {/* Detection Status */}
-            <div className="md:col-span-1 space-y-4">
+            <div className="lg:w-1/3 space-y-4">
               <div className="bg-[#1a1f2e] rounded-lg p-4">
               <h3 className="font-semibold mb-2">Real-Time Detection</h3>
               <p className="text-sm text-gray-400">Landmarks: {landmarksDetected}/33</p>
