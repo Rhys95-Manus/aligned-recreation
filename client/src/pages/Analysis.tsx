@@ -162,28 +162,40 @@ export default function Analysis() {
     if (results.poseLandmarks) {
       const landmarks = results.poseLandmarks;
       
-      // Count landmarks with visibility > 0.3 (more lenient for distance)
-      const visibleLandmarks = landmarks.filter(landmark => 
-        landmark && (landmark.visibility ?? 0) > 0.3
+      // Count landmarks with visibility > 0.3 - EXCLUDE face landmarks (0-10)
+      // Body landmarks: 11-32 = 22 landmarks
+      // + 1 head, + 1 neck, + 3 spine = 27 total
+      const bodyLandmarks = landmarks.filter((landmark, index) => 
+        index >= 11 && landmark && (landmark.visibility ?? 0) > 0.3
       ).length;
-      setLandmarksDetected(visibleLandmarks);
       
-      console.log(`Detected ${visibleLandmarks}/33 visible landmarks`);
+      // Add custom landmarks if visible
+      let customLandmarks = 0;
+      const nose = landmarks[0];
+      if (nose && (nose.visibility ?? 0) > 0.3) customLandmarks++; // Head
       
-      // Calculate body scale and distance
       const leftShoulder = landmarks[11];
       const rightShoulder = landmarks[12];
+      if (leftShoulder && rightShoulder) customLandmarks += 4; // Neck + 3 spine landmarks
+      
+      const totalVisibleLandmarks = bodyLandmarks + customLandmarks;
+      setLandmarksDetected(totalVisibleLandmarks);
+      
+      console.log(`Detected ${totalVisibleLandmarks}/27 visible landmarks (${bodyLandmarks} body + ${customLandmarks} custom)`);
+      
+      // Calculate body scale and distance
+      // (leftShoulder and rightShoulder already declared above)
       
       if (leftShoulder && rightShoulder) {
         const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
         setBodyScale(shoulderWidth);
         
         // Update distance based on landmark count - more lenient thresholds
-        if (visibleLandmarks >= 25) {
+        if (totalVisibleLandmarks >= 20) {
           setDistance("Optimal distance");
-        } else if (visibleLandmarks >= 20) {
+        } else if (totalVisibleLandmarks >= 15) {
           setDistance("Good distance");
-        } else if (visibleLandmarks >= 10) {
+        } else if (totalVisibleLandmarks >= 8) {
           setDistance("Move closer to camera");
         } else {
           setDistance("No pose detected");
@@ -212,26 +224,35 @@ export default function Analysis() {
       const leftKnee = landmarks[25];
       const rightKnee = landmarks[26];
       
-      // Sensitive foot detection - matches hand detection sensitivity
-      // Just need to lift foot slightly off ground
+      // FIXED foot detection - Y increases downward, so ankle.y > knee.y when standing
+      // When foot lifts UP, ankle.y gets SMALLER (closer to knee.y)
+      // Detect when ankle is significantly closer to knee than normal standing position
       const rightAnkleVis = rightAnkle?.visibility ?? 0;
       const rightKneeVis = rightKnee?.visibility ?? 0;
+      
+      // Calculate distance from knee to ankle
+      const rightKneeToAnkleDist = rightAnkle && rightKnee ? Math.abs(rightAnkle.y - rightKnee.y) : 999;
+      
+      // Foot is lifted if ankle is much closer to knee than normal (< 0.15 in normalized coords)
       const rightFootLiftedDetected = rightAnkle && rightKnee && 
-        rightAnkleVis > 0.3 && rightKneeVis > 0.3 && // Same as hand detection
-        rightAnkle.y < rightKnee.y + 0.1; // Slight lift detection (same threshold as hands)
+        rightAnkleVis > 0.3 && rightKneeVis > 0.3 && 
+        rightKneeToAnkleDist < 0.15; // Lifted when ankle-knee distance is small
       
       const leftAnkleVis = leftAnkle?.visibility ?? 0;
       const leftKneeVis = leftKnee?.visibility ?? 0;
+      
+      const leftKneeToAnkleDist = leftAnkle && leftKnee ? Math.abs(leftAnkle.y - leftKnee.y) : 999;
+      
       const leftFootLiftedDetected = leftAnkle && leftKnee && 
-        leftAnkleVis > 0.3 && leftKneeVis > 0.3 && // Same as hand detection
-        leftAnkle.y < leftKnee.y + 0.1; // Slight lift detection (same threshold as hands)
+        leftAnkleVis > 0.3 && leftKneeVis > 0.3 && 
+        leftKneeToAnkleDist < 0.15; // Lifted when ankle-knee distance is small
       
       console.log('Foot detection:', {
         rightAnkleVis: rightAnkleVis.toFixed(2),
         rightKneeVis: rightKneeVis.toFixed(2),
-        rightAnkleY: rightAnkle?.y.toFixed(2),
-        rightKneeY: rightKnee?.y.toFixed(2),
+        rightDist: rightKneeToAnkleDist.toFixed(3),
         rightFootLifted: rightFootLiftedDetected,
+        leftDist: leftKneeToAnkleDist.toFixed(3),
         leftFootLifted: leftFootLiftedDetected
       });
       
@@ -374,19 +395,48 @@ export default function Analysis() {
       }
     });
     
-    // Draw landmarks (only visible ones)
+    // Draw landmarks (only visible ones) - EXCLUDE face landmarks (0-10)
+    // MediaPipe Pose landmarks: 0-10 are face, 11-32 are body
     ctx.fillStyle = '#00ff00';
-    landmarks.forEach(landmark => {
-      if (landmark && (landmark.visibility ?? 0) > 0.3) {
+    landmarks.forEach((landmark, index) => {
+      // Skip face landmarks (indices 0-10: nose, eyes, ears, mouth)
+      if (index >= 11 && landmark && (landmark.visibility ?? 0) > 0.3) {
         ctx.beginPath();
         ctx.arc(landmark.x * width, landmark.y * height, 6, 0, 2 * Math.PI);
         ctx.fill();
       }
     });
     
-    // Draw 3 SPINE LANDMARKS down the middle of the body
+    // Add HEAD landmark (top of head) - estimated above nose
+    const nose = landmarks[0];
+    if (nose && (nose.visibility ?? 0) > 0.3) {
+      const headY = nose.y - 0.08; // Position above nose
+      ctx.fillStyle = '#FF6B6B'; // Red for head
+      ctx.beginPath();
+      ctx.arc(nose.x * width, headY * height, 8, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    
+    // Add NECK landmark (between shoulders)
     const leftShoulder = landmarks[11];
     const rightShoulder = landmarks[12];
+    if (leftShoulder && rightShoulder) {
+      const neckX = (leftShoulder.x + rightShoulder.x) / 2;
+      const neckY = (leftShoulder.y + rightShoulder.y) / 2 - 0.03; // Slightly above shoulders
+      ctx.fillStyle = '#4ECDC4'; // Teal for neck
+      ctx.beginPath();
+      ctx.arc(neckX * width, neckY * height, 8, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    
+    // Draw 3 SPINE LANDMARKS down the middle of the body
+    // (leftShoulder and rightShoulder already declared above)
     const leftHip = landmarks[23];
     const rightHip = landmarks[24];
     
@@ -910,9 +960,9 @@ export default function Analysis() {
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Landmarks:</span>
                     <span className={`text-sm font-semibold ${
-                      landmarksDetected > 25 ? 'text-green-400' : 
-                      landmarksDetected > 15 ? 'text-yellow-400' : 'text-red-400'
-                    }`}>{landmarksDetected}/33</span>
+                      landmarksDetected > 20 ? 'text-green-400' : 
+                      landmarksDetected > 12 ? 'text-yellow-400' : 'text-red-400'
+                    }`}>{landmarksDetected}/27</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Body Scale:</span>
