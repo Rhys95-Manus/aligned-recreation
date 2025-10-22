@@ -75,6 +75,14 @@ export default function Analysis() {
       setTotalPoints(parseInt(saved, 10));
     }
     
+    // Ensure voices are loaded
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+    
     return () => {
       // Cleanup camera on unmount
       if (stream) {
@@ -90,14 +98,15 @@ export default function Analysis() {
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
       
-      // Select a natural-sounding voice
+      // Select a female voice - matching the original website
       const voices = window.speechSynthesis.getVoices();
       const preferredVoice = voices.find(voice => 
-        voice.name.includes('Google') || 
-        voice.name.includes('Natural') ||
-        voice.name.includes('Samantha') ||
-        voice.lang.startsWith('en')
-      );
+        voice.name === 'Google US English' ||
+        voice.name === 'Samantha' ||
+        voice.name.includes('Female') ||
+        (voice.name.includes('Google') && voice.lang === 'en-US')
+      ) || voices.find(voice => voice.lang.startsWith('en'));
+      
       if (preferredVoice) {
         utterance.voice = preferredVoice;
       }
