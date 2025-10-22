@@ -94,7 +94,7 @@ export default function Analysis() {
   const speak = (text: string) => {
     if (voiceEnabled && 'speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
+      utterance.rate = 0.95;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
       
@@ -128,7 +128,7 @@ export default function Analysis() {
         setStream(mediaStream);
         setCameraActive(true);
         
-        speak("Camera ready");
+        speak("Camera has started. Position yourself and press start capture when ready");
         
         // Simulate pose detection after 1 second
         setTimeout(() => {
@@ -148,7 +148,7 @@ export default function Analysis() {
     setDistance("1.5m");
     setSessionState('ready');
     
-    speak("Ready to capture");
+    // Removed - no audio cue here
     
     // Randomly update detection status
     const interval = setInterval(() => {
@@ -163,11 +163,11 @@ export default function Analysis() {
   
   const startCapture = () => {
     setSessionState('capturing');
-    speak("Analyzing");
+    speak("Perform your motion now");
   };
   
   const stopAndScore = () => {
-    speak("Analysis complete");
+    speak("Here's your detailed analysis");
     
     // Generate detailed analysis
     const analysis: DetailedAnalysisData = {
@@ -322,6 +322,9 @@ export default function Analysis() {
   const getButtonClass = () => {
     if (sessionState === 'capturing') {
       return "w-full mt-4 py-6 text-lg bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold";
+    }
+    if (sessionState === 'ready') {
+      return "w-full mt-4 py-6 text-lg bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold";
     }
     return "w-full mt-4 py-6 text-lg bg-blue-600 hover:bg-blue-700 text-white rounded-lg";
   };
