@@ -137,11 +137,13 @@ export default function Analysis() {
     if (results.poseLandmarks) {
       const landmarks = results.poseLandmarks;
       
-      // Count landmarks with visibility > 0.5 (reference threshold)
+      // Count landmarks with visibility > 0.3 (more lenient for distance)
       const visibleLandmarks = landmarks.filter(landmark => 
-        landmark && (landmark.visibility ?? 0) > 0.5
+        landmark && (landmark.visibility ?? 0) > 0.3
       ).length;
       setLandmarksDetected(visibleLandmarks);
+      
+      console.log(`Detected ${visibleLandmarks}/33 visible landmarks`);
       
       // Calculate body scale and distance
       const leftShoulder = landmarks[11];
@@ -151,12 +153,12 @@ export default function Analysis() {
         const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
         setBodyScale(shoulderWidth);
         
-        // Update distance based on landmark count (reference logic)
-        if (visibleLandmarks >= 30) {
+        // Update distance based on landmark count - more lenient thresholds
+        if (visibleLandmarks >= 25) {
           setDistance("Optimal distance");
-        } else if (visibleLandmarks >= 25) {
+        } else if (visibleLandmarks >= 20) {
           setDistance("Good distance");
-        } else if (visibleLandmarks >= 15) {
+        } else if (visibleLandmarks >= 10) {
           setDistance("Move closer to camera");
         } else {
           setDistance("No pose detected");
@@ -167,13 +169,14 @@ export default function Analysis() {
       const leftWrist = landmarks[15];
       const rightWrist = landmarks[16];
       
+      // More lenient hand detection - works at various distances
       const rightHandRaisedDetected = rightWrist && rightShoulder && 
-        (rightWrist.visibility ?? 0) > 0.5 && (rightShoulder.visibility ?? 0) > 0.5 &&
-        rightWrist.y < rightShoulder.y + 0.1; // Reference threshold
+        (rightWrist.visibility ?? 0) > 0.3 && (rightShoulder.visibility ?? 0) > 0.3 &&
+        rightWrist.y < rightShoulder.y + 0.15; // More lenient threshold
       
       const leftHandRaisedDetected = leftWrist && leftShoulder && 
-        (leftWrist.visibility ?? 0) > 0.5 && (leftShoulder.visibility ?? 0) > 0.5 &&
-        leftWrist.y < leftShoulder.y + 0.1; // Reference threshold
+        (leftWrist.visibility ?? 0) > 0.3 && (leftShoulder.visibility ?? 0) > 0.3 &&
+        leftWrist.y < leftShoulder.y + 0.15; // More lenient threshold
       
       setRightHandRaised(rightHandRaisedDetected);
       setLeftHandRaised(leftHandRaisedDetected);
@@ -184,13 +187,14 @@ export default function Analysis() {
       const leftKnee = landmarks[25];
       const rightKnee = landmarks[26];
       
+      // More sensitive foot detection - easier to trigger
       const rightFootLiftedDetected = rightAnkle && rightKnee && 
-        (rightAnkle.visibility ?? 0) > 0.5 && (rightKnee.visibility ?? 0) > 0.5 &&
-        rightAnkle.y < rightKnee.y + 0.15; // Reference threshold
+        (rightAnkle.visibility ?? 0) > 0.3 && (rightKnee.visibility ?? 0) > 0.3 &&
+        rightAnkle.y < rightKnee.y + 0.2; // More lenient threshold for foot lift
       
       const leftFootLiftedDetected = leftAnkle && leftKnee && 
-        (leftAnkle.visibility ?? 0) > 0.5 && (leftKnee.visibility ?? 0) > 0.5 &&
-        leftAnkle.y < leftKnee.y + 0.15; // Reference threshold
+        (leftAnkle.visibility ?? 0) > 0.3 && (leftKnee.visibility ?? 0) > 0.3 &&
+        leftAnkle.y < leftKnee.y + 0.2; // More lenient threshold for foot lift
       
       setRightFootLifted(rightFootLiftedDetected);
       setLeftFootLifted(leftFootLiftedDetected);
@@ -229,7 +233,7 @@ export default function Analysis() {
       const startPoint = landmarks[start];
       const endPoint = landmarks[end];
       if (startPoint && endPoint && 
-          (startPoint.visibility ?? 0) > 0.5 && (endPoint.visibility ?? 0) > 0.5) {
+          (startPoint.visibility ?? 0) > 0.3 && (endPoint.visibility ?? 0) > 0.3) {
         ctx.beginPath();
         ctx.moveTo(startPoint.x * width, startPoint.y * height);
         ctx.lineTo(endPoint.x * width, endPoint.y * height);
@@ -240,7 +244,7 @@ export default function Analysis() {
     // Draw landmarks (only visible ones)
     ctx.fillStyle = '#00ff00';
     landmarks.forEach(landmark => {
-      if (landmark && (landmark.visibility ?? 0) > 0.5) {
+      if (landmark && (landmark.visibility ?? 0) > 0.3) {
         ctx.beginPath();
         ctx.arc(landmark.x * width, landmark.y * height, 6, 0, 2 * Math.PI);
         ctx.fill();
@@ -646,8 +650,8 @@ export default function Analysis() {
 
           {/* Video Feed and Detection Status */}
           <div className="flex flex-col lg:flex-row gap-6 mb-6">
-            {/* Video Feed - Takes up 70% width on large screens */}
-            <div className="lg:w-[70%] bg-[#1a1f2e] rounded-lg p-6">
+            {/* Video Feed - Takes up 75% width on large screens */}
+            <div className="lg:w-[75%] bg-[#1a1f2e] rounded-lg p-6">
               <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
                 <video
                   ref={videoRef}
@@ -678,21 +682,61 @@ export default function Analysis() {
               </Button>
             </div>
 
-            {/* Detection Status - Takes up 30% width on large screens */}
-            <div className="lg:w-[30%] space-y-4 flex-shrink-0">
+            {/* Detection Status - Takes up 25% width on large screens */}
+            <div className="lg:w-[25%] space-y-4 flex-shrink-0">
               <div className="bg-[#1a1f2e] rounded-lg p-4">
-              <h3 className="font-semibold mb-2">Real-Time Detection</h3>
-              <p className="text-sm text-gray-400">Landmarks: {landmarksDetected}/33</p>
-              <p className="text-sm text-gray-400">Body Scale: {bodyScale.toFixed(2)}</p>
-              <p className="text-sm text-gray-400">Distance: {distance}</p>
-            </div>
+                <h3 className="font-semibold mb-3">Real-Time Detection</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Right Hand Raised</span>
+                    <span className={`text-lg font-bold ${rightHandRaised ? 'text-green-400' : 'text-red-400'}`}>
+                      {rightHandRaised ? '✓' : '✗'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Left Hand Raised</span>
+                    <span className={`text-lg font-bold ${leftHandRaised ? 'text-green-400' : 'text-red-400'}`}>
+                      {leftHandRaised ? '✓' : '✗'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Right Foot Lifted</span>
+                    <span className={`text-lg font-bold ${rightFootLifted ? 'text-green-400' : 'text-red-400'}`}>
+                      {rightFootLifted ? '✓' : '✗'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Left Foot Lifted</span>
+                    <span className={`text-lg font-bold ${leftFootLifted ? 'text-green-400' : 'text-red-400'}`}>
+                      {leftFootLifted ? '✓' : '✗'}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-            <div className="bg-[#1a1f2e] rounded-lg p-4">
-              <h3 className="font-semibold mb-2">Positioning Feedback</h3>
-              <p className="text-sm text-gray-400">Right Hand: {rightHandRaised ? '✓ Raised' : '✗ Down'}</p>
-              <p className="text-sm text-gray-400">Left Hand: {leftHandRaised ? '✓ Raised' : '✗ Down'}</p>
-              <p className="text-sm text-gray-400">Right Foot: {rightFootLifted ? '✓ Lifted' : '✗ Down'}</p>
-              <p className="text-sm text-gray-400">Left Foot: {leftFootLifted ? '✓ Lifted' : '✗ Down'}</p>
+              <div className="bg-[#1a1f2e] rounded-lg p-4">
+                <h3 className="font-semibold mb-3">Positioning Feedback</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Landmarks:</span>
+                    <span className={`text-sm font-semibold ${
+                      landmarksDetected > 25 ? 'text-green-400' : 
+                      landmarksDetected > 15 ? 'text-yellow-400' : 'text-red-400'
+                    }`}>{landmarksDetected}/33</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Body Scale:</span>
+                    <span className="text-sm text-gray-400">{bodyScale.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Distance:</span>
+                    <span className={`text-sm font-semibold ${
+                      distance === 'Optimal distance' ? 'text-green-400' :
+                      distance === 'Good distance' ? 'text-yellow-400' :
+                      distance === 'Move closer to camera' ? 'text-orange-400' : 'text-red-400'
+                    }`}>{distance}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
