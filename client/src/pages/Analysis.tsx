@@ -86,9 +86,22 @@ export default function Analysis() {
   const speak = (text: string) => {
     if (voiceEnabled && 'speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.3;
+      utterance.rate = 1.0;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
+      
+      // Select a natural-sounding voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(voice => 
+        voice.name.includes('Google') || 
+        voice.name.includes('Natural') ||
+        voice.name.includes('Samantha') ||
+        voice.lang.startsWith('en')
+      );
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+      
       window.speechSynthesis.speak(utterance);
     }
   };
