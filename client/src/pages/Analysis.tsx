@@ -212,20 +212,19 @@ export default function Analysis() {
       const leftKnee = landmarks[25];
       const rightKnee = landmarks[26];
       
-      // Fixed foot detection - requires good visibility AND ankle higher than knee
-      // When far away (low visibility), don't detect as lifted
-      // When close (high visibility), detect slight lifts
+      // Sensitive foot detection - matches hand detection sensitivity
+      // Just need to lift foot slightly off ground
       const rightAnkleVis = rightAnkle?.visibility ?? 0;
       const rightKneeVis = rightKnee?.visibility ?? 0;
       const rightFootLiftedDetected = rightAnkle && rightKnee && 
-        rightAnkleVis > 0.5 && rightKneeVis > 0.5 && // Require good visibility
-        rightAnkle.y < rightKnee.y - 0.05; // Ankle must be clearly above knee
+        rightAnkleVis > 0.3 && rightKneeVis > 0.3 && // Same as hand detection
+        rightAnkle.y < rightKnee.y + 0.1; // Slight lift detection (same threshold as hands)
       
       const leftAnkleVis = leftAnkle?.visibility ?? 0;
       const leftKneeVis = leftKnee?.visibility ?? 0;
       const leftFootLiftedDetected = leftAnkle && leftKnee && 
-        leftAnkleVis > 0.5 && leftKneeVis > 0.5 && // Require good visibility
-        leftAnkle.y < leftKnee.y - 0.05; // Ankle must be clearly above knee
+        leftAnkleVis > 0.3 && leftKneeVis > 0.3 && // Same as hand detection
+        leftAnkle.y < leftKnee.y + 0.1; // Slight lift detection (same threshold as hands)
       
       console.log('Foot detection:', {
         rightAnkleVis: rightAnkleVis.toFixed(2),
@@ -384,6 +383,63 @@ export default function Analysis() {
         ctx.fill();
       }
     });
+    
+    // Draw 3 SPINE LANDMARKS down the middle of the body
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+    const leftHip = landmarks[23];
+    const rightHip = landmarks[24];
+    
+    if (leftShoulder && rightShoulder && leftHip && rightHip) {
+      // Calculate spine points
+      const neckX = (leftShoulder.x + rightShoulder.x) / 2;
+      const neckY = (leftShoulder.y + rightShoulder.y) / 2;
+      
+      const hipX = (leftHip.x + rightHip.x) / 2;
+      const hipY = (leftHip.y + rightHip.y) / 2;
+      
+      const midSpineX = (neckX + hipX) / 2;
+      const midSpineY = (neckY + hipY) / 2;
+      
+      // Draw spine landmarks as larger, distinct colored circles
+      // Top spine (neck/upper back) - CYAN
+      ctx.fillStyle = '#00FFFF';
+      ctx.beginPath();
+      ctx.arc(neckX * width, neckY * height, 10, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Mid spine (thoracic) - YELLOW
+      ctx.fillStyle = '#FFFF00';
+      ctx.beginPath();
+      ctx.arc(midSpineX * width, midSpineY * height, 10, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Lower spine (lumbar/hip) - MAGENTA
+      ctx.fillStyle = '#FF00FF';
+      ctx.beginPath();
+      ctx.arc(hipX * width, hipY * height, 10, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw connecting line for spine
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([5, 5]); // Dashed line
+      ctx.beginPath();
+      ctx.moveTo(neckX * width, neckY * height);
+      ctx.lineTo(midSpineX * width, midSpineY * height);
+      ctx.lineTo(hipX * width, hipY * height);
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset to solid line
+    }
   };
   
   const startVideo = async () => {
@@ -641,7 +697,7 @@ export default function Analysis() {
         <Header />
         
         <main className="flex-1 container mx-auto py-8 px-4">
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="max-w-7xl mx-auto space-y-6">
             {/* Back button */}
             <Link href={`/motions?category=${params.get('category')}&subcategory=${params.get('subcategory')}`}>
               <Button variant="outline" className="mb-4">
@@ -768,9 +824,9 @@ export default function Analysis() {
       <Header />
       
       <main className="flex-1 container mx-auto py-8 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Back button */}
-          <Link href={`/motions?category=${params.get('category')}&subcategory=${params.get('subcategory')}`}>
+          <Link href={`/motions/${params.get('category')}/${params.get('subcategory')}`}>
             <Button variant="outline" className="mb-4">
               ← Back to Motions
             </Button>
