@@ -86,7 +86,7 @@ export default function Analysis() {
   const speak = (text: string) => {
     if (voiceEnabled && 'speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
+      utterance.rate = 1.3;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
       window.speechSynthesis.speak(utterance);
@@ -106,7 +106,7 @@ export default function Analysis() {
         setStream(mediaStream);
         setCameraActive(true);
         
-        speak("Camera activated. Detecting your pose.");
+        speak("Camera ready");
         
         // Simulate pose detection after 1 second
         setTimeout(() => {
@@ -126,7 +126,7 @@ export default function Analysis() {
     setDistance("1.5m");
     setSessionState('ready');
     
-    speak("Pose detected. Ready to capture. Click Start Capture when you're ready.");
+    speak("Ready to capture");
     
     // Randomly update detection status
     const interval = setInterval(() => {
@@ -141,11 +141,11 @@ export default function Analysis() {
   
   const startCapture = () => {
     setSessionState('capturing');
-    speak("Capture started. Perform your motion now.");
+    speak("Analyzing");
   };
   
   const stopAndScore = () => {
-    speak("Analyzing your performance.");
+    speak("Analysis complete");
     
     // Generate detailed analysis
     const analysis: DetailedAnalysisData = {
