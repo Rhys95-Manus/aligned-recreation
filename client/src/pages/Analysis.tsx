@@ -63,6 +63,17 @@ export default function Analysis() {
   const [rightFootLifted, setRightFootLifted] = useState(false);
   const [leftFootLifted, setLeftFootLifted] = useState(false);
   
+  // Advanced biomechanical metrics
+  const [hipRotation, setHipRotation] = useState(0);
+  const [rightElbowAngle, setRightElbowAngle] = useState(0);
+  const [leftElbowAngle, setLeftElbowAngle] = useState(0);
+  const [rightKneeFlexion, setRightKneeFlexion] = useState(0);
+  const [leftKneeFlexion, setLeftKneeFlexion] = useState(0);
+  const [spineAngle, setSpineAngle] = useState(0);
+  const [balanceScore, setBalanceScore] = useState(0);
+  const [rightShoulderAngle, setRightShoulderAngle] = useState(0);
+  const [leftShoulderAngle, setLeftShoulderAngle] = useState(0);
+  
   // Session state
   const [sessionState, setSessionState] = useState<'idle' | 'ready' | 'capturing' | 'complete'>('idle');
   const [detailedAnalysis, setDetailedAnalysis] = useState<DetailedAnalysisData | null>(null);
@@ -97,6 +108,20 @@ export default function Analysis() {
       }
     };
   }, [stream]);
+  
+  // Helper function to calculate angle between three points (in degrees)
+  const calculateAngle = (a: any, b: any, c: any): number => {
+    if (!a || !b || !c) return 0;
+    
+    const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+    let angle = Math.abs(radians * 180.0 / Math.PI);
+    
+    if (angle > 180.0) {
+      angle = 360 - angle;
+    }
+    
+    return angle;
+  };
   
   const speak = (text: string) => {
     if (voiceEnabled && 'speechSynthesis' in window) {
@@ -187,17 +212,115 @@ export default function Analysis() {
       const leftKnee = landmarks[25];
       const rightKnee = landmarks[26];
       
-      // More sensitive foot detection - easier to trigger
+      // Fixed foot detection - requires good visibility AND ankle higher than knee
+      // When far away (low visibility), don't detect as lifted
+      // When close (high visibility), detect slight lifts
+      const rightAnkleVis = rightAnkle?.visibility ?? 0;
+      const rightKneeVis = rightKnee?.visibility ?? 0;
       const rightFootLiftedDetected = rightAnkle && rightKnee && 
-        (rightAnkle.visibility ?? 0) > 0.3 && (rightKnee.visibility ?? 0) > 0.3 &&
-        rightAnkle.y < rightKnee.y + 0.2; // More lenient threshold for foot lift
+        rightAnkleVis > 0.5 && rightKneeVis > 0.5 && // Require good visibility
+        rightAnkle.y < rightKnee.y - 0.05; // Ankle must be clearly above knee
       
+      const leftAnkleVis = leftAnkle?.visibility ?? 0;
+      const leftKneeVis = leftKnee?.visibility ?? 0;
       const leftFootLiftedDetected = leftAnkle && leftKnee && 
-        (leftAnkle.visibility ?? 0) > 0.3 && (leftKnee.visibility ?? 0) > 0.3 &&
-        leftAnkle.y < leftKnee.y + 0.2; // More lenient threshold for foot lift
+        leftAnkleVis > 0.5 && leftKneeVis > 0.5 && // Require good visibility
+        leftAnkle.y < leftKnee.y - 0.05; // Ankle must be clearly above knee
+      
+      console.log('Foot detection:', {
+        rightAnkleVis: rightAnkleVis.toFixed(2),
+        rightKneeVis: rightKneeVis.toFixed(2),
+        rightAnkleY: rightAnkle?.y.toFixed(2),
+        rightKneeY: rightKnee?.y.toFixed(2),
+        rightFootLifted: rightFootLiftedDetected,
+        leftFootLifted: leftFootLiftedDetected
+      });
       
       setRightFootLifted(rightFootLiftedDetected);
       setLeftFootLifted(leftFootLiftedDetected);
+      
+      // Advanced biomechanical calculations
+      
+      // 1. Hip Rotation - angle between left hip, center, and right hip
+      const leftHip = landmarks[23];
+      const rightHip = landmarks[24];
+      if (leftHip && rightHip) {
+        const hipRotationAngle = Math.abs(Math.atan2(rightHip.y - leftHip.y, rightHip.x - leftHip.x) * 180 / Math.PI);
+        setHipRotation(hipRotationAngle);
+      }
+      
+      // 2. Elbow Angles - shoulder, elbow, wrist
+      const rightElbow = landmarks[14];
+      const leftElbow = landmarks[13];
+      
+      if (rightShoulder && rightElbow && rightWrist) {
+        const angle = calculateAngle(rightShoulder, rightElbow, rightWrist);
+        setRightElbowAngle(angle);
+      }
+      
+      if (leftShoulder && leftElbow && leftWrist) {
+        const angle = calculateAngle(leftShoulder, leftElbow, leftWrist);
+        setLeftElbowAngle(angle);
+      }
+      
+      // 3. Knee Flexion - hip, knee, ankle
+      if (rightHip && rightKnee && rightAnkle) {
+        const angle = calculateAngle(rightHip, rightKnee, rightAnkle);
+        setRightKneeFlexion(angle);
+      }
+      
+      if (leftHip && leftKnee && leftAnkle) {
+        const angle = calculateAngle(leftHip, leftKnee, leftAnkle);
+        setLeftKneeFlexion(angle);
+      }
+      
+      // 4. Spine Angle - shoulder midpoint to hip midpoint
+      if (leftShoulder && rightShoulder && leftHip && rightHip) {
+        const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
+        const hipMidY = (leftHip.y + rightHip.y) / 2;
+        const shoulderMidX = (leftShoulder.x + rightShoulder.x) / 2;
+        const hipMidX = (leftHip.x + rightHip.x) / 2;
+        
+        const spineAngleCalc = Math.abs(Math.atan2(hipMidY - shoulderMidY, hipMidX - shoulderMidX) * 180 / Math.PI);
+        setSpineAngle(spineAngleCalc);
+      }
+      
+      // 5. Shoulder Angles - for arm positioning
+      const neck = landmarks[0]; // Nose as reference
+      
+      if (neck && rightShoulder && rightElbow) {
+        const angle = calculateAngle(neck, rightShoulder, rightElbow);
+        setRightShoulderAngle(angle);
+      }
+      
+      if (neck && leftShoulder && leftElbow) {
+        const angle = calculateAngle(neck, leftShoulder, leftElbow);
+        setLeftShoulderAngle(angle);
+      }
+      
+      // 6. Balance Score - based on hip alignment and foot positioning
+      if (leftHip && rightHip && leftAnkle && rightAnkle) {
+        const hipWidth = Math.abs(leftHip.x - rightHip.x);
+        const ankleWidth = Math.abs(leftAnkle.x - rightAnkle.x);
+        const hipCenterX = (leftHip.x + rightHip.x) / 2;
+        const ankleCenterX = (leftAnkle.x + rightAnkle.x) / 2;
+        const centerOffset = Math.abs(hipCenterX - ankleCenterX);
+        
+        // Balance score: 100 = perfect balance, lower = less balanced
+        const balanceCalc = Math.max(0, 100 - (centerOffset * 500));
+        setBalanceScore(Math.round(balanceCalc));
+      }
+      
+      // Log biomechanical metrics
+      console.log('Biomechanical Metrics:', {
+        hipRotation: hipRotation.toFixed(1) + '°',
+        rightElbow: rightElbowAngle.toFixed(1) + '°',
+        leftElbow: leftElbowAngle.toFixed(1) + '°',
+        rightKnee: rightKneeFlexion.toFixed(1) + '°',
+        leftKnee: leftKneeFlexion.toFixed(1) + '°',
+        spineAngle: spineAngle.toFixed(1) + '°',
+        balance: balanceScore + '/100'
+      });
       
       // Draw skeleton
       drawSkeleton(ctx, landmarks, canvas.width, canvas.height);
@@ -209,6 +332,17 @@ export default function Analysis() {
       setLeftHandRaised(false);
       setRightFootLifted(false);
       setLeftFootLifted(false);
+      
+      // Reset biomechanical metrics
+      setHipRotation(0);
+      setRightElbowAngle(0);
+      setLeftElbowAngle(0);
+      setRightKneeFlexion(0);
+      setLeftKneeFlexion(0);
+      setSpineAngle(0);
+      setBalanceScore(0);
+      setRightShoulderAngle(0);
+      setLeftShoulderAngle(0);
     }
   };
   
@@ -650,8 +784,8 @@ export default function Analysis() {
 
           {/* Video Feed and Detection Status */}
           <div className="flex flex-col lg:flex-row gap-6 mb-6">
-            {/* Video Feed - Takes up 75% width on large screens */}
-            <div className="lg:w-[75%] bg-[#1a1f2e] rounded-lg p-6">
+            {/* Video Feed - Takes up 80% width on large screens */}
+            <div className="lg:w-[80%] bg-[#1a1f2e] rounded-lg p-6">
               <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
                 <video
                   ref={videoRef}
@@ -682,8 +816,8 @@ export default function Analysis() {
               </Button>
             </div>
 
-            {/* Detection Status - Takes up 25% width on large screens */}
-            <div className="lg:w-[25%] space-y-4 flex-shrink-0">
+            {/* Detection Status - Takes up 20% width on large screens */}
+            <div className="lg:w-[20%] space-y-4 flex-shrink-0">
               <div className="bg-[#1a1f2e] rounded-lg p-4">
                 <h3 className="font-semibold mb-3">Real-Time Detection</h3>
                 <div className="space-y-2">
@@ -736,6 +870,65 @@ export default function Analysis() {
                       distance === 'Move closer to camera' ? 'text-orange-400' : 'text-red-400'
                     }`}>{distance}</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Pro Tips Section */}
+              <div className="bg-[#1a1f2e] rounded-lg p-4">
+                <h3 className="font-semibold mb-3">Pro Tips · {motionName}</h3>
+                <div className="text-xs space-y-1 text-gray-300">
+                  <p>• Film in good light, full body in frame</p>
+                  <p>• Warm up joints; test range before effort</p>
+                  <p>• Two reps at moderate pace help models segment phases</p>
+                  {motionName.toLowerCase().includes('jump') && (
+                    <>
+                      <p>• Elbow alignment</p>
+                      <p>• Arc angle</p>
+                      <p>• Follow-through</p>
+                    </>
+                  )}
+                  {motionName.toLowerCase().includes('throw') && (
+                    <>
+                      <p>• Arm motion</p>
+                      <p>• Footwork</p>
+                      <p>• Release</p>
+                    </>
+                  )}
+                  {motionName.toLowerCase().includes('layup') && (
+                    <>
+                      <p>• Footwork</p>
+                      <p>• Soft touch</p>
+                      <p>• Body control</p>
+                    </>
+                  )}
+                  {motionName.toLowerCase().includes('dribbl') && (
+                    <>
+                      <p>• Hand position</p>
+                      <p>• Court vision</p>
+                      <p>• Control</p>
+                    </>
+                  )}
+                  {(motionName.toLowerCase().includes('yoga') || motionName.toLowerCase().includes('pose')) && (
+                    <>
+                      <p>• Alignment</p>
+                      <p>• Breathing</p>
+                      <p>• Balance</p>
+                    </>
+                  )}
+                  {motionName.toLowerCase().includes('golf') && (
+                    <>
+                      <p>• Grip</p>
+                      <p>• Stance</p>
+                      <p>• Swing path</p>
+                    </>
+                  )}
+                  {!motionName.toLowerCase().match(/(jump|throw|layup|dribbl|yoga|pose|golf)/) && (
+                    <>
+                      <p>• Form</p>
+                      <p>• Technique</p>
+                      <p>• Consistency</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
