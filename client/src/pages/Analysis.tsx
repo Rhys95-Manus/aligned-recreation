@@ -52,6 +52,7 @@ export default function Analysis() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const poseRef = useRef<Pose | null>(null);
   const [poseInitialized, setPoseInitialized] = useState(false);
+  const processingRef = useRef(false);
   
   // Detection state
   const [landmarksDetected, setLandmarksDetected] = useState(0);
@@ -122,6 +123,8 @@ export default function Analysis() {
   };
   
   const onResults = (results: Results) => {
+    console.log('onResults called', results.poseLandmarks ? `${results.poseLandmarks.length} landmarks` : 'no landmarks');
+    
     if (!canvasRef.current || !videoRef.current) return;
     
     const canvas = canvasRef.current;
@@ -276,12 +279,25 @@ export default function Analysis() {
         
         pose.onResults(onResults);
         poseRef.current = pose;
+        processingRef.current = true;
+        
+        console.log('MediaPipe Pose initialized, starting frame processing');
         
         // Process video frames
         const processFrame = async () => {
-          if (videoRef.current && poseRef.current && cameraActive) {
-            await poseRef.current.send({ image: videoRef.current });
+          if (videoRef.current && poseRef.current && processingRef.current) {
+            try {
+              await poseRef.current.send({ image: videoRef.current });
+            } catch (error) {
+              console.error('Error processing frame:', error);
+            }
             requestAnimationFrame(processFrame);
+          } else {
+            console.log('Frame processing stopped', {
+              hasVideo: !!videoRef.current,
+              hasPose: !!poseRef.current,
+              isProcessing: processingRef.current
+            });
           }
         };
         
@@ -630,8 +646,8 @@ export default function Analysis() {
 
           {/* Video Feed and Detection Status */}
           <div className="flex flex-col lg:flex-row gap-6 mb-6">
-            {/* Video Feed */}
-            <div className="flex-1 lg:w-2/3 bg-[#1a1f2e] rounded-lg p-6">
+            {/* Video Feed - Takes up 70% width on large screens */}
+            <div className="lg:w-[70%] bg-[#1a1f2e] rounded-lg p-6">
               <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
                 <video
                   ref={videoRef}
@@ -662,8 +678,8 @@ export default function Analysis() {
               </Button>
             </div>
 
-            {/* Detection Status */}
-            <div className="lg:w-1/3 space-y-4">
+            {/* Detection Status - Takes up 30% width on large screens */}
+            <div className="lg:w-[30%] space-y-4 flex-shrink-0">
               <div className="bg-[#1a1f2e] rounded-lg p-4">
               <h3 className="font-semibold mb-2">Real-Time Detection</h3>
               <p className="text-sm text-gray-400">Landmarks: {landmarksDetected}/33</p>
