@@ -42,7 +42,7 @@ export default function Analysis() {
   const [location] = useLocation();
   
   // Parse motion info from URL
-  const params = new URLSearchParams(location.split('?')[1] || '');
+  const params = new URLSearchParams(window.location.search);
   const motionName = params.get('motion') || 'Unknown Motion';
   const motionDescription = params.get('description') || '';
   
@@ -51,6 +51,7 @@ export default function Analysis() {
   const [cameraActive, setCameraActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const poseRef = useRef<Pose | null>(null);
+  const [poseInitialized, setPoseInitialized] = useState(false);
   
   // Detection state
   const [landmarksDetected, setLandmarksDetected] = useState(0);
@@ -242,10 +243,15 @@ export default function Analysis() {
           }
         };
         
-        // Set to ready state immediately after camera starts
-        setSessionState('ready');
-        speak("Camera has started. Position yourself and press start capture when ready");
+        // Start processing frames immediately
         processFrame();
+        
+        // Wait a short moment for MediaPipe to load, then set to ready
+        setTimeout(() => {
+          setPoseInitialized(true);
+          setSessionState('ready');
+          speak("Camera has started. Position yourself and press start capture when ready");
+        }, 1500);
       }
     } catch (error) {
       console.error("Error starting camera:", error);
@@ -404,7 +410,7 @@ export default function Analysis() {
   
   const getButtonText = () => {
     if (!cameraActive) return "Start Video";
-    if (sessionState === 'idle') return "Initializing...";
+    if (cameraActive && !poseInitialized) return "Initializing MediaPipe...";
     if (sessionState === 'ready') return "Start Capture";
     if (sessionState === 'capturing') return "Stop and Score";
     if (sessionState === 'complete') return "Try Again";
@@ -581,9 +587,9 @@ export default function Analysis() {
           </div>
 
           {/* Video Feed and Detection Status */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {/* Video Feed */}
-            <div className="lg:col-span-2 bg-[#1a1f2e] rounded-lg p-6">
+            <div className="md:col-span-2 bg-[#1a1f2e] rounded-lg p-6">
               <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
                 <video
                   ref={videoRef}
@@ -608,14 +614,14 @@ export default function Analysis() {
               <Button
                 onClick={handleButtonClick}
                 className={getButtonClass()}
-                disabled={sessionState === 'idle' && cameraActive}
+                disabled={cameraActive && !poseInitialized}
               >
                 {getButtonText()}
               </Button>
             </div>
 
             {/* Detection Status */}
-            <div className="lg:col-span-1 space-y-4">
+            <div className="md:col-span-1 space-y-4">
               <div className="bg-[#1a1f2e] rounded-lg p-4">
               <h3 className="font-semibold mb-2">Real-Time Detection</h3>
               <p className="text-sm text-gray-400">Landmarks: {landmarksDetected}/33</p>
