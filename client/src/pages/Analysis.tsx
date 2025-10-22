@@ -159,11 +159,6 @@ export default function Analysis() {
       
       // Draw skeleton
       drawSkeleton(ctx, landmarks, canvas.width, canvas.height);
-      
-      // Set session to ready if pose detected
-      if (sessionState === 'idle') {
-        setSessionState('ready');
-      }
     } else {
       setLandmarksDetected(0);
       setDistance("No pose detected");
@@ -247,6 +242,8 @@ export default function Analysis() {
           }
         };
         
+        // Set to ready state immediately after camera starts
+        setSessionState('ready');
         speak("Camera has started. Position yourself and press start capture when ready");
         processFrame();
       }
@@ -583,41 +580,43 @@ export default function Analysis() {
             <p className="text-gray-400">{motionDescription}</p>
           </div>
 
-          {/* Video Feed */}
-          <div className="bg-[#1a1f2e] rounded-lg p-6 mb-6">
-            <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                playsInline
-                muted
-              />
-              <canvas
-                ref={canvasRef}
-                className="absolute top-0 left-0 w-full h-full"
-                width={640}
-                height={480}
-              />
-              {!cameraActive && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
-                  <p className="text-xl">Camera not started</p>
-                </div>
-              )}
+          {/* Video Feed and Detection Status */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Video Feed */}
+            <div className="lg:col-span-2 bg-[#1a1f2e] rounded-lg p-6">
+              <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  playsInline
+                  muted
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute top-0 left-0 w-full h-full"
+                  width={640}
+                  height={480}
+                />
+                {!cameraActive && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
+                    <p className="text-xl">Camera not started</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Control Button */}
+              <Button
+                onClick={handleButtonClick}
+                className={getButtonClass()}
+                disabled={sessionState === 'idle' && cameraActive}
+              >
+                {getButtonText()}
+              </Button>
             </div>
 
-            {/* Control Button */}
-            <Button
-              onClick={handleButtonClick}
-              className={getButtonClass()}
-              disabled={sessionState === 'idle' && cameraActive}
-            >
-              {getButtonText()}
-            </Button>
-          </div>
-
-          {/* Detection Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-[#1a1f2e] rounded-lg p-4">
+            {/* Detection Status */}
+            <div className="lg:col-span-1 space-y-4">
+              <div className="bg-[#1a1f2e] rounded-lg p-4">
               <h3 className="font-semibold mb-2">Real-Time Detection</h3>
               <p className="text-sm text-gray-400">Landmarks: {landmarksDetected}/33</p>
               <p className="text-sm text-gray-400">Body Scale: {bodyScale.toFixed(2)}</p>
@@ -630,6 +629,7 @@ export default function Analysis() {
               <p className="text-sm text-gray-400">Left Hand: {leftHandRaised ? '✓ Raised' : '✗ Down'}</p>
               <p className="text-sm text-gray-400">Right Foot: {rightFootLifted ? '✓ Lifted' : '✗ Down'}</p>
               <p className="text-sm text-gray-400">Left Foot: {leftFootLifted ? '✓ Lifted' : '✗ Down'}</p>
+              </div>
             </div>
           </div>
         </div>
