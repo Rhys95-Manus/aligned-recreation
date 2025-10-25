@@ -37,6 +37,18 @@ interface DetailedAnalysisData {
     score: number;
     trend: string;
   };
+  powerGeneration: {
+    score: number;
+    peakVelocity: string;
+    forceTransfer: string;
+    recommendation: string;
+  };
+  movementTiming: {
+    score: number;
+    sequenceOrder: string;
+    phaseDurations: string;
+    recommendation: string;
+  };
 }
 
 export default function Analysis() {
@@ -780,6 +792,18 @@ export default function Analysis() {
       consistency: {
         score: 81,
         trend: "stable"
+      },
+      powerGeneration: {
+        score: Math.round((hipRotation / 61) * 100), // Based on hip rotation vs professional average
+        peakVelocity: `${((hipRotation / 61) * 100).toFixed(1)}% of professional`,
+        forceTransfer: `${weightTransfer.toFixed(1)}% weight transfer`,
+        recommendation: weightTransfer < 60 ? "Increase weight transfer to front foot for more power" : "Good power transfer through kinetic chain"
+      },
+      movementTiming: {
+        score: Math.round(((hipRotation > 40 ? 100 : (hipRotation / 40) * 100) + (spineAngle > 15 ? 100 : (spineAngle / 15) * 100)) / 2),
+        sequenceOrder: "Hips → Torso → Shoulder → Elbow",
+        phaseDurations: `Hip rotation: ${hipRotation.toFixed(1)}°, Spine angle: ${spineAngle.toFixed(1)}°`,
+        recommendation: hipRotation < 40 ? "Initiate movement with hip rotation for better sequencing" : "Good kinetic chain sequencing"
       }
     };
     
@@ -939,6 +963,32 @@ export default function Analysis() {
               <div className="flex items-baseline gap-4">
                 <span className="text-5xl font-bold">{detailedAnalysis.consistency.score}/100</span>
                 <span className="text-gray-400">Trend: {detailedAnalysis.consistency.trend}</span>
+              </div>
+            </div>
+
+            {/* Power Generation */}
+            <div className="bg-[#1a1f2e] rounded-lg p-6">
+              <h2 className="text-2xl font-bold text-orange-400 mb-4">Power Generation</h2>
+              <div className="space-y-3">
+                <div className="flex items-baseline gap-4">
+                  <span className="text-4xl font-bold text-orange-300">{detailedAnalysis.powerGeneration.score}/100</span>
+                </div>
+                <p className="text-gray-300">Peak Velocity: {detailedAnalysis.powerGeneration.peakVelocity}</p>
+                <p className="text-gray-300">Force Transfer: {detailedAnalysis.powerGeneration.forceTransfer}</p>
+                <p className="text-orange-200 mt-3">{detailedAnalysis.powerGeneration.recommendation}</p>
+              </div>
+            </div>
+
+            {/* Movement Timing */}
+            <div className="bg-[#1a1f2e] rounded-lg p-6">
+              <h2 className="text-2xl font-bold text-purple-400 mb-4">Movement Timing & Sequencing</h2>
+              <div className="space-y-3">
+                <div className="flex items-baseline gap-4">
+                  <span className="text-4xl font-bold text-purple-300">{detailedAnalysis.movementTiming.score}/100</span>
+                </div>
+                <p className="text-gray-300">Kinetic Chain: {detailedAnalysis.movementTiming.sequenceOrder}</p>
+                <p className="text-gray-300">Phase Data: {detailedAnalysis.movementTiming.phaseDurations}</p>
+                <p className="text-purple-200 mt-3">{detailedAnalysis.movementTiming.recommendation}</p>
               </div>
             </div>
 

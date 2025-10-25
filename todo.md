@@ -5,6 +5,10 @@
 - [x] Fix "Analyze Another Motion" not reinitializing camera and MediaPipe
 
 ## Features to Implement
+- [x] Add footwork metrics to detailed analysis display
+- [x] Show what detailed analysis should read from professional reference
+- [x] Implement actual Power Generation calculation
+- [x] Implement actual Movement Timing calculation
 - [x] Add footwork tracking and comparison with professionals
 - [x] Improve biomechanical metric logging to show actual values
 - [x] Fix scoring algorithm to properly use professional reference
