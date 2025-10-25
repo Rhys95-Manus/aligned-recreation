@@ -78,6 +78,20 @@ export const footballThrowReference: ProfessionalReference = {
       optimalRange: { min: 30, max: 50 },
       unit: "degrees",
       description: "Stride leg knee bend (average of 29-46° range)"
+    },
+    {
+      name: "Foot Positioning",
+      professionalAverage: 45,
+      optimalRange: { min: 35, max: 55 },
+      unit: "degrees",
+      description: "Front foot angle relative to target line during stride"
+    },
+    {
+      name: "Weight Transfer",
+      professionalAverage: 70,
+      optimalRange: { min: 60, max: 80 },
+      unit: "percent",
+      description: "Percentage of weight transferred from back to front foot"
     }
   ]
 };

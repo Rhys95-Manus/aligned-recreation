@@ -75,6 +75,11 @@ export default function Analysis() {
   const [rightShoulderAngle, setRightShoulderAngle] = useState(0);
   const [leftShoulderAngle, setLeftShoulderAngle] = useState(0);
   
+  // Footwork metrics
+  const [footPositioning, setFootPositioning] = useState(0);
+  const [weightTransfer, setWeightTransfer] = useState(0);
+  const [strideLength, setStrideLength] = useState(0);
+  
   // Session state
   const [sessionState, setSessionState] = useState<'idle' | 'ready' | 'capturing' | 'complete'>('idle');
   const [detailedAnalysis, setDetailedAnalysis] = useState<DetailedAnalysisData | null>(null);
@@ -332,16 +337,50 @@ export default function Analysis() {
         setBalanceScore(Math.round(balanceCalc));
       }
       
+      // 7. Footwork Metrics
+      if (leftAnkle && rightAnkle && leftHip && rightHip) {
+        // Foot Positioning - angle of front foot relative to body center line
+        const bodyCenter = (leftHip.x + rightHip.x) / 2;
+        const frontFoot = leftAnkle.x < rightAnkle.x ? leftAnkle : rightAnkle; // Determine front foot
+        const backFoot = leftAnkle.x < rightAnkle.x ? rightAnkle : leftAnkle;
+        
+        // Calculate foot angle relative to vertical
+        const footAngle = Math.abs(Math.atan2(frontFoot.y - backFoot.y, frontFoot.x - backFoot.x) * 180 / Math.PI);
+        setFootPositioning(footAngle);
+        
+        // Stride Length - distance between feet
+        const strideDistance = Math.sqrt(
+          Math.pow((frontFoot.x - backFoot.x), 2) + 
+          Math.pow((frontFoot.y - backFoot.y), 2)
+        );
+        setStrideLength(strideDistance * 100); // Scale to percentage
+        
+        // Weight Transfer - based on vertical position of hips relative to feet
+        const hipCenter = (leftHip.y + rightHip.y) / 2;
+        const frontFootY = frontFoot.y;
+        const backFootY = backFoot.y;
+        const totalDistance = Math.abs(frontFootY - backFootY);
+        const hipToFrontDistance = Math.abs(hipCenter - frontFootY);
+        
+        if (totalDistance > 0) {
+          const weightTransferCalc = (hipToFrontDistance / totalDistance) * 100;
+          setWeightTransfer(Math.min(100, Math.max(0, weightTransferCalc)));
+        }
+      }
+      
       // Log biomechanical metrics
-      console.log('Biomechanical Metrics:', {
-        hipRotation: hipRotation.toFixed(1) + '°',
-        rightElbow: rightElbowAngle.toFixed(1) + '°',
-        leftElbow: leftElbowAngle.toFixed(1) + '°',
-        rightKnee: rightKneeFlexion.toFixed(1) + '°',
-        leftKnee: leftKneeFlexion.toFixed(1) + '°',
-        spineAngle: spineAngle.toFixed(1) + '°',
-        balance: balanceScore + '/100'
-      });
+      console.log('=== BIOMECHANICAL METRICS ===');
+      console.log(`Hip Rotation: ${hipRotation.toFixed(1)}°`);
+      console.log(`Right Elbow: ${rightElbowAngle.toFixed(1)}° | Left Elbow: ${leftElbowAngle.toFixed(1)}°`);
+      console.log(`Right Knee: ${rightKneeFlexion.toFixed(1)}° | Left Knee: ${leftKneeFlexion.toFixed(1)}°`);
+      console.log(`Spine Angle: ${spineAngle.toFixed(1)}°`);
+      console.log(`Balance Score: ${balanceScore.toFixed(1)}/100`);
+      console.log(`Right Shoulder: ${rightShoulderAngle.toFixed(1)}° | Left Shoulder: ${leftShoulderAngle.toFixed(1)}°`);
+      console.log('--- FOOTWORK METRICS ---');
+      console.log(`Foot Positioning: ${footPositioning.toFixed(1)}°`);
+      console.log(`Weight Transfer: ${weightTransfer.toFixed(1)}%`);
+      console.log(`Stride Length: ${strideLength.toFixed(1)}`);
+      console.log('============================');
       
       // Draw skeleton
       drawSkeleton(ctx, landmarks, canvas.width, canvas.height);
@@ -591,7 +630,9 @@ export default function Analysis() {
         { name: "Elbow Angle", value: (rightElbowAngle + leftElbowAngle) / 2, metricName: "Elbow Flexion" },
         { name: "Knee Flexion", value: (rightKneeFlexion + leftKneeFlexion) / 2, metricName: "Knee Flexion" },
         { name: "Spine Angle", value: spineAngle, metricName: "Spine Extension" },
-        { name: "Shoulder Angle", value: (rightShoulderAngle + leftShoulderAngle) / 2, metricName: "Shoulder External Rotation" }
+        { name: "Shoulder Angle", value: (rightShoulderAngle + leftShoulderAngle) / 2, metricName: "Shoulder External Rotation" },
+        { name: "Foot Positioning", value: footPositioning, metricName: "Foot Positioning" },
+        { name: "Weight Transfer", value: weightTransfer, metricName: "Weight Transfer" }
       ];
       
       let totalScore = 0;

@@ -5,6 +5,9 @@
 - [x] Fix "Analyze Another Motion" not reinitializing camera and MediaPipe
 
 ## Features to Implement
+- [x] Add footwork tracking and comparison with professionals
+- [x] Improve biomechanical metric logging to show actual values
+- [x] Fix scoring algorithm to properly use professional reference
 - [x] Build professional reference system for scoring
   - [x] Research 8 professional quarterbacks for Football Throw reference
   - [x] Create averaged professional reference data structure
