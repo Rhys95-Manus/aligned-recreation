@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Pose, Results } from "@mediapipe/pose";
+import { getProfessionalReference, calculateMetricScore, getComparisonText } from "@/data/professionalReferences";
 
 // Detailed analysis data structure
 interface DetailedAnalysisData {
@@ -567,10 +568,91 @@ export default function Analysis() {
   const stopAndScore = () => {
     speak("Here's your detailed analysis");
     
+    // Get professional reference for this motion
+    const category = params.get('category') || '';
+    const subcategory = params.get('subcategory') || '';
+    const professionalRef = getProfessionalReference(category, subcategory, motionName);
+    
+    // Calculate scores based on captured biomechanical data vs professional reference
+    let biomechanicalData: Array<{
+      title: string;
+      yours: string;
+      pro: string;
+      difference: string;
+      recommendation: string;
+    }> = [];
+    
+    let overallScore = 75; // Base score
+    
+    if (professionalRef) {
+      // Use actual captured metrics and compare with professional reference
+      const userMetrics = [
+        { name: "Hip Rotation", value: hipRotation, metricName: "Hip Rotation" },
+        { name: "Elbow Angle", value: (rightElbowAngle + leftElbowAngle) / 2, metricName: "Elbow Flexion" },
+        { name: "Knee Flexion", value: (rightKneeFlexion + leftKneeFlexion) / 2, metricName: "Knee Flexion" },
+        { name: "Spine Angle", value: spineAngle, metricName: "Spine Extension" },
+        { name: "Shoulder Angle", value: (rightShoulderAngle + leftShoulderAngle) / 2, metricName: "Shoulder External Rotation" }
+      ];
+      
+      let totalScore = 0;
+      let metricCount = 0;
+      
+      userMetrics.forEach(userMetric => {
+        const refMetric = professionalRef.metrics.find(m => m.name === userMetric.metricName);
+        if (refMetric && userMetric.value > 0) {
+          const score = calculateMetricScore(userMetric.value, refMetric);
+          totalScore += score;
+          metricCount++;
+          
+          const difference = Math.abs(userMetric.value - refMetric.professionalAverage);
+          const comparisonText = getComparisonText(userMetric.value, refMetric);
+          
+          let recommendation = "";
+          if (userMetric.value < refMetric.optimalRange.min) {
+            recommendation = `Increase ${userMetric.name.toLowerCase()} by ${difference.toFixed(1)}° to reach professional range`;
+          } else if (userMetric.value > refMetric.optimalRange.max) {
+            recommendation = `Decrease ${userMetric.name.toLowerCase()} by ${difference.toFixed(1)}° to reach professional range`;
+          } else {
+            recommendation = `Excellent ${userMetric.name.toLowerCase()} - within professional range`;
+          }
+          
+          biomechanicalData.push({
+            title: userMetric.name,
+            yours: `${userMetric.value.toFixed(1)}°`,
+            pro: `${refMetric.professionalAverage}°`,
+            difference: `${difference.toFixed(1)}°`,
+            recommendation
+          });
+        }
+      });
+      
+      if (metricCount > 0) {
+        overallScore = Math.round(totalScore / metricCount);
+      }
+    } else {
+      // Fallback to mock data if no professional reference available
+      biomechanicalData = [
+        {
+          title: "Hip Rotation",
+          yours: `${hipRotation.toFixed(1)}°`,
+          pro: "61°",
+          difference: `${Math.abs(hipRotation - 61).toFixed(1)}°`,
+          recommendation: "Work on hip rotation for more power"
+        },
+        {
+          title: "Elbow Angle",
+          yours: `${((rightElbowAngle + leftElbowAngle) / 2).toFixed(1)}°`,
+          pro: "100°",
+          difference: `${Math.abs(((rightElbowAngle + leftElbowAngle) / 2) - 100).toFixed(1)}°`,
+          recommendation: "Maintain optimal elbow angle at cocking phase"
+        }
+      ];
+    }
+    
     // Generate detailed analysis
     const analysis: DetailedAnalysisData = {
-      overallScore: Math.floor(70 + Math.random() * 30),
-      priorityFocus: "Increase elbow flexion - keep forearm closer to 90°",
+      overallScore,
+      priorityFocus: biomechanicalData.length > 0 ? biomechanicalData[0].recommendation : "Focus on form and technique",
       strengths: [
         {
           title: "Joint Angles",
@@ -653,36 +735,7 @@ export default function Analysis() {
           drill: "Slow-motion reps (10 reps)"
         }
       ],
-      biomechanical: [
-        {
-          title: "Hip Rotation",
-          yours: "61°",
-          pro: "36°",
-          difference: "25°",
-          recommendation: "Increase hip rotation by 15° for more power"
-        },
-        {
-          title: "Elbow Angle",
-          yours: "92°",
-          pro: "104°",
-          difference: "12°",
-          recommendation: "Maintain 90° elbow angle at cocking phase"
-        },
-        {
-          title: "Knee Flexion",
-          yours: "32°",
-          pro: "38°",
-          difference: "6°",
-          recommendation: "Deepen knee bend for better power transfer"
-        },
-        {
-          title: "Spine Angle",
-          yours: "7°",
-          pro: "9°",
-          difference: "2°",
-          recommendation: "Maintain neutral spine throughout motion"
-        }
-      ],
+      biomechanical: biomechanicalData,
       consistency: {
         score: 81,
         trend: "stable"
