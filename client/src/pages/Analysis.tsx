@@ -747,7 +747,7 @@ export default function Analysis() {
         <main className="flex-1 container mx-auto py-8 px-4">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Back button */}
-            <Link href={`/motions?category=${params.get('category')}&subcategory=${params.get('subcategory')}`}>
+            <Link href={`/motions/${params.get('category')}/${params.get('subcategory')}`}>
               <Button variant="outline" className="mb-4">
                 ← Back to Motions
               </Button>
@@ -850,7 +850,42 @@ export default function Analysis() {
 
             {/* Try Again Button */}
             <Button
-              onClick={() => setShowDetailedAnalysis(false)}
+              onClick={() => {
+                // Reset all state
+                setShowDetailedAnalysis(false);
+                setSessionState('idle');
+                setCameraActive(false);
+                setPoseInitialized(false);
+                processingRef.current = false;
+                
+                // Stop camera stream
+                if (stream) {
+                  stream.getTracks().forEach(track => track.stop());
+                  setStream(null);
+                }
+                
+                // Clear video element
+                if (videoRef.current) {
+                  videoRef.current.srcObject = null;
+                }
+                
+                // Dispose MediaPipe Pose
+                if (poseRef.current) {
+                  poseRef.current.close();
+                  poseRef.current = null;
+                }
+                
+                // Reset detection state
+                setLandmarksDetected(0);
+                setBodyScale(0.00);
+                setDistance("No pose detected");
+                setRightHandRaised(false);
+                setLeftHandRaised(false);
+                setRightFootLifted(false);
+                setLeftFootLifted(false);
+                
+                speak("Ready to analyze another motion");
+              }}
               className="w-full py-6 text-lg bg-blue-600 hover:bg-blue-700"
             >
               Analyze Another Motion
