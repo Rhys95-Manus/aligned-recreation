@@ -1,6 +1,10 @@
 # Aligned Recreation - TODO
 
 ## Bugs to Fix
+- [ ] Shorten video frame height further - user needs to see whole frame and Start Capture button without scrolling
+- [ ] Fix detailed analysis still showing mock data instead of real biomechanical comparison
+- [ ] Fix scoring - user sitting still getting high scores instead of low scores based on professional reference
+- [ ] Footwork metrics not displaying in Biomechanical Analysis section
 - [x] Fix video frame height on desktop - too tall, requires scrolling to see Start Video/Capture buttons
 - [x] Fix scoring system giving scores without motion (91 score while sitting still)
 - [x] Add footwork metrics (Foot Positioning, Weight Transfer) to Biomechanical Analysis display

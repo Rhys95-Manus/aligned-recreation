@@ -282,61 +282,72 @@ export default function Analysis() {
       // 1. Hip Rotation - angle between left hip, center, and right hip
       const leftHip = landmarks[23];
       const rightHip = landmarks[24];
+      let hipRotationCalc = 0;
       if (leftHip && rightHip) {
-        const hipRotationAngle = Math.abs(Math.atan2(rightHip.y - leftHip.y, rightHip.x - leftHip.x) * 180 / Math.PI);
-        setHipRotation(hipRotationAngle);
+        hipRotationCalc = Math.abs(Math.atan2(rightHip.y - leftHip.y, rightHip.x - leftHip.x) * 180 / Math.PI);
+        setHipRotation(hipRotationCalc);
       }
       
       // 2. Elbow Angles - shoulder, elbow, wrist
       const rightElbow = landmarks[14];
       const leftElbow = landmarks[13];
       
+      let rightElbowCalc = 0;
+      let leftElbowCalc = 0;
+      
       if (rightShoulder && rightElbow && rightWrist) {
-        const angle = calculateAngle(rightShoulder, rightElbow, rightWrist);
-        setRightElbowAngle(angle);
+        rightElbowCalc = calculateAngle(rightShoulder, rightElbow, rightWrist);
+        setRightElbowAngle(rightElbowCalc);
       }
       
       if (leftShoulder && leftElbow && leftWrist) {
-        const angle = calculateAngle(leftShoulder, leftElbow, leftWrist);
-        setLeftElbowAngle(angle);
+        leftElbowCalc = calculateAngle(leftShoulder, leftElbow, leftWrist);
+        setLeftElbowAngle(leftElbowCalc);
       }
       
       // 3. Knee Flexion - hip, knee, ankle
+      let rightKneeCalc = 0;
+      let leftKneeCalc = 0;
+      
       if (rightHip && rightKnee && rightAnkle) {
-        const angle = calculateAngle(rightHip, rightKnee, rightAnkle);
-        setRightKneeFlexion(angle);
+        rightKneeCalc = calculateAngle(rightHip, rightKnee, rightAnkle);
+        setRightKneeFlexion(rightKneeCalc);
       }
       
       if (leftHip && leftKnee && leftAnkle) {
-        const angle = calculateAngle(leftHip, leftKnee, leftAnkle);
-        setLeftKneeFlexion(angle);
+        leftKneeCalc = calculateAngle(leftHip, leftKnee, leftAnkle);
+        setLeftKneeFlexion(leftKneeCalc);
       }
       
       // 4. Spine Angle - shoulder midpoint to hip midpoint
+      let spineAngleCalc = 0;
       if (leftShoulder && rightShoulder && leftHip && rightHip) {
         const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
         const hipMidY = (leftHip.y + rightHip.y) / 2;
         const shoulderMidX = (leftShoulder.x + rightShoulder.x) / 2;
         const hipMidX = (leftHip.x + rightHip.x) / 2;
         
-        const spineAngleCalc = Math.abs(Math.atan2(hipMidY - shoulderMidY, hipMidX - shoulderMidX) * 180 / Math.PI);
+        spineAngleCalc = Math.abs(Math.atan2(hipMidY - shoulderMidY, hipMidX - shoulderMidX) * 180 / Math.PI);
         setSpineAngle(spineAngleCalc);
       }
       
       // 5. Shoulder Angles - for arm positioning
       const neck = landmarks[0]; // Nose as reference
+      let rightShoulderCalc = 0;
+      let leftShoulderCalc = 0;
       
       if (neck && rightShoulder && rightElbow) {
-        const angle = calculateAngle(neck, rightShoulder, rightElbow);
-        setRightShoulderAngle(angle);
+        rightShoulderCalc = calculateAngle(neck, rightShoulder, rightElbow);
+        setRightShoulderAngle(rightShoulderCalc);
       }
       
       if (neck && leftShoulder && leftElbow) {
-        const angle = calculateAngle(neck, leftShoulder, leftElbow);
-        setLeftShoulderAngle(angle);
+        leftShoulderCalc = calculateAngle(neck, leftShoulder, leftElbow);
+        setLeftShoulderAngle(leftShoulderCalc);
       }
       
       // 6. Balance Score - based on hip alignment and foot positioning
+      let balanceCalc = 0;
       if (leftHip && rightHip && leftAnkle && rightAnkle) {
         const hipWidth = Math.abs(leftHip.x - rightHip.x);
         const ankleWidth = Math.abs(leftAnkle.x - rightAnkle.x);
@@ -345,53 +356,52 @@ export default function Analysis() {
         const centerOffset = Math.abs(hipCenterX - ankleCenterX);
         
         // Balance score: 100 = perfect balance, lower = less balanced
-        const balanceCalc = Math.max(0, 100 - (centerOffset * 500));
+        balanceCalc = Math.max(0, 100 - (centerOffset * 500));
         setBalanceScore(Math.round(balanceCalc));
       }
       
       // 7. Footwork Metrics
+      let footPositioningCalc = 0;
+      let strideLengthCalc = 0;
+      let weightTransferCalc = 0;
+      
       if (leftAnkle && rightAnkle && leftHip && rightHip) {
         // Foot Positioning - angle of front foot relative to body center line
-        const bodyCenter = (leftHip.x + rightHip.x) / 2;
-        const frontFoot = leftAnkle.x < rightAnkle.x ? leftAnkle : rightAnkle; // Determine front foot
-        const backFoot = leftAnkle.x < rightAnkle.x ? rightAnkle : leftAnkle;
-        
-        // Calculate foot angle relative to vertical
-        const footAngle = Math.abs(Math.atan2(frontFoot.y - backFoot.y, frontFoot.x - backFoot.x) * 180 / Math.PI);
-        setFootPositioning(footAngle);
+        footPositioningCalc = Math.abs(Math.atan2(rightAnkle.y - leftAnkle.y, rightAnkle.x - leftAnkle.x) * 180 / Math.PI);
+        setFootPositioning(footPositioningCalc);
         
         // Stride Length - distance between feet
-        const strideDistance = Math.sqrt(
-          Math.pow((frontFoot.x - backFoot.x), 2) + 
-          Math.pow((frontFoot.y - backFoot.y), 2)
+        strideLengthCalc = Math.sqrt(
+          Math.pow(rightAnkle.x - leftAnkle.x, 2) + 
+          Math.pow(rightAnkle.y - leftAnkle.y, 2)
         );
-        setStrideLength(strideDistance * 100); // Scale to percentage
+        setStrideLength(strideLengthCalc);
         
-        // Weight Transfer - based on vertical position of hips relative to feet
+        // Weight Transfer - based on hip position relative to feet
         const hipCenter = (leftHip.y + rightHip.y) / 2;
-        const frontFootY = frontFoot.y;
-        const backFootY = backFoot.y;
+        const frontFootY = Math.min(leftAnkle.y, rightAnkle.y);
+        const backFootY = Math.max(leftAnkle.y, rightAnkle.y);
         const totalDistance = Math.abs(frontFootY - backFootY);
         const hipToFrontDistance = Math.abs(hipCenter - frontFootY);
         
         if (totalDistance > 0) {
-          const weightTransferCalc = (hipToFrontDistance / totalDistance) * 100;
-          setWeightTransfer(Math.min(100, Math.max(0, weightTransferCalc)));
+          weightTransferCalc = (hipToFrontDistance / totalDistance) * 100;
+          weightTransferCalc = Math.min(100, Math.max(0, weightTransferCalc));
+          setWeightTransfer(weightTransferCalc);
         }
-      }
-      
-      // Log biomechanical metrics
+      }     
+      // Log biomechanical metrics (use calculated values, not state)
       console.log('=== BIOMECHANICAL METRICS ===');
-      console.log(`Hip Rotation: ${hipRotation.toFixed(1)}°`);
-      console.log(`Right Elbow: ${rightElbowAngle.toFixed(1)}° | Left Elbow: ${leftElbowAngle.toFixed(1)}°`);
-      console.log(`Right Knee: ${rightKneeFlexion.toFixed(1)}° | Left Knee: ${leftKneeFlexion.toFixed(1)}°`);
-      console.log(`Spine Angle: ${spineAngle.toFixed(1)}°`);
-      console.log(`Balance Score: ${balanceScore.toFixed(1)}/100`);
-      console.log(`Right Shoulder: ${rightShoulderAngle.toFixed(1)}° | Left Shoulder: ${leftShoulderAngle.toFixed(1)}°`);
+      console.log(`Hip Rotation: ${hipRotationCalc.toFixed(1)}°`);
+      console.log(`Right Elbow: ${rightElbowCalc.toFixed(1)}° | Left Elbow: ${leftElbowCalc.toFixed(1)}°`);
+      console.log(`Right Knee: ${rightKneeCalc.toFixed(1)}° | Left Knee: ${leftKneeCalc.toFixed(1)}°`);
+      console.log(`Spine Angle: ${spineAngleCalc.toFixed(1)}°`);
+      console.log(`Balance Score: ${balanceCalc.toFixed(1)}/100`);
+      console.log(`Right Shoulder: ${rightShoulderCalc.toFixed(1)}° | Left Shoulder: ${leftShoulderCalc.toFixed(1)}°`);
       console.log('--- FOOTWORK METRICS ---');
-      console.log(`Foot Positioning: ${footPositioning.toFixed(1)}°`);
-      console.log(`Weight Transfer: ${weightTransfer.toFixed(1)}%`);
-      console.log(`Stride Length: ${strideLength.toFixed(1)}`);
+      console.log(`Foot Positioning: ${footPositioningCalc.toFixed(1)}°`);
+      console.log(`Weight Transfer: ${weightTransferCalc.toFixed(1)}%`);
+      console.log(`Stride Length: ${strideLengthCalc.toFixed(1)}`);
       console.log('============================');
       
       // Draw skeleton
@@ -1044,7 +1054,7 @@ export default function Analysis() {
           <div className="flex flex-col lg:flex-row gap-6 mb-6">
             {/* Video Feed - Takes up 80% width on large screens */}
             <div className="lg:w-[80%] bg-[#1a1f2e] rounded-lg p-6">
-              <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
+              <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', maxHeight: '500px' }}>
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
