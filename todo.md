@@ -1,6 +1,12 @@
 # Aligned Recreation - TODO
 
 ## Bugs to Fix
+- [x] Fix video frame height on desktop - too tall, requires scrolling to see Start Video/Capture buttons
+- [x] Fix scoring system giving scores without motion (91 score while sitting still)
+- [x] Add footwork metrics (Foot Positioning, Weight Transfer) to Biomechanical Analysis display
+- [x] Fix contradictory feedback (elbow angle says "maintain 90°" but pro is 104°)
+- [x] Fix repetitive/mock scores in detailed analysis - use actual captured data
+- [x] Change audio cue from "position yourself and start capture" to "video capture is ready, press start capture when ready"
 - [x] Fix "Back to Motions" button 404 error on detailed analysis page
 - [x] Fix "Analyze Another Motion" not reinitializing camera and MediaPipe
 

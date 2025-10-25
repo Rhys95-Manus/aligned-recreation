@@ -602,7 +602,7 @@ export default function Analysis() {
         setTimeout(() => {
           setPoseInitialized(true);
           setSessionState('ready');
-          speak("Camera has started. Position yourself and press start capture when ready");
+          speak("Video capture is ready. Press start capture when ready");
         }, 1500);
       }
     } catch (error) {
@@ -616,7 +616,21 @@ export default function Analysis() {
     speak("Perform your motion now");
   };
   
-  const stopAndScore = () => {
+  // Helper function to get drill recommendation for a metric
+  const getDrillForMetric = (metricTitle: string): string => {
+    const drills: Record<string, string> = {
+      "Hip Rotation": "Medicine ball rotational throws (3 sets of 10)",
+      "Elbow Angle": "Wall angels with resistance band (3 sets of 15)",
+      "Knee Flexion": "Bodyweight squats focusing on depth (3 sets of 12)",
+      "Spine Angle": "Cat-cow stretches and thoracic extensions (2 sets of 10)",
+      "Shoulder Angle": "Band pull-aparts and external rotations (3 sets of 15)",
+      "Foot Positioning": "Cone drills focusing on foot placement (10 minutes)",
+      "Weight Transfer": "Single-leg balance with weight shifts (3 sets of 30 seconds)"
+    };
+    return drills[metricTitle] || "Practice the motion slowly with focus (10 reps)";
+  };
+
+  const stopAndScore = async () => {
     speak("Here's your detailed analysis");
     
     // Get professional reference for this motion
@@ -652,7 +666,7 @@ export default function Analysis() {
       
       userMetrics.forEach(userMetric => {
         const refMetric = professionalRef.metrics.find(m => m.name === userMetric.metricName);
-        if (refMetric && userMetric.value > 0) {
+        if (refMetric) {
           const score = calculateMetricScore(userMetric.value, refMetric);
           totalScore += score;
           metricCount++;
@@ -662,18 +676,19 @@ export default function Analysis() {
           
           let recommendation = "";
           if (userMetric.value < refMetric.optimalRange.min) {
-            recommendation = `Increase ${userMetric.name.toLowerCase()} by ${difference.toFixed(1)}° to reach professional range`;
+            recommendation = `Increase ${userMetric.name.toLowerCase()} to ${refMetric.professionalAverage}° (professional average) for optimal performance`;
           } else if (userMetric.value > refMetric.optimalRange.max) {
-            recommendation = `Decrease ${userMetric.name.toLowerCase()} by ${difference.toFixed(1)}° to reach professional range`;
+            recommendation = `Decrease ${userMetric.name.toLowerCase()} to ${refMetric.professionalAverage}° (professional average) for optimal performance`;
           } else {
-            recommendation = `Excellent ${userMetric.name.toLowerCase()} - within professional range`;
+            recommendation = `Excellent ${userMetric.name.toLowerCase()} - within professional range (${refMetric.optimalRange.min}-${refMetric.optimalRange.max}°)`;
           }
           
+          const unit = userMetric.name === "Weight Transfer" ? "%" : "°";
           biomechanicalData.push({
             title: userMetric.name,
-            yours: `${userMetric.value.toFixed(1)}°`,
-            pro: `${refMetric.professionalAverage}°`,
-            difference: `${difference.toFixed(1)}°`,
+            yours: `${userMetric.value.toFixed(1)}${unit}`,
+            pro: `${refMetric.professionalAverage}${unit}`,
+            difference: `${difference.toFixed(1)}${unit}`,
             recommendation
           });
         }
@@ -705,89 +720,49 @@ export default function Analysis() {
     // Generate detailed analysis
     const analysis: DetailedAnalysisData = {
       overallScore,
-      priorityFocus: biomechanicalData.length > 0 ? biomechanicalData[0].recommendation : "Focus on form and technique",
-      strengths: [
-        {
-          title: "Joint Angles",
-          score: 86,
-          description: "Great joint positioning - very close to professional form"
-        },
-        {
-          title: "Movement Timing",
-          score: 87,
-          description: "Smooth, well-timed movement sequence"
-        }
-      ],
-      detailedAreas: [
-        {
-          title: "Power Generation",
-          score: 50,
-          description: "Improve power transfer through better hip-to-shoulder coordination",
-          priority: "High"
-        },
-        {
-          title: "Movement Timing",
-          score: 71,
-          description: "Work on smooth, sequential muscle activation for better timing",
-          priority: "Medium"
-        },
-        {
-          title: "Posture & Alignment",
-          score: 73,
-          description: "Maintain upright posture with engaged core throughout the movement",
-          priority: "High"
-        },
-        {
-          title: "Range of Motion",
-          score: 73,
-          description: "Increase range of motion through targeted mobility work",
-          priority: "Medium"
-        },
-        {
-          title: "Joint Angles",
-          score: 83,
-          description: "Focus on achieving optimal joint angles at each phase of the motion",
-          priority: "High"
-        },
-        {
-          title: "Balance & Stability",
-          score: 88,
-          description: "Strengthen stabilizing muscles for better balance control",
-          priority: "Medium"
-        }
-      ],
-      improvements: [
-        {
-          title: "Power Generation",
-          scoreRange: "52 → 67",
-          description: "Work on explosive movement patterns",
-          drill: "Medicine ball throws (3 sets of 8)"
-        },
-        {
-          title: "Balance & Stability",
-          scoreRange: "60 → 75",
-          description: "Strengthen stabilizing muscles",
-          drill: "Single-leg stands (30 seconds each)"
-        },
-        {
-          title: "Range of Motion",
-          scoreRange: "66 → 81",
-          description: "Work on mobility in tight areas",
-          drill: "Dynamic stretching (10 minutes)"
-        },
-        {
-          title: "Joint Angles",
-          scoreRange: "72 → 87",
-          description: "Focus on achieving optimal joint angles at key phases",
-          drill: "Mirror practice (5 minutes daily)"
-        },
-        {
-          title: "Movement Timing",
-          scoreRange: "75 → 90",
-          description: "Focus on smooth acceleration through the motion",
-          drill: "Slow-motion reps (10 reps)"
-        }
-      ],
+      priorityFocus: biomechanicalData.length > 0 && biomechanicalData[0].recommendation ? biomechanicalData[0].recommendation : "Focus on form and technique",
+      strengths: biomechanicalData
+        .filter(metric => {
+          const diff = parseFloat(metric.difference.replace('°', ''));
+          return diff < 10; // Metrics within 10° of professional
+        })
+        .slice(0, 3)
+        .map(metric => ({
+          title: metric.title,
+          score: Math.round(100 - (parseFloat(metric.difference.replace('°', '')) / parseFloat(metric.pro.replace('°', ''))) * 100),
+          description: metric.recommendation
+        })),
+      detailedAreas: biomechanicalData
+        .filter(metric => {
+          const diff = parseFloat(metric.difference.replace('°', ''));
+          return diff >= 10; // Metrics that need improvement
+        })
+        .map(metric => {
+          const diff = parseFloat(metric.difference.replace('°', ''));
+          const score = Math.round(100 - (diff / parseFloat(metric.pro.replace('°', ''))) * 100);
+          return {
+            title: metric.title,
+            score: Math.max(0, score),
+            description: metric.recommendation,
+            priority: diff > 20 ? "High" : "Medium"
+          };
+        }),
+      improvements: biomechanicalData
+        .filter(metric => {
+          const diff = parseFloat(metric.difference.replace('°', ''));
+          return diff >= 10;
+        })
+        .slice(0, 5)
+        .map(metric => {
+          const currentScore = Math.round(100 - (parseFloat(metric.difference.replace('°', '')) / parseFloat(metric.pro.replace('°', ''))) * 100);
+          const targetScore = Math.min(100, currentScore + 15);
+          return {
+            title: metric.title,
+            scoreRange: `${Math.max(0, currentScore)} → ${targetScore}`,
+            description: metric.recommendation,
+            drill: getDrillForMetric(metric.title)
+          };
+        }),
       biomechanical: biomechanicalData,
       consistency: {
         score: 81,
@@ -1069,7 +1044,7 @@ export default function Analysis() {
           <div className="flex flex-col lg:flex-row gap-6 mb-6">
             {/* Video Feed - Takes up 80% width on large screens */}
             <div className="lg:w-[80%] bg-[#1a1f2e] rounded-lg p-6">
-              <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
+              <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
