@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 import { POSE_CONNECTIONS } from "@mediapipe/pose";
 import { generateProfessionalMotion, ProfessionalFrame } from "../utils/professionalMotionGenerator";
+import { detectPhase, getPhaseMiddleFrame, type MotionPhase } from "../utils/phaseDetection";
 
 interface ReplayProps {
   recordedFrames: Array<{
@@ -35,6 +36,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const [isPlaying, setIsPlaying] = useState(true); // Auto-play on load
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isRightHanded, setIsRightHanded] = useState(true); // Toggle for left/right handed
+  const [currentPhase, setCurrentPhase] = useState<MotionPhase>("Neutral");
+  const [synchronizedProFrame, setSynchronizedProFrame] = useState(0); // Hologram frame synchronized to user's phase
   
   // Generate professional motion sequence (same length as user motion)
   const professionalFrames = useRef<ProfessionalFrame[]>(
@@ -77,6 +80,21 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     };
   }, [isPlaying, recordedFrames.length]);
   
+  // Detect phase and synchronize hologram
+  useEffect(() => {
+    if (!recordedFrames[currentFrameIndex]) return;
+    
+    const currentFrame = recordedFrames[currentFrameIndex];
+    
+    // Detect which phase the user is currently in
+    const detectedPhase = detectPhase(currentFrame.metrics);
+    setCurrentPhase(detectedPhase);
+    
+    // Synchronize hologram to show the same phase
+    const syncedFrame = getPhaseMiddleFrame(detectedPhase, professionalFrames.length);
+    setSynchronizedProFrame(syncedFrame);
+  }, [currentFrameIndex, recordedFrames, professionalFrames.length]);
+  
   // Render current frame
   useEffect(() => {
     if (!recordedFrames[currentFrameIndex]) return;
@@ -111,11 +129,11 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       }
     }
     
-    // Render professional hologram
-    if (proCanvasRef.current && professionalFrames[currentFrameIndex]) {
+    // Render professional hologram (using synchronized frame)
+    if (proCanvasRef.current && professionalFrames[synchronizedProFrame]) {
       const canvas = proCanvasRef.current;
       const ctx = canvas.getContext('2d');
-      const proFrame = professionalFrames[currentFrameIndex];
+      const proFrame = professionalFrames[synchronizedProFrame];
       
       if (ctx && proFrame) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -132,21 +150,40 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           x: isRightHanded ? (1 - lm.x) : lm.x  // Right-handed: flip, Left-handed: no flip
         }));
         
-        // Apply 3D perspective transformation
-        const perspectiveFactor = 300; // Adjust for stronger/weaker perspective
-        const transformedLandmarks = mirroredLandmarks.map((lm: any) => {
+        // Apply AGGRESSIVE 3D perspective transformation for clear depth visualization
+        const perspectiveFactor = 150; // Lower = stronger perspective (was 300)
+        const transformedLandmarks = mirroredLandmarks.map((lm: any, index: number) => {
           // Z-axis: positive = away from camera, negative = toward camera
           const depth = lm.z || 0;
-          const scale = perspectiveFactor / (perspectiveFactor + depth * 100);
           
-          // Apply perspective scaling
+          // MUCH stronger perspective scaling
+          const scale = perspectiveFactor / (perspectiveFactor + depth * 500); // Increased from 100 to 500
+          
+          // Apply perspective scaling from center
           const centerX = 0.5;
           const centerY = 0.5;
           const perspectiveX = centerX + (lm.x - centerX) * scale;
           const perspectiveY = centerY + (lm.y - centerY) * scale;
           
-          // Calculate opacity based on depth (further = dimmer)
-          const opacity = Math.max(0.4, Math.min(1.0, 1.0 - depth * 1.5));
+          // STRONGER opacity variation (further = much dimmer)
+          const opacity = Math.max(0.2, Math.min(1.0, 1.0 - depth * 3.0)); // Increased from 1.5 to 3.0
+          
+          // Color gradient: Blue (close) -> Purple (mid) -> Magenta (far)
+          let r = 255;
+          let g = 0;
+          let b = 255;
+          
+          if (depth < -0.1) {
+            // Very close: more blue/cyan
+            r = Math.floor(100 + depth * -500);
+            b = 255;
+            g = Math.floor(255 + depth * 1000);
+          } else if (depth > 0.1) {
+            // Far away: more red/magenta
+            r = 255;
+            g = Math.floor(Math.max(0, 100 - depth * 500));
+            b = Math.floor(Math.max(150, 255 - depth * 300));
+          }
           
           return {
             ...lm,
@@ -154,7 +191,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
             y: perspectiveY,
             scale,
             opacity,
-            depth
+            depth,
+            color: { r, g, b }
           };
         });
         
@@ -177,32 +215,39 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           if (start && end) {
             const avgOpacity = (start.opacity + end.opacity) / 2;
             const avgDepth = (start.depth + end.depth) / 2;
+            const avgColor = {
+              r: Math.floor((start.color.r + end.color.r) / 2),
+              g: Math.floor((start.color.g + end.color.g) / 2),
+              b: Math.floor((start.color.b + end.color.b) / 2)
+            };
             
             ctx.beginPath();
             ctx.moveTo(start.x * canvas.width, start.y * canvas.height);
             ctx.lineTo(end.x * canvas.width, end.y * canvas.height);
             
-            // Color intensity based on depth
-            const intensity = Math.floor(255 * avgOpacity);
-            ctx.strokeStyle = `rgba(255, 0, 255, ${avgOpacity})`;
-            ctx.lineWidth = 3 * (0.8 + avgOpacity * 0.4); // Thicker lines for closer parts
+            // Depth-based color gradient and thickness
+            ctx.strokeStyle = `rgba(${avgColor.r}, ${avgColor.g}, ${avgColor.b}, ${avgOpacity})`;
+            ctx.lineWidth = 4 * (0.5 + avgOpacity * 0.8); // MUCH thicker lines for closer parts (was 3)
             ctx.stroke();
           }
         });
         
-        // Draw only body landmark points (skip face 0-10) with 3D effects
+        // Draw only body landmark points (skip face 0-10) with STRONG 3D effects
         transformedLandmarks.forEach((landmark: any, index: number) => {
           if (index >= 11) { // Only draw body landmarks
-            const radius = 4 * landmark.scale; // Scale size based on depth
+            const radius = 6 * landmark.scale; // Larger base size (was 4)
             
             ctx.beginPath();
             ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, radius, 0, 2 * Math.PI);
-            ctx.fillStyle = `rgba(255, 0, 255, ${landmark.opacity})`;
+            ctx.fillStyle = `rgba(${landmark.color.r}, ${landmark.color.g}, ${landmark.color.b}, ${landmark.opacity})`;
             ctx.fill();
             
-            // Add cyan glow with depth-based intensity
-            ctx.strokeStyle = `rgba(0, 255, 255, ${landmark.opacity * 0.8})`;
-            ctx.lineWidth = 2 * landmark.scale;
+            // Add depth-based glow (cyan for close, white for far)
+            const glowR = landmark.depth < 0 ? 0 : 255;
+            const glowG = 255;
+            const glowB = 255;
+            ctx.strokeStyle = `rgba(${glowR}, ${glowG}, ${glowB}, ${landmark.opacity * 0.9})`;
+            ctx.lineWidth = 3 * landmark.scale; // Thicker glow (was 2)
             ctx.stroke();
           }
         });
@@ -210,7 +255,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         ctx.shadowBlur = 0;
       }
     }
-  }, [currentFrameIndex, recordedFrames, isRightHanded]);
+  }, [currentFrameIndex, recordedFrames, isRightHanded, synchronizedProFrame]);
   
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -318,56 +363,61 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         </div>
         
         {/* Real-Time Metrics */}
-        {currentMetrics && professionalFrames[currentFrameIndex] && (
+        {currentMetrics && professionalFrames[synchronizedProFrame] && (
           <div className="bg-[#1a1f2e] rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-4">Real-Time Metrics (Frame {currentFrameIndex + 1}/{recordedFrames.length})</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold">Real-Time Metrics (Frame {currentFrameIndex + 1}/{recordedFrames.length})</h2>
+              <div className="bg-purple-900/50 px-4 py-2 rounded-lg border border-purple-500">
+                <span className="text-purple-300 font-semibold">Phase: {currentPhase}</span>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <MetricCard
                 title="Hip Rotation"
                 yours={currentMetrics.hipRotation}
-                pro={professionalFrames[currentFrameIndex].metrics.hipRotation}
+                pro={professionalFrames[synchronizedProFrame].metrics.hipRotation}
                 unit="°"
               />
               <MetricCard
-                title="Right Elbow"
-                yours={currentMetrics.rightElbowAngle}
-                pro={professionalFrames[currentFrameIndex].metrics.rightElbowAngle}
+                title={isRightHanded ? "Right Elbow" : "Left Elbow"}
+                yours={isRightHanded ? currentMetrics.rightElbowAngle : currentMetrics.leftElbowAngle}
+                pro={isRightHanded ? professionalFrames[synchronizedProFrame].metrics.rightElbowAngle : professionalFrames[synchronizedProFrame].metrics.leftElbowAngle}
                 unit="°"
               />
               <MetricCard
-                title="Left Elbow"
-                yours={currentMetrics.leftElbowAngle}
-                pro={professionalFrames[currentFrameIndex].metrics.leftElbowAngle}
+                title={isRightHanded ? "Left Elbow" : "Right Elbow"}
+                yours={isRightHanded ? currentMetrics.leftElbowAngle : currentMetrics.rightElbowAngle}
+                pro={isRightHanded ? professionalFrames[synchronizedProFrame].metrics.leftElbowAngle : professionalFrames[synchronizedProFrame].metrics.rightElbowAngle}
                 unit="°"
               />
               <MetricCard
-                title="Right Knee"
-                yours={currentMetrics.rightKneeFlexion}
-                pro={professionalFrames[currentFrameIndex].metrics.rightKneeFlexion}
+                title={isRightHanded ? "Right Knee" : "Left Knee"}
+                yours={isRightHanded ? currentMetrics.rightKneeFlexion : currentMetrics.leftKneeFlexion}
+                pro={isRightHanded ? professionalFrames[synchronizedProFrame].metrics.rightKneeFlexion : professionalFrames[synchronizedProFrame].metrics.leftKneeFlexion}
                 unit="°"
               />
               <MetricCard
-                title="Left Knee"
-                yours={currentMetrics.leftKneeFlexion}
-                pro={professionalFrames[currentFrameIndex].metrics.leftKneeFlexion}
+                title={isRightHanded ? "Left Knee" : "Right Knee"}
+                yours={isRightHanded ? currentMetrics.leftKneeFlexion : currentMetrics.rightKneeFlexion}
+                pro={isRightHanded ? professionalFrames[synchronizedProFrame].metrics.leftKneeFlexion : professionalFrames[synchronizedProFrame].metrics.rightKneeFlexion}
                 unit="°"
               />
               <MetricCard
                 title="Spine Angle"
                 yours={currentMetrics.spineAngle}
-                pro={professionalFrames[currentFrameIndex].metrics.spineAngle}
+                pro={professionalFrames[synchronizedProFrame].metrics.spineAngle}
                 unit="°"
               />
               <MetricCard
                 title="Foot Positioning"
                 yours={currentMetrics.footPositioning}
-                pro={professionalFrames[currentFrameIndex].metrics.footPositioning}
+                pro={professionalFrames[synchronizedProFrame].metrics.footPositioning}
                 unit="°"
               />
               <MetricCard
                 title="Weight Transfer"
                 yours={currentMetrics.weightTransfer}
-                pro={professionalFrames[currentFrameIndex].metrics.weightTransfer}
+                pro={professionalFrames[synchronizedProFrame].metrics.weightTransfer}
                 unit="%"
               />
             </div>

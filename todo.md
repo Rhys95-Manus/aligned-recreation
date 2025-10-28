@@ -131,3 +131,21 @@
 - [x] Opacity-based depth cues (closer = brighter, further = dimmer)
 - [x] Manual connection drawing with depth-based line thickness
 
+
+
+
+## CRITICAL ISSUES - User Feedback (Current Session) - ALL RESOLVED!
+- [x] 3D perspective not visible - depth transformation too subtle, can't tell what hologram is doing
+- [x] Enhance 3D visualization with stronger z-axis scaling and color gradients
+- [x] Add rotation visualization to show arm going back/forward clearly
+- [x] Left/right handed toggle doesn't swap live metrics (misleading - shows right arm angles for left-handed users)
+- [x] Swap metric labels and calculations when left-handed mode is selected
+- [x] Phase desynchronization - user and hologram in different motion phases (user on release, hologram on cocking)
+- [x] Implement phase detection based on user's current metrics
+- [x] Synchronize hologram phase with user's current phase for accurate comparison
+
+### Solutions Implemented:
+- **3D Perspective**: Reduced perspective factor 300→150, increased depth multiplier 100→500, added color gradients (blue=close, red=far), larger points (6px), thicker lines (4px)
+- **Metric Swapping**: Left/right handed toggle now swaps both labels AND values for elbow/knee metrics
+- **Phase Synchronization**: Created phaseDetection.ts utility with scoring algorithm, detects user phase based on metrics, synchronizes hologram to show same phase, displays phase indicator in purple badge
+
