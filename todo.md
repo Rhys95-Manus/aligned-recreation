@@ -114,10 +114,20 @@
 
 
 ## Hologram Fixes Needed
-- [ ] Fix hologram to throw with RIGHT arm (currently throwing with left)
-- [ ] Apply 3D perspective transformation to make hologram look 3D instead of flat 2D
-- [ ] Improve keyframe poses to look more like an actual quarterback throw
-- [ ] Add left-handed / right-handed toggle option before replay
-- [ ] Mirror hologram motion based on user's handedness selection
+- [x] Fix hologram to throw with RIGHT arm - exaggerated cocking and release positions
+- [x] Apply 3D perspective transformation to make hologram look 3D instead of flat 2D
+- [x] Improve keyframe poses to look more like an actual quarterback throw
+- [x] Add left-handed / right-handed toggle option before replay
+- [x] Mirror hologram motion based on user's handedness selection
 - [ ] Update metrics comparison to match selected handedness
+
+
+
+## Critical Hologram Issues - RESOLVED!
+- [x] WRONG ARM MOVING - Fixed x-coordinate mirroring (x = 1 - lm.x) so right arm appears on viewer's left
+- [x] 2D flat appearance - Added 3D perspective transformation with z-depth scaling and opacity
+- [x] Added left/right handed toggle button to switch between right-handed and left-handed motions
+- [x] Depth visualization with size scaling (closer = larger, further = smaller)
+- [x] Opacity-based depth cues (closer = brighter, further = dimmer)
+- [x] Manual connection drawing with depth-based line thickness
 

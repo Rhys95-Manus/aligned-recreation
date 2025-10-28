@@ -34,6 +34,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   
   const [isPlaying, setIsPlaying] = useState(true); // Auto-play on load
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
+  const [isRightHanded, setIsRightHanded] = useState(true); // Toggle for left/right handed
   
   // Generate professional motion sequence (same length as user motion)
   const professionalFrames = useRef<ProfessionalFrame[]>(
@@ -123,22 +124,85 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#ff00ff';
         
-        // Draw connections
-        drawConnectors(ctx, proFrame.landmarks, POSE_CONNECTIONS, {
-          color: '#ff00ff',
-          lineWidth: 3
+        // Mirror landmarks for correct left/right orientation
+        // (MediaPipe x:0 = left, x:1 = right, but we need to flip for viewer perspective)
+        // Apply additional flip if user wants left-handed hologram
+        const mirroredLandmarks = proFrame.landmarks.map((lm: any) => ({
+          ...lm,
+          x: isRightHanded ? (1 - lm.x) : lm.x  // Right-handed: flip, Left-handed: no flip
+        }));
+        
+        // Apply 3D perspective transformation
+        const perspectiveFactor = 300; // Adjust for stronger/weaker perspective
+        const transformedLandmarks = mirroredLandmarks.map((lm: any) => {
+          // Z-axis: positive = away from camera, negative = toward camera
+          const depth = lm.z || 0;
+          const scale = perspectiveFactor / (perspectiveFactor + depth * 100);
+          
+          // Apply perspective scaling
+          const centerX = 0.5;
+          const centerY = 0.5;
+          const perspectiveX = centerX + (lm.x - centerX) * scale;
+          const perspectiveY = centerY + (lm.y - centerY) * scale;
+          
+          // Calculate opacity based on depth (further = dimmer)
+          const opacity = Math.max(0.4, Math.min(1.0, 1.0 - depth * 1.5));
+          
+          return {
+            ...lm,
+            x: perspectiveX,
+            y: perspectiveY,
+            scale,
+            opacity,
+            depth
+          };
         });
         
-        // Draw only body landmark points (skip face 0-10)
-        proFrame.landmarks.forEach((landmark: any, index: number) => {
-          if (index >= 11) { // Only draw body landmarks
+        // Draw connections with depth-based styling
+        // We need to manually draw connections to apply depth effects
+        const connections = [
+          [11, 13], [13, 15], // Left arm
+          [12, 14], [14, 16], // Right arm
+          [11, 12], // Shoulders
+          [11, 23], [12, 24], // Torso
+          [23, 24], // Hips
+          [23, 25], [25, 27], // Left leg
+          [24, 26], [26, 28], // Right leg
+        ];
+        
+        connections.forEach(([startIdx, endIdx]) => {
+          const start = transformedLandmarks[startIdx];
+          const end = transformedLandmarks[endIdx];
+          
+          if (start && end) {
+            const avgOpacity = (start.opacity + end.opacity) / 2;
+            const avgDepth = (start.depth + end.depth) / 2;
+            
             ctx.beginPath();
-            ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 4, 0, 2 * Math.PI);
-            ctx.fillStyle = '#ff00ff';
+            ctx.moveTo(start.x * canvas.width, start.y * canvas.height);
+            ctx.lineTo(end.x * canvas.width, end.y * canvas.height);
+            
+            // Color intensity based on depth
+            const intensity = Math.floor(255 * avgOpacity);
+            ctx.strokeStyle = `rgba(255, 0, 255, ${avgOpacity})`;
+            ctx.lineWidth = 3 * (0.8 + avgOpacity * 0.4); // Thicker lines for closer parts
+            ctx.stroke();
+          }
+        });
+        
+        // Draw only body landmark points (skip face 0-10) with 3D effects
+        transformedLandmarks.forEach((landmark: any, index: number) => {
+          if (index >= 11) { // Only draw body landmarks
+            const radius = 4 * landmark.scale; // Scale size based on depth
+            
+            ctx.beginPath();
+            ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = `rgba(255, 0, 255, ${landmark.opacity})`;
             ctx.fill();
-            // Add cyan glow
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 2;
+            
+            // Add cyan glow with depth-based intensity
+            ctx.strokeStyle = `rgba(0, 255, 255, ${landmark.opacity * 0.8})`;
+            ctx.lineWidth = 2 * landmark.scale;
             ctx.stroke();
           }
         });
@@ -146,7 +210,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         ctx.shadowBlur = 0;
       }
     }
-  }, [currentFrameIndex, recordedFrames]);
+  }, [currentFrameIndex, recordedFrames, isRightHanded]);
   
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -199,7 +263,17 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           
           {/* Professional Hologram */}
           <div className="bg-[#1a1f2e] rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4 text-pink-400">Professional Reference</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-pink-400">Professional Reference</h2>
+              <Button 
+                onClick={() => setIsRightHanded(!isRightHanded)} 
+                variant="outline" 
+                size="sm"
+                className="text-xs"
+              >
+                {isRightHanded ? '🤜 Right-Handed' : '🤛 Left-Handed'}
+              </Button>
+            </div>
             <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
               <canvas
                 ref={proCanvasRef}

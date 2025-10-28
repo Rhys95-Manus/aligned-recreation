@@ -131,16 +131,16 @@ export function createThrowingKeyframes(): Keyframe[] {
         ),
         
         // Shoulders - maximum rotation
-        createLandmark(baseX - 0.12, baseY - 0.25, -0.06), // Left shoulder forward
-        createLandmark(baseX + 0.06, baseY - 0.21, 0.08), // Right shoulder way back
+        createLandmark(baseX - 0.15, baseY - 0.25, -0.08), // Left shoulder forward
+        createLandmark(baseX + 0.15, baseY - 0.21, 0.15), // Right shoulder WAY back
         
         // Elbows - right elbow high and back (cocked position)
-        createLandmark(baseX - 0.14, baseY - 0.14, -0.04), // Left elbow
-        createLandmark(baseX + 0.12, baseY - 0.28, 0.15), // Right elbow high and back
+        createLandmark(baseX - 0.16, baseY - 0.14, -0.05), // Left elbow
+        createLandmark(baseX + 0.25, baseY - 0.30, 0.25), // Right elbow HIGH and BACK
         
-        // Wrists - right hand behind head
-        createLandmark(baseX - 0.15, baseY - 0.02, -0.03), // Left wrist
-        createLandmark(baseX + 0.08, baseY - 0.35, 0.10), // Right wrist behind head
+        // Wrists - right hand behind head (throwing position)
+        createLandmark(baseX - 0.17, baseY - 0.02, -0.04), // Left wrist
+        createLandmark(baseX + 0.20, baseY - 0.38, 0.20), // Right wrist BEHIND head
         
         // Hands
         ...Array(6).fill(null).map((_, i) => 
@@ -225,16 +225,16 @@ export function createThrowingKeyframes(): Keyframe[] {
         ),
         
         // Shoulders - square to target
-        createLandmark(baseX - 0.09, baseY - 0.23, 0), // Left shoulder
-        createLandmark(baseX + 0.09, baseY - 0.23, 0), // Right shoulder
+        createLandmark(baseX - 0.10, baseY - 0.23, 0.02), // Left shoulder
+        createLandmark(baseX + 0.10, baseY - 0.23, -0.02), // Right shoulder forward
         
-        // Elbows - right arm extended
-        createLandmark(baseX - 0.12, baseY - 0.11, 0), // Left elbow
-        createLandmark(baseX + 0.05, baseY - 0.25, -0.08), // Right elbow extended forward
+        // Elbows - right arm FULLY extended forward
+        createLandmark(baseX - 0.13, baseY - 0.11, 0.01), // Left elbow
+        createLandmark(baseX - 0.05, baseY - 0.28, -0.15), // Right elbow EXTENDED FORWARD
         
-        // Wrists - right hand at release point
-        createLandmark(baseX - 0.13, baseY + 0.01, 0), // Left wrist
-        createLandmark(baseX + 0.02, baseY - 0.32, -0.12), // Right wrist extended
+        // Wrists - right hand at release point FAR FORWARD
+        createLandmark(baseX - 0.14, baseY + 0.01, 0.01), // Left wrist
+        createLandmark(baseX - 0.15, baseY - 0.35, -0.25), // Right wrist FAR FORWARD
         
         // Hands
         ...Array(6).fill(null).map((_, i) => 
@@ -335,6 +335,10 @@ function interpolateLandmarks(kf1: Keyframe, kf2: Keyframe, t: number): any[] {
  * Get landmarks for a specific progress through the motion (0-1)
  */
 export function getLandmarksAtProgress(progress: number): any[] {
+  // Debug logging
+  if (progress === 0 || Math.abs(progress - 0.55) < 0.01) {
+    console.log(`🎯 Progress: ${progress.toFixed(2)} (${progress < 0.2 ? 'Neutral' : progress < 0.45 ? 'Wind-up' : progress < 0.65 ? 'COCKING' : progress < 0.78 ? 'Acceleration' : progress < 0.88 ? 'RELEASE' : 'Follow-through'})`);
+  }
   const keyframes = createThrowingKeyframes();
   
   // Clamp progress
@@ -359,7 +363,20 @@ export function getLandmarksAtProgress(progress: number): any[] {
   // Apply easing for smooth motion
   const easedT = easeInOutCubic(t);
   
-  return interpolateLandmarks(kf1, kf2, easedT);
+  const result = interpolateLandmarks(kf1, kf2, easedT);
+  
+  // Debug logging at cocking phase
+  if (Math.abs(progress - 0.55) < 0.01 && result.length >= 17) {
+    console.log('🦾 Cocking Phase Arm Positions:');
+    console.log('  Left Shoulder (11) x:', result[11].x.toFixed(3), 'z:', result[11].z.toFixed(3));
+    console.log('  Right Shoulder (12) x:', result[12].x.toFixed(3), 'z:', result[12].z.toFixed(3));
+    console.log('  Left Elbow (13) x:', result[13].x.toFixed(3), 'z:', result[13].z.toFixed(3));
+    console.log('  Right Elbow (14) x:', result[14].x.toFixed(3), 'z:', result[14].z.toFixed(3));
+    console.log('  Left Wrist (15) x:', result[15].x.toFixed(3), 'z:', result[15].z.toFixed(3));
+    console.log('  Right Wrist (16) x:', result[16].x.toFixed(3), 'z:', result[16].z.toFixed(3));
+  }
+  
+  return result;
 }
 
 /**
