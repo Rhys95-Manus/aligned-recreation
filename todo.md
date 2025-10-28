@@ -149,3 +149,21 @@
 - **Metric Swapping**: Left/right handed toggle now swaps both labels AND values for elbow/knee metrics
 - **Phase Synchronization**: Created phaseDetection.ts utility with scoring algorithm, detects user phase based on metrics, synchronizes hologram to show same phase, displays phase indicator in purple badge
 
+
+
+
+## NEW CRITICAL ISSUES - Hologram Animation & Metrics (Current Session)
+- [ ] All metrics should swap for left/right handed (not just elbow/knee) - lead leg changes, weight transfer flips
+- [x] 3D perspective transformation is DISTORTING skeleton into boxy/geometric shapes - not fluid/human-looking
+- [x] Fix transformation to use body center (hip midpoint) instead of canvas center to prevent warping
+- [x] Hologram only shows right arm moving - hips, feet, legs, torso are static or barely moving
+- [x] Full-body animation missing: hips should rotate, feet should shift, legs should transfer weight
+- [x] Keyframes DO include full-body movement data - problem was phase synchronization locking to single frame
+- [ ] "Stop and Score" button press contaminates last 2-3 seconds of motion capture with leaning/reaching movement
+- [ ] Need to trim last 2-3 seconds from recorded frames before analysis
+
+### Fixes Applied:
+- **3D Transformation**: Changed to use body center (hip midpoint) as perspective origin, reduced distortion (perspective factor 150→500, depth multiplier 500→200)
+- **Phase Synchronization Removed**: Was locking hologram to single static frame per phase, now plays through full animation
+- **Hologram Animation**: Now animates through all phases showing full-body movement (hips, legs, feet, arms)
+

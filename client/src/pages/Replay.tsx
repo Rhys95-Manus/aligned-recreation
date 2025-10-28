@@ -37,7 +37,6 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isRightHanded, setIsRightHanded] = useState(true); // Toggle for left/right handed
   const [currentPhase, setCurrentPhase] = useState<MotionPhase>("Neutral");
-  const [synchronizedProFrame, setSynchronizedProFrame] = useState(0); // Hologram frame synchronized to user's phase
   
   // Generate professional motion sequence (same length as user motion)
   const professionalFrames = useRef<ProfessionalFrame[]>(
@@ -80,7 +79,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     };
   }, [isPlaying, recordedFrames.length]);
   
-  // Detect phase and synchronize hologram
+  // Detect current phase for display (but don't lock hologram to it)
   useEffect(() => {
     if (!recordedFrames[currentFrameIndex]) return;
     
@@ -89,11 +88,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     // Detect which phase the user is currently in
     const detectedPhase = detectPhase(currentFrame.metrics);
     setCurrentPhase(detectedPhase);
-    
-    // Synchronize hologram to show the same phase
-    const syncedFrame = getPhaseMiddleFrame(detectedPhase, professionalFrames.length);
-    setSynchronizedProFrame(syncedFrame);
-  }, [currentFrameIndex, recordedFrames, professionalFrames.length]);
+  }, [currentFrameIndex, recordedFrames]);
   
   // Render current frame
   useEffect(() => {
@@ -129,11 +124,11 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       }
     }
     
-    // Render professional hologram (using synchronized frame)
-    if (proCanvasRef.current && professionalFrames[synchronizedProFrame]) {
+    // Render professional hologram (plays through full animation)
+    if (proCanvasRef.current && professionalFrames[currentFrameIndex]) {
       const canvas = proCanvasRef.current;
       const ctx = canvas.getContext('2d');
-      const proFrame = professionalFrames[synchronizedProFrame];
+      const proFrame = professionalFrames[currentFrameIndex];
       
       if (ctx && proFrame) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -150,20 +145,25 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           x: isRightHanded ? (1 - lm.x) : lm.x  // Right-handed: flip, Left-handed: no flip
         }));
         
-        // Apply AGGRESSIVE 3D perspective transformation for clear depth visualization
-        const perspectiveFactor = 150; // Lower = stronger perspective (was 300)
+        // Calculate body center (midpoint between hips) for natural perspective
+        const leftHip = mirroredLandmarks[23];
+        const rightHip = mirroredLandmarks[24];
+        const bodyCenterX = leftHip && rightHip ? (leftHip.x + rightHip.x) / 2 : 0.5;
+        const bodyCenterY = leftHip && rightHip ? (leftHip.y + rightHip.y) / 2 : 0.5;
+        
+        // Apply SUBTLE 3D perspective transformation - keep skeleton proportional
         const transformedLandmarks = mirroredLandmarks.map((lm: any, index: number) => {
           // Z-axis: positive = away from camera, negative = toward camera
           const depth = lm.z || 0;
           
-          // MUCH stronger perspective scaling
-          const scale = perspectiveFactor / (perspectiveFactor + depth * 500); // Increased from 100 to 500
+          // SUBTLE perspective scaling (much gentler to preserve human proportions)
+          const perspectiveFactor = 500; // Higher = gentler perspective
+          const scale = perspectiveFactor / (perspectiveFactor + depth * 200); // Reduced from 500 to 200
           
-          // Apply perspective scaling from center
-          const centerX = 0.5;
-          const centerY = 0.5;
-          const perspectiveX = centerX + (lm.x - centerX) * scale;
-          const perspectiveY = centerY + (lm.y - centerY) * scale;
+          // Apply perspective scaling from BODY CENTER (not canvas center)
+          // This keeps the skeleton proportional and human-looking
+          const perspectiveX = bodyCenterX + (lm.x - bodyCenterX) * scale;
+          const perspectiveY = bodyCenterY + (lm.y - bodyCenterY) * scale;
           
           // STRONGER opacity variation (further = much dimmer)
           const opacity = Math.max(0.2, Math.min(1.0, 1.0 - depth * 3.0)); // Increased from 1.5 to 3.0
@@ -255,7 +255,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         ctx.shadowBlur = 0;
       }
     }
-  }, [currentFrameIndex, recordedFrames, isRightHanded, synchronizedProFrame]);
+  }, [currentFrameIndex, recordedFrames, isRightHanded]);
   
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -363,7 +363,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         </div>
         
         {/* Real-Time Metrics */}
-        {currentMetrics && professionalFrames[synchronizedProFrame] && (
+        {currentMetrics && professionalFrames[currentFrameIndex] && (
           <div className="bg-[#1a1f2e] rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">Real-Time Metrics (Frame {currentFrameIndex + 1}/{recordedFrames.length})</h2>
@@ -375,49 +375,49 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
               <MetricCard
                 title="Hip Rotation"
                 yours={currentMetrics.hipRotation}
-                pro={professionalFrames[synchronizedProFrame].metrics.hipRotation}
+                pro={professionalFrames[currentFrameIndex].metrics.hipRotation}
                 unit="°"
               />
               <MetricCard
                 title={isRightHanded ? "Right Elbow" : "Left Elbow"}
                 yours={isRightHanded ? currentMetrics.rightElbowAngle : currentMetrics.leftElbowAngle}
-                pro={isRightHanded ? professionalFrames[synchronizedProFrame].metrics.rightElbowAngle : professionalFrames[synchronizedProFrame].metrics.leftElbowAngle}
+                pro={isRightHanded ? professionalFrames[currentFrameIndex].metrics.rightElbowAngle : professionalFrames[currentFrameIndex].metrics.leftElbowAngle}
                 unit="°"
               />
               <MetricCard
                 title={isRightHanded ? "Left Elbow" : "Right Elbow"}
                 yours={isRightHanded ? currentMetrics.leftElbowAngle : currentMetrics.rightElbowAngle}
-                pro={isRightHanded ? professionalFrames[synchronizedProFrame].metrics.leftElbowAngle : professionalFrames[synchronizedProFrame].metrics.rightElbowAngle}
+                pro={isRightHanded ? professionalFrames[currentFrameIndex].metrics.leftElbowAngle : professionalFrames[currentFrameIndex].metrics.rightElbowAngle}
                 unit="°"
               />
               <MetricCard
                 title={isRightHanded ? "Right Knee" : "Left Knee"}
                 yours={isRightHanded ? currentMetrics.rightKneeFlexion : currentMetrics.leftKneeFlexion}
-                pro={isRightHanded ? professionalFrames[synchronizedProFrame].metrics.rightKneeFlexion : professionalFrames[synchronizedProFrame].metrics.leftKneeFlexion}
+                pro={isRightHanded ? professionalFrames[currentFrameIndex].metrics.rightKneeFlexion : professionalFrames[currentFrameIndex].metrics.leftKneeFlexion}
                 unit="°"
               />
               <MetricCard
                 title={isRightHanded ? "Left Knee" : "Right Knee"}
                 yours={isRightHanded ? currentMetrics.leftKneeFlexion : currentMetrics.rightKneeFlexion}
-                pro={isRightHanded ? professionalFrames[synchronizedProFrame].metrics.leftKneeFlexion : professionalFrames[synchronizedProFrame].metrics.rightKneeFlexion}
+                pro={isRightHanded ? professionalFrames[currentFrameIndex].metrics.leftKneeFlexion : professionalFrames[currentFrameIndex].metrics.rightKneeFlexion}
                 unit="°"
               />
               <MetricCard
                 title="Spine Angle"
                 yours={currentMetrics.spineAngle}
-                pro={professionalFrames[synchronizedProFrame].metrics.spineAngle}
+                pro={professionalFrames[currentFrameIndex].metrics.spineAngle}
                 unit="°"
               />
               <MetricCard
                 title="Foot Positioning"
                 yours={currentMetrics.footPositioning}
-                pro={professionalFrames[synchronizedProFrame].metrics.footPositioning}
+                pro={professionalFrames[currentFrameIndex].metrics.footPositioning}
                 unit="°"
               />
               <MetricCard
                 title="Weight Transfer"
                 yours={currentMetrics.weightTransfer}
-                pro={professionalFrames[synchronizedProFrame].metrics.weightTransfer}
+                pro={professionalFrames[currentFrameIndex].metrics.weightTransfer}
                 unit="%"
               />
             </div>
