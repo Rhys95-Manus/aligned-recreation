@@ -117,7 +117,12 @@ export function getProfessionalReference(
   subcategory: string, 
   motionName: string
 ): ProfessionalReference | null {
-  const key = `${category}-${motionName.toLowerCase().replace(/\s+/g, '')}`;
+  // Convert motion name to lowercase and replace spaces with dashes to match key format
+  // e.g., "Football Throw" -> "football-throw"
+  // Use SUBCATEGORY (e.g., "football") not category (e.g., "sports") for the key
+  const formattedMotion = motionName.toLowerCase().replace(/\s+/g, '-');
+  const key = `${subcategory.toLowerCase()}-${formattedMotion}`;
+  console.log('🔑 Looking for professional reference with key:', key);
   return professionalReferences[key] || null;
 }
 

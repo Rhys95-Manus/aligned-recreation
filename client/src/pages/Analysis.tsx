@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Pose, Results } from "@mediapipe/pose";
 import { getProfessionalReference, calculateMetricScore, getComparisonText } from "@/data/professionalReferences";
+import Replay from "./Replay";
 
 // Detailed analysis data structure
 interface DetailedAnalysisData {
@@ -49,7 +50,25 @@ interface DetailedAnalysisData {
     phaseDurations: string;
     recommendation: string;
   };
+  recordedFrames?: Array<{
+    timestamp: number;
+    landmarks: any[];
+    metrics: {
+      hipRotation: number;
+      rightElbowAngle: number;
+      leftElbowAngle: number;
+      rightKneeFlexion: number;
+      leftKneeFlexion: number;
+      spineAngle: number;
+      rightShoulderAngle: number;
+      leftShoulderAngle: number;
+      footPositioning: number;
+      weightTransfer: number;
+    };
+  }>;
 }
+
+console.log('🔥 Analysis.tsx loaded - VERSION WITH PEAK TRACKING - timestamp:', new Date().toISOString());
 
 export default function Analysis() {
   const [location] = useLocation();
@@ -92,8 +111,41 @@ export default function Analysis() {
   const [weightTransfer, setWeightTransfer] = useState(0);
   const [strideLength, setStrideLength] = useState(0);
   
+  // Peak value tracking (for capturing maximum values during motion)
+  const peakHipRotation = useRef(0);
+  const peakRightElbowAngle = useRef(0);
+  const peakLeftElbowAngle = useRef(0);
+  const peakRightKneeFlexion = useRef(0);
+  const peakLeftKneeFlexion = useRef(0);
+  const peakSpineAngle = useRef(0);
+  const peakRightShoulderAngle = useRef(0);
+  const peakLeftShoulderAngle = useRef(0);
+  const peakFootPositioning = useRef(0);
+  const peakWeightTransfer = useRef(0);
+  
   // Session state
-  const [sessionState, setSessionState] = useState<'idle' | 'ready' | 'capturing' | 'complete'>('idle');
+  const [sessionState, setSessionState] = useState<'idle' | 'ready' | 'countdown' | 'capturing' | 'complete'>('idle');
+  const isCapturingRef = useRef(false); // Ref to avoid closure issues in onResults
+  const [countdown, setCountdown] = useState(5); // Countdown from 5 to 0
+  
+  // Frame recording for replay
+  const recordedFramesRef = useRef<Array<{
+    timestamp: number;
+    landmarks: any[];
+    metrics: {
+      hipRotation: number;
+      rightElbowAngle: number;
+      leftElbowAngle: number;
+      rightKneeFlexion: number;
+      leftKneeFlexion: number;
+      spineAngle: number;
+      rightShoulderAngle: number;
+      leftShoulderAngle: number;
+      footPositioning: number;
+      weightTransfer: number;
+    };
+  }>>([]);
+  const captureStartTimeRef = useRef<number>(0);
   const [detailedAnalysis, setDetailedAnalysis] = useState<DetailedAnalysisData | null>(null);
   const [totalPoints, setTotalPoints] = useState(0);
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
@@ -126,6 +178,32 @@ export default function Analysis() {
       }
     };
   }, [stream]);
+  
+  // Countdown timer effect
+  useEffect(() => {
+    if (sessionState === 'countdown' && countdown > 0) {
+      const timer = setTimeout(() => {
+        const newCount = countdown - 1;
+        setCountdown(newCount);
+        
+        // Speak the countdown number
+        if (newCount > 0) {
+          speak(newCount.toString());
+        } else {
+          // Countdown finished, start capturing
+          speak("Perform your motion now!");
+          isCapturingRef.current = true;
+          recordedFramesRef.current = []; // Clear previous recording
+          captureStartTimeRef.current = Date.now(); // Record start time
+          setSessionState('capturing');
+          console.log('▶️ Countdown complete - starting capture');
+          console.log('🎥 Frame recording started');
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [sessionState, countdown]);
   
   // Helper function to calculate angle between three points (in degrees)
   const calculateAngle = (a: any, b: any, c: any): number => {
@@ -279,12 +357,17 @@ export default function Analysis() {
       
       // Advanced biomechanical calculations
       
-      // 1. Hip Rotation - angle between left hip, center, and right hip
+      // 1. Hip Rotation - measure deviation from level hips (rotation amount)
       const leftHip = landmarks[23];
       const rightHip = landmarks[24];
       let hipRotationCalc = 0;
       if (leftHip && rightHip) {
-        hipRotationCalc = Math.abs(Math.atan2(rightHip.y - leftHip.y, rightHip.x - leftHip.x) * 180 / Math.PI);
+        // Calculate hip line angle (0° = horizontal right, 90° = vertical up)
+        const hipLineAngle = Math.abs(Math.atan2(rightHip.y - leftHip.y, rightHip.x - leftHip.x) * 180 / Math.PI);
+        // Rotation = deviation from 90° (level hips)
+        // If hips are level (90°), rotation = 0°
+        // If hips are rotated, rotation increases
+        hipRotationCalc = Math.abs(90 - hipLineAngle);
         setHipRotation(hipRotationCalc);
       }
       
@@ -296,12 +379,16 @@ export default function Analysis() {
       let leftElbowCalc = 0;
       
       if (rightShoulder && rightElbow && rightWrist) {
-        rightElbowCalc = calculateAngle(rightShoulder, rightElbow, rightWrist);
+        const rawAngle = calculateAngle(rightShoulder, rightElbow, rightWrist);
+        // Convert to flexion angle: 180° - raw angle (so 0° = straight, 90° = right angle bend)
+        rightElbowCalc = 180 - rawAngle;
         setRightElbowAngle(rightElbowCalc);
       }
       
       if (leftShoulder && leftElbow && leftWrist) {
-        leftElbowCalc = calculateAngle(leftShoulder, leftElbow, leftWrist);
+        const rawAngle = calculateAngle(leftShoulder, leftElbow, leftWrist);
+        // Convert to flexion angle: 180° - raw angle
+        leftElbowCalc = 180 - rawAngle;
         setLeftElbowAngle(leftElbowCalc);
       }
       
@@ -310,12 +397,16 @@ export default function Analysis() {
       let leftKneeCalc = 0;
       
       if (rightHip && rightKnee && rightAnkle) {
-        rightKneeCalc = calculateAngle(rightHip, rightKnee, rightAnkle);
+        const rawAngle = calculateAngle(rightHip, rightKnee, rightAnkle);
+        // Convert to flexion angle: 180° - raw angle (so 0° = straight leg, 90° = right angle bend)
+        rightKneeCalc = 180 - rawAngle;
         setRightKneeFlexion(rightKneeCalc);
       }
       
       if (leftHip && leftKnee && leftAnkle) {
-        leftKneeCalc = calculateAngle(leftHip, leftKnee, leftAnkle);
+        const rawAngle = calculateAngle(leftHip, leftKnee, leftAnkle);
+        // Convert to flexion angle: 180° - raw angle
+        leftKneeCalc = 180 - rawAngle;
         setLeftKneeFlexion(leftKneeCalc);
       }
       
@@ -389,7 +480,42 @@ export default function Analysis() {
           weightTransferCalc = Math.min(100, Math.max(0, weightTransferCalc));
           setWeightTransfer(weightTransferCalc);
         }
-      }     
+      }
+      
+      // Track peak values during capture session (use ref to avoid closure issues)
+      if (isCapturingRef.current) {
+        console.log('📈 Tracking peaks - isCapturing:', isCapturingRef.current);
+        if (hipRotationCalc > peakHipRotation.current) peakHipRotation.current = hipRotationCalc;
+        if (rightElbowCalc > peakRightElbowAngle.current) peakRightElbowAngle.current = rightElbowCalc;
+        if (leftElbowCalc > peakLeftElbowAngle.current) peakLeftElbowAngle.current = leftElbowCalc;
+        if (rightKneeCalc > peakRightKneeFlexion.current) peakRightKneeFlexion.current = rightKneeCalc;
+        if (leftKneeCalc > peakLeftKneeFlexion.current) peakLeftKneeFlexion.current = leftKneeCalc;
+        if (spineAngleCalc > peakSpineAngle.current) peakSpineAngle.current = spineAngleCalc;
+        if (rightShoulderCalc > peakRightShoulderAngle.current) peakRightShoulderAngle.current = rightShoulderCalc;
+        if (leftShoulderCalc > peakLeftShoulderAngle.current) peakLeftShoulderAngle.current = leftShoulderCalc;
+        if (footPositioningCalc > peakFootPositioning.current) peakFootPositioning.current = footPositioningCalc;
+        if (weightTransferCalc > peakWeightTransfer.current) peakWeightTransfer.current = weightTransferCalc;
+        
+        // Record this frame for replay
+        const timestamp = Date.now() - captureStartTimeRef.current;
+        recordedFramesRef.current.push({
+          timestamp,
+          landmarks: JSON.parse(JSON.stringify(landmarks)), // Deep copy
+          metrics: {
+            hipRotation: hipRotationCalc,
+            rightElbowAngle: rightElbowCalc,
+            leftElbowAngle: leftElbowCalc,
+            rightKneeFlexion: rightKneeCalc,
+            leftKneeFlexion: leftKneeCalc,
+            spineAngle: spineAngleCalc,
+            rightShoulderAngle: rightShoulderCalc,
+            leftShoulderAngle: leftShoulderCalc,
+            footPositioning: footPositioningCalc,
+            weightTransfer: weightTransferCalc
+          }
+        });
+      }
+      
       // Log biomechanical metrics (use calculated values, not state)
       console.log('=== BIOMECHANICAL METRICS ===');
       console.log(`Hip Rotation: ${hipRotationCalc.toFixed(1)}°`);
@@ -622,8 +748,23 @@ export default function Analysis() {
   };
   
   const startCapture = () => {
-    setSessionState('capturing');
-    speak("Perform your motion now");
+    // Reset peak values at start of capture
+    peakHipRotation.current = 0;
+    peakRightElbowAngle.current = 0;
+    peakLeftElbowAngle.current = 0;
+    peakRightKneeFlexion.current = 0;
+    peakLeftKneeFlexion.current = 0;
+    peakSpineAngle.current = 0;
+    peakRightShoulderAngle.current = 0;
+    peakLeftShoulderAngle.current = 0;
+    peakFootPositioning.current = 0;
+    peakWeightTransfer.current = 0;
+    
+    // Start countdown instead of immediate capture
+    setCountdown(5);
+    setSessionState('countdown');
+    console.log('⏱️ Starting 5-second countdown');
+    speak("Get ready. Starting in 5 seconds");
   };
   
   // Helper function to get drill recommendation for a metric
@@ -641,12 +782,20 @@ export default function Analysis() {
   };
 
   const stopAndScore = async () => {
+    console.log('🛑 stopAndScore function called! sessionState:', sessionState);
+    isCapturingRef.current = false; // Stop peak tracking
+    console.log('⏹️ Stopped capture - isCapturingRef set to:', isCapturingRef.current);
     speak("Here's your detailed analysis");
     
     // Get professional reference for this motion
     const category = params.get('category') || '';
     const subcategory = params.get('subcategory') || '';
+    console.log('📊 Getting professional reference for:');
+    console.log('  category:', category);
+    console.log('  subcategory:', subcategory);
+    console.log('  motionName:', motionName);
     const professionalRef = getProfessionalReference(category, subcategory, motionName);
+    console.log('📊 Professional reference:', professionalRef ? 'FOUND' : 'NOT FOUND (NULL)');
     
     // Calculate scores based on captured biomechanical data vs professional reference
     let biomechanicalData: Array<{
@@ -660,15 +809,25 @@ export default function Analysis() {
     let overallScore = 75; // Base score
     
     if (professionalRef) {
-      // Use actual captured metrics and compare with professional reference
+      // Use PEAK values captured during the motion (not final frame values)
+      console.log('=== USING PEAK VALUES FOR SCORING ===');
+      console.log(`Peak Hip Rotation: ${peakHipRotation.current.toFixed(1)}°`);
+      console.log(`Peak Elbow Angles: R=${peakRightElbowAngle.current.toFixed(1)}° L=${peakLeftElbowAngle.current.toFixed(1)}°`);
+      console.log(`Peak Knee Flexion: R=${peakRightKneeFlexion.current.toFixed(1)}° L=${peakLeftKneeFlexion.current.toFixed(1)}°`);
+      console.log(`Peak Spine Angle: ${peakSpineAngle.current.toFixed(1)}°`);
+      console.log(`Peak Shoulder Angles: R=${peakRightShoulderAngle.current.toFixed(1)}° L=${peakLeftShoulderAngle.current.toFixed(1)}°`);
+      console.log(`Peak Foot Positioning: ${peakFootPositioning.current.toFixed(1)}°`);
+      console.log(`Peak Weight Transfer: ${peakWeightTransfer.current.toFixed(1)}%`);
+      console.log('=====================================');
+      
       const userMetrics = [
-        { name: "Hip Rotation", value: hipRotation, metricName: "Hip Rotation" },
-        { name: "Elbow Angle", value: (rightElbowAngle + leftElbowAngle) / 2, metricName: "Elbow Flexion" },
-        { name: "Knee Flexion", value: (rightKneeFlexion + leftKneeFlexion) / 2, metricName: "Knee Flexion" },
-        { name: "Spine Angle", value: spineAngle, metricName: "Spine Extension" },
-        { name: "Shoulder Angle", value: (rightShoulderAngle + leftShoulderAngle) / 2, metricName: "Shoulder External Rotation" },
-        { name: "Foot Positioning", value: footPositioning, metricName: "Foot Positioning" },
-        { name: "Weight Transfer", value: weightTransfer, metricName: "Weight Transfer" }
+        { name: "Hip Rotation", value: peakHipRotation.current, metricName: "Hip Rotation" },
+        { name: "Elbow Angle", value: (peakRightElbowAngle.current + peakLeftElbowAngle.current) / 2, metricName: "Elbow Flexion" },
+        { name: "Knee Flexion", value: (peakRightKneeFlexion.current + peakLeftKneeFlexion.current) / 2, metricName: "Knee Flexion" },
+        { name: "Spine Angle", value: peakSpineAngle.current, metricName: "Spine Extension" },
+        { name: "Shoulder Angle", value: (peakRightShoulderAngle.current + peakLeftShoulderAngle.current) / 2, metricName: "Shoulder External Rotation" },
+        { name: "Foot Positioning", value: peakFootPositioning.current, metricName: "Foot Positioning" },
+        { name: "Weight Transfer", value: peakWeightTransfer.current, metricName: "Weight Transfer" }
       ];
       
       let totalScore = 0;
@@ -779,19 +938,21 @@ export default function Analysis() {
         trend: "stable"
       },
       powerGeneration: {
-        score: Math.round((hipRotation / 61) * 100), // Based on hip rotation vs professional average
-        peakVelocity: `${((hipRotation / 61) * 100).toFixed(1)}% of professional`,
-        forceTransfer: `${weightTransfer.toFixed(1)}% weight transfer`,
-        recommendation: weightTransfer < 60 ? "Increase weight transfer to front foot for more power" : "Good power transfer through kinetic chain"
+        score: Math.round((peakHipRotation.current / 61) * 100), // Based on PEAK hip rotation vs professional average
+        peakVelocity: `${((peakHipRotation.current / 61) * 100).toFixed(1)}% of professional`,
+        forceTransfer: `${peakWeightTransfer.current.toFixed(1)}% weight transfer`,
+        recommendation: peakWeightTransfer.current < 60 ? "Increase weight transfer to front foot for more power" : "Good power transfer through kinetic chain"
       },
       movementTiming: {
-        score: Math.round(((hipRotation > 40 ? 100 : (hipRotation / 40) * 100) + (spineAngle > 15 ? 100 : (spineAngle / 15) * 100)) / 2),
+        score: Math.round(((peakHipRotation.current > 40 ? 100 : (peakHipRotation.current / 40) * 100) + (peakSpineAngle.current > 15 ? 100 : (peakSpineAngle.current / 15) * 100)) / 2),
         sequenceOrder: "Hips → Torso → Shoulder → Elbow",
-        phaseDurations: `Hip rotation: ${hipRotation.toFixed(1)}°, Spine angle: ${spineAngle.toFixed(1)}°`,
-        recommendation: hipRotation < 40 ? "Initiate movement with hip rotation for better sequencing" : "Good kinetic chain sequencing"
-      }
+        phaseDurations: `Hip rotation: ${peakHipRotation.current.toFixed(1)}°, Spine angle: ${peakSpineAngle.current.toFixed(1)}°`,
+        recommendation: peakHipRotation.current < 40 ? "Initiate movement with hip rotation for better sequencing" : "Good kinetic chain sequencing"
+      },
+      recordedFrames: recordedFramesRef.current // Include recorded frames for replay
     };
     
+    console.log(`🎬 Recorded ${recordedFramesRef.current.length} frames for replay`);
     setDetailedAnalysis(analysis);
     setSessionState('complete');
     setShowDetailedAnalysis(true);
@@ -815,6 +976,7 @@ export default function Analysis() {
     if (!cameraActive) return "Start Video";
     if (cameraActive && !poseInitialized) return "Initializing MediaPipe...";
     if (sessionState === 'ready') return "Start Capture";
+    if (sessionState === 'countdown') return `Starting in ${countdown}...`;
     if (sessionState === 'capturing') return "Stop and Score";
     if (sessionState === 'complete') return "Try Again";
     return "Start Video";
@@ -823,6 +985,9 @@ export default function Analysis() {
   const getButtonClass = () => {
     if (sessionState === 'capturing') {
       return "w-full mt-4 py-6 text-lg bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold";
+    }
+    if (sessionState === 'countdown') {
+      return "w-full mt-4 py-6 text-lg bg-yellow-600 text-white rounded-lg font-bold cursor-not-allowed";
     }
     if (sessionState === 'ready') {
       return "w-full mt-4 py-6 text-lg bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold";
@@ -843,191 +1008,22 @@ export default function Analysis() {
   };
   
   if (showDetailedAnalysis && detailedAnalysis) {
+    // Get professional reference for replay
+    const category = params.get('category') || '';
+    const subcategory = params.get('subcategory') || '';
+    const professionalRef = getProfessionalReference(category, subcategory, motionName);
+    
     return (
-      <div className="min-h-screen bg-[#0a0e1a] text-white flex flex-col">
+      <>
         <Header />
-        
-        <main className="flex-1 container mx-auto py-8 px-4">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {/* Back button */}
-            <Link href={`/motions/${params.get('category')}/${params.get('subcategory')}`}>
-              <Button variant="outline" className="mb-4">
-                ← Back to Motions
-              </Button>
-            </Link>
-
-            {/* Overall Performance */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h2 className="text-2xl font-bold mb-4">Overall Performance</h2>
-              <div className="text-6xl font-bold mb-6">{detailedAnalysis.overallScore}/100</div>
-              <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4">
-                <h3 className="text-yellow-400 font-bold mb-2">Priority Focus:</h3>
-                <p className="text-yellow-200">{detailedAnalysis.priorityFocus}</p>
-              </div>
-            </div>
-
-            {/* Detailed Analysis */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Detailed Analysis</h2>
-              </div>
-            </div>
-
-            {/* Your Strengths */}
-            <div className="bg-green-900/20 border border-green-600/50 rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-green-400 mb-6">Your Strengths</h2>
-              <div className="space-y-4">
-                {detailedAnalysis.strengths.map((strength, idx) => (
-                  <div key={idx}>
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-xl font-semibold text-green-300">{strength.title} ({strength.score}/100)</h3>
-                    </div>
-                    <p className="text-gray-300">{strength.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Detailed Analysis - All Areas */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-blue-400 mb-6">Detailed Analysis - All Areas</h2>
-              <div className="space-y-4">
-                {detailedAnalysis.detailedAreas.map((area, idx) => (
-                  <div key={idx} className="border-l-4 border-blue-500 pl-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-xl font-semibold text-blue-300">{area.title}</h3>
-                      <span className="bg-blue-900/50 px-3 py-1 rounded text-sm">{area.score}/100</span>
-                    </div>
-                    <p className="text-gray-300 mb-1">{area.description}</p>
-                    <p className="text-sm text-gray-400">Priority: {area.priority}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Improvement Recommendations */}
-            <div className="bg-yellow-900/20 border border-yellow-600/50 rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-yellow-400 mb-6">Improvement Recommendations</h2>
-              <div className="space-y-6">
-                {detailedAnalysis.improvements.map((improvement, idx) => (
-                  <div key={idx} className="border-l-4 border-yellow-600 pl-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-xl font-semibold text-yellow-300">{improvement.title}</h3>
-                      <span className="bg-yellow-900/50 px-3 py-1 rounded text-sm">{improvement.scoreRange}</span>
-                    </div>
-                    <p className="text-gray-300 mb-2">{improvement.description}</p>
-                    <div className="flex items-center gap-2 text-yellow-200">
-                      <span>💡</span>
-                      <span className="font-semibold">Drill:</span>
-                      <span>{improvement.drill}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Biomechanical Analysis */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-cyan-400 mb-6">Biomechanical Analysis</h2>
-              <div className="space-y-6">
-                {detailedAnalysis.biomechanical.map((bio, idx) => (
-                  <div key={idx} className="border-l-4 border-cyan-500 pl-4">
-                    <h3 className="text-xl font-semibold text-cyan-300 mb-3">{bio.title}</h3>
-                    <p className="text-gray-300 mb-2">
-                      Your: {bio.yours} | Pro: {bio.pro} | Difference: {bio.difference}
-                    </p>
-                    <p className="text-cyan-200">{bio.recommendation}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Movement Consistency */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h2 className="text-2xl font-bold mb-4">Movement Consistency</h2>
-              <div className="flex items-baseline gap-4">
-                <span className="text-5xl font-bold">{detailedAnalysis.consistency.score}/100</span>
-                <span className="text-gray-400">Trend: {detailedAnalysis.consistency.trend}</span>
-              </div>
-            </div>
-
-            {/* Power Generation */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-orange-400 mb-4">Power Generation</h2>
-              <div className="space-y-3">
-                <div className="flex items-baseline gap-4">
-                  <span className="text-4xl font-bold text-orange-300">{detailedAnalysis.powerGeneration.score}/100</span>
-                </div>
-                <p className="text-gray-300">Peak Velocity: {detailedAnalysis.powerGeneration.peakVelocity}</p>
-                <p className="text-gray-300">Force Transfer: {detailedAnalysis.powerGeneration.forceTransfer}</p>
-                <p className="text-orange-200 mt-3">{detailedAnalysis.powerGeneration.recommendation}</p>
-              </div>
-            </div>
-
-            {/* Movement Timing */}
-            <div className="bg-[#1a1f2e] rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-purple-400 mb-4">Movement Timing & Sequencing</h2>
-              <div className="space-y-3">
-                <div className="flex items-baseline gap-4">
-                  <span className="text-4xl font-bold text-purple-300">{detailedAnalysis.movementTiming.score}/100</span>
-                </div>
-                <p className="text-gray-300">Kinetic Chain: {detailedAnalysis.movementTiming.sequenceOrder}</p>
-                <p className="text-gray-300">Phase Data: {detailedAnalysis.movementTiming.phaseDurations}</p>
-                <p className="text-purple-200 mt-3">{detailedAnalysis.movementTiming.recommendation}</p>
-              </div>
-            </div>
-
-            {/* Try Again Button */}
-            <Button
-              onClick={() => {
-                // Reset all state
-                setShowDetailedAnalysis(false);
-                setSessionState('idle');
-                setCameraActive(false);
-                setPoseInitialized(false);
-                processingRef.current = false;
-                
-                // Stop camera stream
-                if (stream) {
-                  stream.getTracks().forEach(track => track.stop());
-                  setStream(null);
-                }
-                
-                // Clear video element
-                if (videoRef.current) {
-                  videoRef.current.srcObject = null;
-                }
-                
-                // Dispose MediaPipe Pose
-                if (poseRef.current) {
-                  poseRef.current.close();
-                  poseRef.current = null;
-                }
-                
-                // Reset detection state
-                setLandmarksDetected(0);
-                setBodyScale(0.00);
-                setDistance("No pose detected");
-                setRightHandRaised(false);
-                setLeftHandRaised(false);
-                setRightFootLifted(false);
-                setLeftFootLifted(false);
-                
-                speak("Ready to analyze another motion");
-              }}
-              className="w-full py-6 text-lg bg-blue-600 hover:bg-blue-700"
-            >
-              Analyze Another Motion
-            </Button>
-          </div>
-        </main>
-
-        {/* Footer */}
-        <footer className="bg-[#050810] py-4 text-center text-gray-400">
-          <p>Total Points: {totalPoints}</p>
-          <p className="text-sm">Made with Manus</p>
-        </footer>
-      </div>
+        <Replay
+          recordedFrames={detailedAnalysis.recordedFrames || []}
+          professionalReference={professionalRef}
+          motionName={motionName}
+          onBack={() => setShowDetailedAnalysis(false)}
+          detailedAnalysis={detailedAnalysis}
+        />
+      </>
     );
   }
   
@@ -1072,13 +1068,24 @@ export default function Analysis() {
                     <p className="text-xl">Camera not started</p>
                   </div>
                 )}
+                {/* Countdown Overlay */}
+                {sessionState === 'countdown' && countdown > 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="text-center">
+                      <div className="text-9xl font-bold text-blue-400 animate-pulse">
+                        {countdown}
+                      </div>
+                      <p className="text-2xl text-white mt-4">Get ready...</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Control Button */}
               <Button
                 onClick={handleButtonClick}
                 className={getButtonClass()}
-                disabled={cameraActive && !poseInitialized}
+                disabled={(cameraActive && !poseInitialized) || sessionState === 'countdown'}
               >
                 {getButtonText()}
               </Button>
