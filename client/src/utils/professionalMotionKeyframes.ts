@@ -53,23 +53,23 @@ export function createThrowingKeyframes(): Keyframe[] {
           createLandmark(baseX + (i < 3 ? -0.14 : 0.14), baseY + 0.04, 0, 0.85)
         ),
         
-        // Hips (23-24)
-        createLandmark(baseX - 0.07, baseY + 0.05, 0), // Left hip
-        createLandmark(baseX + 0.07, baseY + 0.05, 0), // Right hip
+        // Hips (23-24) - NEUTRAL STANCE
+        createLandmark(baseX - 0.08, baseY + 0.05, 0), // Left hip
+        createLandmark(baseX + 0.08, baseY + 0.05, 0), // Right hip
         
         // Knees (25-26)
-        createLandmark(baseX - 0.07, baseY + 0.20, 0), // Left knee
-        createLandmark(baseX + 0.07, baseY + 0.20, 0), // Right knee
+        createLandmark(baseX - 0.08, baseY + 0.20, 0), // Left knee
+        createLandmark(baseX + 0.08, baseY + 0.20, 0), // Right knee
         
         // Ankles (27-28)
-        createLandmark(baseX - 0.07, baseY + 0.35, 0), // Left ankle
-        createLandmark(baseX + 0.07, baseY + 0.35, 0), // Right ankle
+        createLandmark(baseX - 0.09, baseY + 0.35, 0), // Left ankle
+        createLandmark(baseX + 0.09, baseY + 0.35, 0), // Right ankle
         
-        // Feet (29-32)
-        createLandmark(baseX - 0.09, baseY + 0.37, 0.03, 0.88), // Left heel
-        createLandmark(baseX - 0.09, baseY + 0.37, -0.03, 0.88), // Left toe
-        createLandmark(baseX + 0.09, baseY + 0.37, 0.03, 0.88), // Right heel
-        createLandmark(baseX + 0.09, baseY + 0.37, -0.03, 0.88), // Right toe
+        // Feet (29-32) - shoulder width apart
+        createLandmark(baseX - 0.10, baseY + 0.37, 0.02, 0.88), // Left heel
+        createLandmark(baseX - 0.10, baseY + 0.37, -0.04, 0.88), // Left toe
+        createLandmark(baseX + 0.10, baseY + 0.37, 0.02, 0.88), // Right heel
+        createLandmark(baseX + 0.10, baseY + 0.37, -0.04, 0.88), // Right toe
       ]
     },
     
@@ -100,23 +100,23 @@ export function createThrowingKeyframes(): Keyframe[] {
           createLandmark(baseX + (i < 3 ? -0.15 : 0.19), baseY + (i < 3 ? 0.02 : -0.22), i < 3 ? -0.01 : 0.13, 0.85)
         ),
         
-        // Hips - rotate right
-        createLandmark(baseX - 0.08, baseY + 0.06, -0.05), // Left hip forward
-        createLandmark(baseX + 0.06, baseY + 0.04, 0.05), // Right hip back
+        // Hips - DRAMATIC rotation right (body coiling)
+        createLandmark(baseX - 0.18, baseY + 0.08, -0.10), // Left hip FORWARD
+        createLandmark(baseX + 0.02, baseY + 0.02, 0.10), // Right hip WAY BACK
         
-        // Knees - right knee bends
-        createLandmark(baseX - 0.08, baseY + 0.21, -0.03), // Left knee
-        createLandmark(baseX + 0.06, baseY + 0.18, 0.04), // Right knee bent
+        // Knees - right knee bends, weight loading back
+        createLandmark(baseX - 0.15, baseY + 0.22, -0.06), // Left knee forward
+        createLandmark(baseX + 0.03, baseY + 0.16, 0.08), // Right knee BENT and back
         
-        // Ankles
-        createLandmark(baseX - 0.09, baseY + 0.35, -0.02), // Left ankle
-        createLandmark(baseX + 0.06, baseY + 0.33, 0.03), // Right ankle
+        // Ankles - feet planted wide
+        createLandmark(baseX - 0.16, baseY + 0.34, -0.04), // Left ankle forward
+        createLandmark(baseX + 0.04, baseY + 0.30, 0.06), // Right ankle back
         
-        // Feet - weight shifting back
-        createLandmark(baseX - 0.11, baseY + 0.37, 0.02, 0.88),
-        createLandmark(baseX - 0.11, baseY + 0.37, -0.04, 0.88),
-        createLandmark(baseX + 0.08, baseY + 0.35, 0.05, 0.88),
-        createLandmark(baseX + 0.08, baseY + 0.35, 0, 0.88),
+        // Feet - WIDE STANCE, weight on back foot
+        createLandmark(baseX - 0.18, baseY + 0.36, 0, 0.88), // Left heel forward
+        createLandmark(baseX - 0.18, baseY + 0.36, -0.08, 0.88), // Left toe forward
+        createLandmark(baseX + 0.06, baseY + 0.32, 0.10, 0.88), // Right heel back
+        createLandmark(baseX + 0.06, baseY + 0.32, 0.04, 0.88), // Right toe back
       ]
     },
     
@@ -147,23 +147,23 @@ export function createThrowingKeyframes(): Keyframe[] {
           createLandmark(baseX + (i < 3 ? -0.16 : 0.09), baseY + (i < 3 ? 0 : -0.37), i < 3 ? -0.02 : 0.11, 0.85)
         ),
         
-        // Hips - maximum rotation
-        createLandmark(baseX - 0.09, baseY + 0.07, -0.08), // Left hip forward
-        createLandmark(baseX + 0.05, baseY + 0.03, 0.08), // Right hip back
+        // Hips - MAXIMUM rotation (peak coil)
+        createLandmark(baseX - 0.20, baseY + 0.09, -0.12), // Left hip MAXIMUM FORWARD
+        createLandmark(baseX + 0.00, baseY + 0.01, 0.12), // Right hip MAXIMUM BACK
         
-        // Knees - front knee bent, back leg loaded
-        createLandmark(baseX - 0.10, baseY + 0.19, -0.05), // Left knee bent
-        createLandmark(baseX + 0.05, baseY + 0.16, 0.06), // Right knee loaded
+        // Knees - front knee bent, back leg LOADED
+        createLandmark(baseX - 0.18, baseY + 0.20, -0.08), // Left knee bent forward
+        createLandmark(baseX + 0.02, baseY + 0.14, 0.10), // Right knee LOADED back
         
-        // Ankles
-        createLandmark(baseX - 0.11, baseY + 0.33, -0.04), // Left ankle
-        createLandmark(baseX + 0.05, baseY + 0.31, 0.05), // Right ankle
+        // Ankles - maximum separation
+        createLandmark(baseX - 0.19, baseY + 0.32, -0.06), // Left ankle forward
+        createLandmark(baseX + 0.03, baseY + 0.28, 0.08), // Right ankle back
         
-        // Feet - weight on back foot
-        createLandmark(baseX - 0.13, baseY + 0.35, 0, 0.88),
-        createLandmark(baseX - 0.13, baseY + 0.35, -0.06, 0.88),
-        createLandmark(baseX + 0.07, baseY + 0.33, 0.07, 0.88),
-        createLandmark(baseX + 0.07, baseY + 0.33, 0.02, 0.88),
+        // Feet - MAXIMUM WIDE STANCE, all weight on back foot
+        createLandmark(baseX - 0.22, baseY + 0.34, -0.02, 0.88), // Left heel forward
+        createLandmark(baseX - 0.22, baseY + 0.34, -0.10, 0.88), // Left toe forward
+        createLandmark(baseX + 0.05, baseY + 0.30, 0.12, 0.88), // Right heel back (loaded)
+        createLandmark(baseX + 0.05, baseY + 0.30, 0.06, 0.88), // Right toe back
       ]
     },
     
@@ -194,23 +194,23 @@ export function createThrowingKeyframes(): Keyframe[] {
           createLandmark(baseX + (i < 3 ? -0.15 : 0.20), baseY + (i < 3 ? 0.02 : -0.27), i < 3 ? 0 : 0.09, 0.85)
         ),
         
-        // Hips - rotating forward
-        createLandmark(baseX - 0.08, baseY + 0.06, -0.03), // Left hip
-        createLandmark(baseX + 0.06, baseY + 0.04, 0.03), // Right hip forward
+           // Hips - EXPLOSIVE rotation forward (uncoiling)
+        createLandmark(baseX - 0.12, baseY + 0.06, -0.06), // Left hip rotating back
+        createLandmark(baseX + 0.08, baseY + 0.04, 0.06), // Right hip DRIVING forward
         
-        // Knees - front leg extending
-        createLandmark(baseX - 0.09, baseY + 0.20, -0.02), // Left knee extending
-        createLandmark(baseX + 0.06, baseY + 0.18, 0.02), // Right knee
+        // Knees - weight TRANSFERRING forward explosively
+        createLandmark(baseX - 0.14, baseY + 0.21, -0.04), // Left knee straightening
+        createLandmark(baseX + 0.06, baseY + 0.18, 0.04), // Right knee driving
         
-        // Ankles
-        createLandmark(baseX - 0.09, baseY + 0.34, -0.01), // Left ankle
-        createLandmark(baseX + 0.06, baseY + 0.33, 0.02), // Right ankle
+        // Ankles - weight shifting
+        createLandmark(baseX - 0.15, baseY + 0.34, -0.02), // Left ankle
+        createLandmark(baseX + 0.07, baseY + 0.32, 0.04), // Right ankle
         
-        // Feet - weight transferring forward
-        createLandmark(baseX - 0.11, baseY + 0.36, -0.02, 0.88),
-        createLandmark(baseX - 0.11, baseY + 0.36, -0.06, 0.88),
-        createLandmark(baseX + 0.08, baseY + 0.35, 0.03, 0.88),
-        createLandmark(baseX + 0.08, baseY + 0.35, 0, 0.88),
+        // Feet - weight MOVING forward
+        createLandmark(baseX - 0.17, baseY + 0.36, -0.04, 0.88), // Left heel loading
+        createLandmark(baseX - 0.17, baseY + 0.36, -0.08, 0.88), // Left toe
+        createLandmark(baseX + 0.09, baseY + 0.34, 0.06, 0.88), // Right heel
+        createLandmark(baseX + 0.09, baseY + 0.34, 0.02, 0.88), // Right toe
       ]
     },
     
@@ -241,23 +241,23 @@ export function createThrowingKeyframes(): Keyframe[] {
           createLandmark(baseX + (i < 3 ? -0.14 : 0.01), baseY + (i < 3 ? 0.03 : -0.34), i < 3 ? 0 : -0.13, 0.85)
         ),
         
-        // Hips - square, weight forward
-        createLandmark(baseX - 0.07, baseY + 0.05, 0), // Left hip
-        createLandmark(baseX + 0.07, baseY + 0.05, 0), // Right hip
+        // Hips - SQUARE to target (rotation complete)
+        createLandmark(baseX - 0.08, baseY + 0.05, -0.02), // Left hip
+        createLandmark(baseX + 0.08, baseY + 0.05, 0.02), // Right hip
         
-        // Knees - front leg straight, back leg pushing
-        createLandmark(baseX - 0.08, baseY + 0.21, 0), // Left knee straight
-        createLandmark(baseX + 0.07, baseY + 0.20, 0.02), // Right knee
+        // Knees - balanced, weight centered
+        createLandmark(baseX - 0.10, baseY + 0.20, -0.02), // Left knee
+        createLandmark(baseX + 0.08, baseY + 0.20, 0.02), // Right knee
         
-        // Ankles
-        createLandmark(baseX - 0.08, baseY + 0.35, 0), // Left ankle
-        createLandmark(baseX + 0.07, baseY + 0.35, 0.01), // Right ankle
+        // Ankles - balanced
+        createLandmark(baseX - 0.11, baseY + 0.35, -0.01), // Left ankle
+        createLandmark(baseX + 0.09, baseY + 0.35, 0.01), // Right ankle
         
-        // Feet - weight on front foot
-        createLandmark(baseX - 0.10, baseY + 0.37, -0.03, 0.88),
-        createLandmark(baseX - 0.10, baseY + 0.37, -0.07, 0.88),
-        createLandmark(baseX + 0.09, baseY + 0.37, 0.02, 0.88),
-        createLandmark(baseX + 0.09, baseY + 0.37, -0.01, 0.88),
+        // Feet - weight CENTERED
+        createLandmark(baseX - 0.12, baseY + 0.37, -0.02, 0.88), // Left heel
+        createLandmark(baseX - 0.12, baseY + 0.37, -0.06, 0.88), // Left toe
+        createLandmark(baseX + 0.10, baseY + 0.37, 0.02, 0.88), // Right heel
+        createLandmark(baseX + 0.10, baseY + 0.37, -0.02, 0.88), // Right toe
       ]
     },
     
@@ -288,23 +288,23 @@ export function createThrowingKeyframes(): Keyframe[] {
           createLandmark(baseX + (i < 3 ? -0.12 : -0.14), baseY + (i < 3 ? 0.04 : -0.06), i < 3 ? 0.01 : -0.11, 0.85)
         ),
         
-        // Hips - rotated left
-        createLandmark(baseX - 0.06, baseY + 0.04, 0.05), // Left hip back
-        createLandmark(baseX + 0.08, baseY + 0.06, -0.05), // Right hip forward
+        // Hips - OVER-ROTATED left (follow-through)
+        createLandmark(baseX - 0.02, baseY + 0.04, 0.10), // Left hip WAY BACK
+        createLandmark(baseX + 0.18, baseY + 0.06, -0.10), // Right hip WAY FORWARD
         
-        // Knees - balanced
-        createLandmark(baseX - 0.07, baseY + 0.20, 0.03), // Left knee
-        createLandmark(baseX + 0.08, baseY + 0.21, -0.02), // Right knee
+        // Knees - weight on front leg
+        createLandmark(baseX - 0.06, baseY + 0.22, 0.06), // Left knee back
+        createLandmark(baseX + 0.14, baseY + 0.19, -0.04), // Right knee forward
         
-        // Ankles
-        createLandmark(baseX - 0.07, baseY + 0.35, 0.02), // Left ankle
-        createLandmark(baseX + 0.09, baseY + 0.36, -0.01), // Right ankle
+        // Ankles - weight forward
+        createLandmark(baseX - 0.05, baseY + 0.36, 0.04), // Left ankle back
+        createLandmark(baseX + 0.16, baseY + 0.34, -0.02), // Right ankle forward
         
-        // Feet - weight fully forward
-        createLandmark(baseX - 0.09, baseY + 0.37, 0, 0.88),
-        createLandmark(baseX - 0.09, baseY + 0.37, -0.05, 0.88),
-        createLandmark(baseX + 0.11, baseY + 0.38, -0.02, 0.88),
-        createLandmark(baseX + 0.11, baseY + 0.38, -0.05, 0.88),
+        // Feet - weight FULLY on front foot
+        createLandmark(baseX - 0.04, baseY + 0.38, 0.02, 0.88), // Left heel back (light)
+        createLandmark(baseX - 0.04, baseY + 0.38, -0.04, 0.88), // Left toe back
+        createLandmark(baseX + 0.18, baseY + 0.36, -0.04, 0.88), // Right heel forward (loaded)
+        createLandmark(baseX + 0.18, baseY + 0.36, -0.08, 0.88), // Right toe forward
       ]
     }
   ];
@@ -365,15 +365,23 @@ export function getLandmarksAtProgress(progress: number): any[] {
   
   const result = interpolateLandmarks(kf1, kf2, easedT);
   
-  // Debug logging at cocking phase
-  if (Math.abs(progress - 0.55) < 0.01 && result.length >= 17) {
-    console.log('🦾 Cocking Phase Arm Positions:');
-    console.log('  Left Shoulder (11) x:', result[11].x.toFixed(3), 'z:', result[11].z.toFixed(3));
-    console.log('  Right Shoulder (12) x:', result[12].x.toFixed(3), 'z:', result[12].z.toFixed(3));
-    console.log('  Left Elbow (13) x:', result[13].x.toFixed(3), 'z:', result[13].z.toFixed(3));
-    console.log('  Right Elbow (14) x:', result[14].x.toFixed(3), 'z:', result[14].z.toFixed(3));
-    console.log('  Left Wrist (15) x:', result[15].x.toFixed(3), 'z:', result[15].z.toFixed(3));
-    console.log('  Right Wrist (16) x:', result[16].x.toFixed(3), 'z:', result[16].z.toFixed(3));
+  // Comprehensive debug logging every 10 frames
+  if (result.length >= 33 && Math.random() < 0.1) { // 10% sample rate
+    console.log(`\n🎬 Frame Progress: ${progress.toFixed(3)} (${progress < 0.2 ? 'Neutral' : progress < 0.45 ? 'Wind-up' : progress < 0.65 ? 'Cocking' : progress < 0.78 ? 'Acceleration' : progress < 0.88 ? 'Release' : 'Follow-through'})`);
+    console.log('👤 FULL BODY POSITIONS:');
+    console.log('  💪 Arms:');
+    console.log('    L Shoulder (11):', result[11].x.toFixed(3), result[11].y.toFixed(3), 'z:', result[11].z.toFixed(3));
+    console.log('    R Shoulder (12):', result[12].x.toFixed(3), result[12].y.toFixed(3), 'z:', result[12].z.toFixed(3));
+    console.log('    L Elbow (13):', result[13].x.toFixed(3), result[13].y.toFixed(3), 'z:', result[13].z.toFixed(3));
+    console.log('    R Elbow (14):', result[14].x.toFixed(3), result[14].y.toFixed(3), 'z:', result[14].z.toFixed(3));
+    console.log('  🦴 Hips:');
+    console.log('    L Hip (23):', result[23].x.toFixed(3), result[23].y.toFixed(3), 'z:', result[23].z.toFixed(3));
+    console.log('    R Hip (24):', result[24].x.toFixed(3), result[24].y.toFixed(3), 'z:', result[24].z.toFixed(3));
+    console.log('  🦵 Legs:');
+    console.log('    L Knee (25):', result[25].x.toFixed(3), result[25].y.toFixed(3), 'z:', result[25].z.toFixed(3));
+    console.log('    R Knee (26):', result[26].x.toFixed(3), result[26].y.toFixed(3), 'z:', result[26].z.toFixed(3));
+    console.log('    L Ankle (27):', result[27].x.toFixed(3), result[27].y.toFixed(3), 'z:', result[27].z.toFixed(3));
+    console.log('    R Ankle (28):', result[28].x.toFixed(3), result[28].y.toFixed(3), 'z:', result[28].z.toFixed(3));
   }
   
   return result;

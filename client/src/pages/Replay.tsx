@@ -145,51 +145,36 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           x: isRightHanded ? (1 - lm.x) : lm.x  // Right-handed: flip, Left-handed: no flip
         }));
         
-        // Calculate body center (midpoint between hips) for natural perspective
-        const leftHip = mirroredLandmarks[23];
-        const rightHip = mirroredLandmarks[24];
-        const bodyCenterX = leftHip && rightHip ? (leftHip.x + rightHip.x) / 2 : 0.5;
-        const bodyCenterY = leftHip && rightHip ? (leftHip.y + rightHip.y) / 2 : 0.5;
-        
-        // Apply SUBTLE 3D perspective transformation - keep skeleton proportional
+        // NO PERSPECTIVE TRANSFORMATION - render in simple 2D
+        // Use color and opacity ONLY for depth perception
         const transformedLandmarks = mirroredLandmarks.map((lm: any, index: number) => {
           // Z-axis: positive = away from camera, negative = toward camera
           const depth = lm.z || 0;
           
-          // SUBTLE perspective scaling (much gentler to preserve human proportions)
-          const perspectiveFactor = 500; // Higher = gentler perspective
-          const scale = perspectiveFactor / (perspectiveFactor + depth * 200); // Reduced from 500 to 200
+          // Opacity based on depth (further = dimmer)
+          const opacity = Math.max(0.4, Math.min(1.0, 1.0 - depth * 2.0));
           
-          // Apply perspective scaling from BODY CENTER (not canvas center)
-          // This keeps the skeleton proportional and human-looking
-          const perspectiveX = bodyCenterX + (lm.x - bodyCenterX) * scale;
-          const perspectiveY = bodyCenterY + (lm.y - bodyCenterY) * scale;
-          
-          // STRONGER opacity variation (further = much dimmer)
-          const opacity = Math.max(0.2, Math.min(1.0, 1.0 - depth * 3.0)); // Increased from 1.5 to 3.0
-          
-          // Color gradient: Blue (close) -> Purple (mid) -> Magenta (far)
+          // Color gradient: Cyan (close) -> Magenta (mid) -> Red (far)
           let r = 255;
           let g = 0;
           let b = 255;
           
-          if (depth < -0.1) {
-            // Very close: more blue/cyan
-            r = Math.floor(100 + depth * -500);
+          if (depth < -0.05) {
+            // Close: cyan/blue
+            r = 0;
+            g = Math.floor(200 + depth * -1000);
             b = 255;
-            g = Math.floor(255 + depth * 1000);
-          } else if (depth > 0.1) {
-            // Far away: more red/magenta
+          } else if (depth > 0.05) {
+            // Far: red/magenta
             r = 255;
-            g = Math.floor(Math.max(0, 100 - depth * 500));
-            b = Math.floor(Math.max(150, 255 - depth * 300));
+            g = 0;
+            b = Math.floor(Math.max(100, 255 - depth * 500));
           }
           
           return {
             ...lm,
-            x: perspectiveX,
-            y: perspectiveY,
-            scale,
+            x: lm.x, // NO TRANSFORMATION - use raw coordinates
+            y: lm.y, // NO TRANSFORMATION - use raw coordinates
             opacity,
             depth,
             color: { r, g, b }
@@ -225,9 +210,9 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
             ctx.moveTo(start.x * canvas.width, start.y * canvas.height);
             ctx.lineTo(end.x * canvas.width, end.y * canvas.height);
             
-            // Depth-based color gradient and thickness
+            // Depth-based color gradient - UNIFORM thickness
             ctx.strokeStyle = `rgba(${avgColor.r}, ${avgColor.g}, ${avgColor.b}, ${avgOpacity})`;
-            ctx.lineWidth = 4 * (0.5 + avgOpacity * 0.8); // MUCH thicker lines for closer parts (was 3)
+            ctx.lineWidth = 3; // Uniform line width
             ctx.stroke();
           }
         });
@@ -379,27 +364,27 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 unit="°"
               />
               <MetricCard
-                title={isRightHanded ? "Right Elbow" : "Left Elbow"}
+                title="Throwing Arm Elbow"
                 yours={isRightHanded ? currentMetrics.rightElbowAngle : currentMetrics.leftElbowAngle}
-                pro={isRightHanded ? professionalFrames[currentFrameIndex].metrics.rightElbowAngle : professionalFrames[currentFrameIndex].metrics.leftElbowAngle}
+                pro={professionalFrames[currentFrameIndex].metrics.rightElbowAngle}
                 unit="°"
               />
               <MetricCard
-                title={isRightHanded ? "Left Elbow" : "Right Elbow"}
+                title="Non-Throwing Arm Elbow"
                 yours={isRightHanded ? currentMetrics.leftElbowAngle : currentMetrics.rightElbowAngle}
-                pro={isRightHanded ? professionalFrames[currentFrameIndex].metrics.leftElbowAngle : professionalFrames[currentFrameIndex].metrics.rightElbowAngle}
+                pro={professionalFrames[currentFrameIndex].metrics.leftElbowAngle}
                 unit="°"
               />
               <MetricCard
-                title={isRightHanded ? "Right Knee" : "Left Knee"}
-                yours={isRightHanded ? currentMetrics.rightKneeFlexion : currentMetrics.leftKneeFlexion}
-                pro={isRightHanded ? professionalFrames[currentFrameIndex].metrics.rightKneeFlexion : professionalFrames[currentFrameIndex].metrics.leftKneeFlexion}
-                unit="°"
-              />
-              <MetricCard
-                title={isRightHanded ? "Left Knee" : "Right Knee"}
+                title="Lead Leg Knee"
                 yours={isRightHanded ? currentMetrics.leftKneeFlexion : currentMetrics.rightKneeFlexion}
-                pro={isRightHanded ? professionalFrames[currentFrameIndex].metrics.leftKneeFlexion : professionalFrames[currentFrameIndex].metrics.rightKneeFlexion}
+                pro={professionalFrames[currentFrameIndex].metrics.leftKneeFlexion}
+                unit="°"
+              />
+              <MetricCard
+                title="Back Leg Knee"
+                yours={isRightHanded ? currentMetrics.rightKneeFlexion : currentMetrics.leftKneeFlexion}
+                pro={professionalFrames[currentFrameIndex].metrics.rightKneeFlexion}
                 unit="°"
               />
               <MetricCard

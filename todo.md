@@ -167,3 +167,35 @@
 - **Phase Synchronization Removed**: Was locking hologram to single static frame per phase, now plays through full animation
 - **Hologram Animation**: Now animates through all phases showing full-body movement (hips, legs, feet, arms)
 
+
+
+
+## CRITICAL DISCOVERY - Keyframe Movement Too Subtle (Current Session)
+- [x] Diagnosed root cause: Keyframe data has movement but it's TOO SMALL to be visible
+- [x] Hip rotation only 1% of screen width (0.01 units) - needs to be 20-30%
+- [x] Feet/legs barely shifting - weight transfer invisible
+- [x] Body parts ARE moving in data but changes are imperceptible on screen
+- [ ] URGENT: Dramatically increase movement ranges in all keyframes (5-10x larger)
+- [ ] Exaggerate hip rotation, foot positioning, knee bend, weight transfer
+- [ ] Make throwing motion visually obvious and dramatic
+
+
+
+
+## CRITICAL FINDING - 3D Transformation Destroying Movement (Current Session)
+- [x] Console data confirms hips ARE moving 20% across screen (0.480 → 0.680)
+- [x] Keyframe data is CORRECT and dramatic
+- [x] Problem: 3D perspective transformation is WARPING coordinates and destroying visible movement
+- [x] SOLUTION: Remove ALL 3D perspective transformation, render in simple 2D
+- [x] Use color/opacity ONLY for depth perception (no coordinate warping)
+- [x] Draw landmarks directly without any scaling or perspective distortion
+- [x] Fix metric swapping to change DEGREES not just labels
+
+### Solutions Implemented:
+- **Removed 3D Transformation**: No more coordinate warping, uses raw x/y values directly
+- **Simple 2D Rendering**: Color gradients (cyan=close, magenta=mid, red=far) and opacity for depth only
+- **Proper Metric Swapping**: Now compares throwing arm to throwing arm, lead leg to lead leg
+  * Right-handed: User's right elbow vs Pro's right elbow, User's left knee (lead) vs Pro's left knee (lead)
+  * Left-handed: User's LEFT elbow vs Pro's RIGHT elbow, User's RIGHT knee (lead) vs Pro's LEFT knee (lead)
+- **Biomechanically Correct Labels**: "Throwing Arm Elbow", "Lead Leg Knee", etc.
+
