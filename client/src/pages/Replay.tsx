@@ -145,36 +145,38 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           x: isRightHanded ? (1 - lm.x) : lm.x  // Right-handed: flip, Left-handed: no flip
         }));
         
-        // NO PERSPECTIVE TRANSFORMATION - render in simple 2D
-        // Use color and opacity ONLY for depth perception
+        // CORRECT 3D PERSPECTIVE TRANSFORMATION
+        // Apply isometric-style projection: shift x-position based on z-depth
+        // This makes rotation visible without distorting the skeleton
         const transformedLandmarks = mirroredLandmarks.map((lm: any, index: number) => {
-          // Z-axis: positive = away from camera, negative = toward camera
+          // Z-axis: positive = away from camera (back), negative = toward camera (forward)
           const depth = lm.z || 0;
           
+          // Isometric projection: shift x based on z-depth
+          // Parts further back (positive z) shift RIGHT
+          // Parts closer (negative z) shift LEFT
+          const perspectiveShift = depth * 0.4; // Adjust multiplier for effect strength
+          const projectedX = lm.x + perspectiveShift;
+          
+          // Scale based on depth (further = smaller, closer = larger)
+          // Subtle scaling to show depth without distortion
+          const scale = 1.0 / (1.0 + depth * 0.8);
+          
           // Opacity based on depth (further = dimmer)
-          const opacity = Math.max(0.4, Math.min(1.0, 1.0 - depth * 2.0));
+          const opacity = Math.max(0.5, Math.min(1.0, 1.0 - depth * 1.5));
           
-          // Color gradient: Cyan (close) -> Magenta (mid) -> Red (far)
-          let r = 255;
-          let g = 0;
-          let b = 255;
-          
-          if (depth < -0.05) {
-            // Close: cyan/blue
-            r = 0;
-            g = Math.floor(200 + depth * -1000);
-            b = 255;
-          } else if (depth > 0.05) {
-            // Far: red/magenta
-            r = 255;
-            g = 0;
-            b = Math.floor(Math.max(100, 255 - depth * 500));
-          }
+          // Magenta/Purple color (matching professional reference theme)
+          // Brighter for closer, dimmer for further
+          const brightness = Math.max(0.6, Math.min(1.0, 1.0 - depth * 1.2));
+          const r = Math.floor(255 * brightness);
+          const g = Math.floor(0 * brightness);
+          const b = Math.floor(255 * brightness);
           
           return {
             ...lm,
-            x: lm.x, // NO TRANSFORMATION - use raw coordinates
-            y: lm.y, // NO TRANSFORMATION - use raw coordinates
+            x: projectedX,
+            y: lm.y,
+            scale,
             opacity,
             depth,
             color: { r, g, b }
@@ -217,24 +219,23 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           }
         });
         
-        // Draw only body landmark points (skip face 0-10) with STRONG 3D effects
+        // Draw ALL landmark points (matching user's style with visible dots)
         transformedLandmarks.forEach((landmark: any, index: number) => {
-          if (index >= 11) { // Only draw body landmarks
-            const radius = 6 * landmark.scale; // Larger base size (was 4)
-            
-            ctx.beginPath();
-            ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, radius, 0, 2 * Math.PI);
-            ctx.fillStyle = `rgba(${landmark.color.r}, ${landmark.color.g}, ${landmark.color.b}, ${landmark.opacity})`;
-            ctx.fill();
-            
-            // Add depth-based glow (cyan for close, white for far)
-            const glowR = landmark.depth < 0 ? 0 : 255;
-            const glowG = 255;
-            const glowB = 255;
-            ctx.strokeStyle = `rgba(${glowR}, ${glowG}, ${glowB}, ${landmark.opacity * 0.9})`;
-            ctx.lineWidth = 3 * landmark.scale; // Thicker glow (was 2)
-            ctx.stroke();
-          }
+          // Draw all 33 landmarks as visible dots (like user's green skeleton)
+          const radius = 5 * (landmark.scale || 1.0); // Scale with depth
+          
+          ctx.beginPath();
+          ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, radius, 0, 2 * Math.PI);
+          
+          // Magenta/Purple fill (professional reference color)
+          ctx.fillStyle = `rgba(${landmark.color.r}, ${landmark.color.g}, ${landmark.color.b}, ${landmark.opacity})`;
+          ctx.fill();
+          
+          // Cyan outline for depth (brighter for closer landmarks)
+          const outlineOpacity = landmark.depth < 0 ? landmark.opacity : landmark.opacity * 0.6;
+          ctx.strokeStyle = `rgba(0, 255, 255, ${outlineOpacity})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
         });
         
         ctx.shadowBlur = 0;

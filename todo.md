@@ -199,3 +199,62 @@
   * Left-handed: User's LEFT elbow vs Pro's RIGHT elbow, User's RIGHT knee (lead) vs Pro's LEFT knee (lead)
 - **Biomechanically Correct Labels**: "Throwing Arm Elbow", "Lead Leg Knee", etc.
 
+
+
+
+## Rewrite Professional Motion Keyframes with Proper Biomechanics (Current Session)
+- [ ] Research proper quarterback throwing biomechanics and rotation sequence
+- [ ] Document the 3D rotation pattern: z-axis (facing target) → x-axis (perpendicular) → z-axis (release)
+- [ ] Rewrite Neutral keyframe: Hips and shoulders aligned on z-axis facing target
+- [ ] Rewrite Wind-up keyframe: Both hips and shoulders start rotating to x-axis
+- [ ] Rewrite Cocking keyframe: Maximum x-axis rotation (perpendicular to target), arm back
+- [ ] Rewrite Acceleration keyframe: Explosive rotation back toward z-axis, hips lead
+- [ ] Rewrite Release keyframe: Square to target (z-axis), arm extended forward
+- [ ] Rewrite Follow-through keyframe: Continue rotation past z-axis, weight forward
+- [ ] Test hologram to verify fluid, realistic throwing motion
+- [ ] Ensure hologram shows proper torque generation and hip-shoulder coordination
+
+
+
+
+## Hologram Rendering Issues - Current Session
+- [ ] Hologram looks like a box moving on X/Y axis only - no visible depth/rotation
+- [ ] Z-coordinates exist in data but not visualized properly
+- [ ] Implement CORRECT 3D perspective transformation:
+  * Apply perspective to show z-axis depth
+  * Parts further back (positive z) appear smaller and shifted
+  * Parts closer (negative z) appear larger and shifted
+  * NO distortion of skeleton structure
+- [ ] Hologram is stick figure - can't see hands, feet, or head
+- [ ] Match user's rendering style:
+  * Draw visible landmark dots (like green dots on user)
+  * Use same connection lines
+  * Make it look identical to user skeleton but in magenta/purple color
+  * Show all 33 landmarks as visible points
+
+
+
+
+## Keyframe 3D Coordination Issues - Current Session - ALL FIXED! ✅
+- [x] Hips show depth/rotation but shoulders and feet are flat
+- [x] Shoulders get distorted during motion - don't look human
+- [x] Body proportions are odd - shoulders look wrong compared to rest of body
+- [x] Audit all 6 keyframes for proper 3D z-coordinates:
+  * Shoulders rotate in sync with hips (0.000 diff in 5/6 phases)
+  * Feet/ankles rotate with body (0.000 diff in all phases)
+  * Knees rotate with body (0.000 diff in 5/6 phases)
+  * Arms maintain proper attachment to rotating shoulders
+- [x] Maintain consistent human proportions through all phases:
+  * Shoulder width: 0.180 (constant across ALL phases) ✅
+  * Torso length: 0.280 (constant across ALL phases) ✅
+  * Hip width: 0.160 (constant across ALL phases) ✅
+- [x] Verify coordinated full-body rotation - all parts move together as one unit
+
+### Fixes Applied:
+- **Wind-up**: All body parts rotate together (shoulders, hips, knees, ankles all at +0.20 z-rotation)
+- **Cocking**: All body parts rotate together (all at +0.28 z-rotation)
+- **Acceleration**: Hips/knees/ankles at +0.12, shoulders lag at +0.20 (INTENTIONAL torque separation)
+- **Release**: All body parts square to target (all at +0.04 z-rotation)
+- **Follow-through**: All body parts rotate together (all at -0.24 z-rotation)
+- **Proportions**: Shoulder width, hip width, and torso length now constant across all phases
+
