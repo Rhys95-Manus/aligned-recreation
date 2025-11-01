@@ -136,8 +136,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         // Draw holographic effect (glowing wireframe) - filter face landmarks
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#ff00ff';
-        
-        // Mirror landmarks for correct left/right orientation
+              // Mirror x-coordinates for proper right/left orientation
         // (MediaPipe x:0 = left, x:1 = right, but we need to flip for viewer perspective)
         // Apply additional flip if user wants left-handed hologram
         const mirroredLandmarks = proFrame.landmarks.map((lm: any) => ({
