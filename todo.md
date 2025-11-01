@@ -290,3 +290,20 @@
 - [ ] Test with left-handed toggle (should show left arm throwing, stay on screen)
 - [ ] Future enhancement: 3D toggle to rotate hologram to any angle
 
+
+
+
+## New Facebook Videos - Complete Throwing Motion
+- [ ] Download Video 1: https://www.facebook.com/reel/1503596520253163 (seconds 3-4, same motion)
+- [ ] Download Video 2: https://www.facebook.com/QUARTERBACKMECHANICS/videos/544896007258712 (35s to end, front-facing, starts at cocking)
+- [ ] Process both videos with MediaPipe to extract all frames
+- [ ] Analyze Video 1 (3-4s) for complete throwing sequence
+- [ ] Analyze Video 2 (35s+) for front-facing throwing motion
+- [ ] Select best video with:
+  * Complete phases (neutral → wind-up → cocking → acceleration → release → follow-through)
+  * Visible z-depth in shoulders, hips, feet
+  * Dramatic, fluid motion (not subtle/flat)
+- [ ] Extract 6 keyframes from best video
+- [ ] Verify shoulders, hips, feet all have coordinated z-rotation
+- [ ] Replace current flat keyframes with new 3D motion data
+
