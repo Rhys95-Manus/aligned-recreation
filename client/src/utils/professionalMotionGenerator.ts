@@ -3,7 +3,7 @@
  * Generates realistic professional reference motion sequences with phase-based pose landmarks and metrics
  */
 
-import { createThrowingKeyframes, interpolateKeyframes } from './professionalMotionKeyframes';
+import { interpolateKeyframes } from './professionalMotionKeyframes';
 
 export interface ProfessionalFrame {
   timestamp: number;
@@ -224,9 +224,8 @@ function generatePoseLandmarks(metrics: any, frameIndex: number, totalFrames: nu
   const progress = frameIndex / totalFrames;
   
   // Get landmarks from keyframe system - this returns realistic throwing poses!
-  const keyframes = createThrowingKeyframes();
-  const interpolatedFrame = interpolateKeyframes(keyframes, progress);
-  return interpolatedFrame.landmarks;
+  const interpolatedLandmarks = interpolateKeyframes(progress);
+  return interpolatedLandmarks;
 }
 
 /**

@@ -275,3 +275,18 @@
 - [ ] Test hologram rendering with real motion
 - [ ] Verify natural, fluid throwing motion with proper leg differentiation
 
+
+
+
+## Hologram Coordinate Transformation - Current Session
+- [x] Issue: Side-view video doesn't match front-facing user recordings
+- [x] Issue: Right-handed toggle shows LEFT arm throwing (backwards)
+- [x] Issue: Left-handed toggle goes off-screen
+- [x] Implement 90° coordinate rotation (side-view → front-view) - PARTIAL SUCCESS
+- [x] Extract front-facing throw from seconds 6-7 of same Facebook video (31 frames extracted)
+- [x] Replace side-view keyframes (seconds 2-4) with front-facing keyframes (seconds 6-7)
+- [x] Remove 90° rotation transformation (no longer needed with front-facing video)
+- [ ] Test with right-handed toggle (should show right arm throwing)
+- [ ] Test with left-handed toggle (should show left arm throwing, stay on screen)
+- [ ] Future enhancement: 3D toggle to rotate hologram to any angle
+

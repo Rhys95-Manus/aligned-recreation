@@ -1,317 +1,253 @@
-/**
- * Professional quarterback throwing motion - REAL MOTION CAPTURE
- * Extracted from Facebook reel using MediaPipe Pose (seconds 2-4)
- * Source: https://www.facebook.com/reel/912999550989454
- */
+// Professional quarterback throwing motion keyframes
+// Extracted from real QB video (FRONT-FACING, seconds 6-7)
+// 6 keyframes: Neutral, Wind-up, Cocking, Acceleration, Release, Follow-through
 
-export interface Keyframe {
-  phase: string;
-  progress: number; // 0.0 to 1.0
-  landmarks: any[];
+export interface Landmark {
+  x: number;
+  y: number;
+  z: number;
+  visibility?: number;
 }
 
-/**
- * Create a single landmark with proper typing
- */
-function createLandmark(x: number, y: number, z: number, visibility: number = 0.95) {
-  return { x, y, z, visibility };
-}
+export const PROFESSIONAL_KEYFRAMES: Landmark[][] = [
+  // NEUTRAL - Frame 180 (6.00s)
+  [
+    { x: 0.530146, y: 0.370254, z: -0.487681, visibility: 0.999812 },  // Landmark 0
+    { x: 0.545567, y: 0.353137, z: -0.488857, visibility: 0.999623 },  // Landmark 1
+    { x: 0.557145, y: 0.352081, z: -0.489366, visibility: 0.999599 },  // Landmark 2
+    { x: 0.568583, y: 0.351437, z: -0.489278, visibility: 0.999652 },  // Landmark 3
+    { x: 0.522819, y: 0.355367, z: -0.423627, visibility: 0.999711 },  // Landmark 4
+    { x: 0.515876, y: 0.355482, z: -0.424368, visibility: 0.999750 },  // Landmark 5
+    { x: 0.509539, y: 0.355708, z: -0.424778, visibility: 0.999801 },  // Landmark 6
+    { x: 0.593605, y: 0.354990, z: -0.378276, visibility: 0.999615 },  // Landmark 7
+    { x: 0.515776, y: 0.359101, z: -0.083701, visibility: 0.999467 },  // Landmark 8
+    { x: 0.550727, y: 0.379655, z: -0.432603, visibility: 0.999481 },  // Landmark 9
+    { x: 0.524750, y: 0.383549, z: -0.352401, visibility: 0.999504 },  // Landmark 10
+    { x: 0.643377, y: 0.423752, z: -0.480467, visibility: 0.999933 },  // Landmark 11
+    { x: 0.550118, y: 0.445288, z: 0.356885, visibility: 0.999747 },  // Landmark 12
+    { x: 0.581231, y: 0.556591, z: -0.602242, visibility: 0.866106 },  // Landmark 13
+    { x: 0.535587, y: 0.557149, z: 0.414094, visibility: 0.310937 },  // Landmark 14
+    { x: 0.418653, y: 0.581171, z: -0.638491, visibility: 0.857055 },  // Landmark 15
+    { x: 0.422853, y: 0.575348, z: 0.021982, visibility: 0.511542 },  // Landmark 16
+    { x: 0.380457, y: 0.590159, z: -0.714722, visibility: 0.858174 },  // Landmark 17
+    { x: 0.379396, y: 0.583831, z: -0.023504, visibility: 0.602628 },  // Landmark 18
+    { x: 0.380347, y: 0.571652, z: -0.705652, visibility: 0.862305 },  // Landmark 19
+    { x: 0.373521, y: 0.568538, z: -0.096214, visibility: 0.603769 },  // Landmark 20
+    { x: 0.395559, y: 0.567712, z: -0.627716, visibility: 0.826675 },  // Landmark 21
+    { x: 0.393558, y: 0.564002, z: -0.022955, visibility: 0.563829 },  // Landmark 22
+    { x: 0.660794, y: 0.648680, z: -0.288680, visibility: 0.999821 },  // Landmark 23
+    { x: 0.588571, y: 0.651453, z: 0.288440, visibility: 0.999776 },  // Landmark 24
+    { x: 0.555912, y: 0.788664, z: -0.515833, visibility: 0.937202 },  // Landmark 25
+    { x: 0.457138, y: 0.801713, z: 0.047105, visibility: 0.679660 },  // Landmark 26
+    { x: 0.729669, y: 0.954669, z: -0.350832, visibility: 0.922765 },  // Landmark 27
+    { x: 0.544656, y: 0.959032, z: 0.208470, visibility: 0.722043 },  // Landmark 28
+    { x: 0.771020, y: 0.977914, z: -0.341066, visibility: 0.778841 },  // Landmark 29
+    { x: 0.586845, y: 0.978202, z: 0.216052, visibility: 0.688302 },  // Landmark 30
+    { x: 0.639438, y: 1.007802, z: -0.619887, visibility: 0.922067 },  // Landmark 31
+    { x: 0.421240, y: 0.999075, z: 0.022409, visibility: 0.754237 },  // Landmark 32
+  ],
+  // WINDUP - Frame 185 (6.17s)
+  [
+    { x: 0.543426, y: 0.375373, z: -0.156292, visibility: 0.999864 },  // Landmark 0
+    { x: 0.559311, y: 0.358812, z: -0.168471, visibility: 0.999752 },  // Landmark 1
+    { x: 0.568986, y: 0.357553, z: -0.168962, visibility: 0.999738 },  // Landmark 2
+    { x: 0.577995, y: 0.356600, z: -0.168908, visibility: 0.999773 },  // Landmark 3
+    { x: 0.539259, y: 0.360513, z: -0.098927, visibility: 0.999801 },  // Landmark 4
+    { x: 0.534766, y: 0.360579, z: -0.099679, visibility: 0.999820 },  // Landmark 5
+    { x: 0.530982, y: 0.360369, z: -0.100044, visibility: 0.999850 },  // Landmark 6
+    { x: 0.610300, y: 0.359510, z: -0.129856, visibility: 0.999757 },  // Landmark 7
+    { x: 0.551948, y: 0.363196, z: 0.182977, visibility: 0.999595 },  // Landmark 8
+    { x: 0.567383, y: 0.384849, z: -0.128906, visibility: 0.999623 },  // Landmark 9
+    { x: 0.544393, y: 0.388094, z: -0.043511, visibility: 0.999565 },  // Landmark 10
+    { x: 0.645941, y: 0.426843, z: -0.293334, visibility: 0.999944 },  // Landmark 11
+    { x: 0.618787, y: 0.439185, z: 0.505389, visibility: 0.999442 },  // Landmark 12
+    { x: 0.547202, y: 0.527703, z: -0.436326, visibility: 0.919073 },  // Landmark 13
+    { x: 0.633229, y: 0.552366, z: 0.541135, visibility: 0.208446 },  // Landmark 14
+    { x: 0.380787, y: 0.568350, z: -0.452350, visibility: 0.910445 },  // Landmark 15
+    { x: 0.616784, y: 0.634074, z: 0.262556, visibility: 0.355913 },  // Landmark 16
+    { x: 0.341830, y: 0.577295, z: -0.533457, visibility: 0.907933 },  // Landmark 17
+    { x: 0.613676, y: 0.660759, z: 0.230949, visibility: 0.429685 },  // Landmark 18
+    { x: 0.334329, y: 0.569651, z: -0.505048, visibility: 0.910680 },  // Landmark 19
+    { x: 0.603137, y: 0.660043, z: 0.172596, visibility: 0.432400 },  // Landmark 20
+    { x: 0.350691, y: 0.566815, z: -0.434724, visibility: 0.882329 },  // Landmark 21
+    { x: 0.606719, y: 0.649355, z: 0.227094, visibility: 0.409802 },  // Landmark 22
+    { x: 0.666822, y: 0.648092, z: -0.268977, visibility: 0.999841 },  // Landmark 23
+    { x: 0.597415, y: 0.649531, z: 0.268648, visibility: 0.999776 },  // Landmark 24
+    { x: 0.634061, y: 0.795605, z: -0.422367, visibility: 0.959663 },  // Landmark 25
+    { x: 0.454674, y: 0.804759, z: 0.096252, visibility: 0.770983 },  // Landmark 26
+    { x: 0.806231, y: 0.957465, z: -0.286618, visibility: 0.949666 },  // Landmark 27
+    { x: 0.552157, y: 0.956162, z: 0.259651, visibility: 0.806433 },  // Landmark 28
+    { x: 0.849125, y: 0.978530, z: -0.286914, visibility: 0.837012 },  // Landmark 29
+    { x: 0.592591, y: 0.976540, z: 0.266661, visibility: 0.772677 },  // Landmark 30
+    { x: 0.765667, y: 1.005265, z: -0.552481, visibility: 0.946438 },  // Landmark 31
+    { x: 0.431711, y: 0.990905, z: 0.082754, visibility: 0.824692 },  // Landmark 32
+  ],
+  // COCKING - Frame 180 (6.00s)
+  [
+    { x: 0.530146, y: 0.370254, z: -0.487681, visibility: 0.999812 },  // Landmark 0
+    { x: 0.545567, y: 0.353137, z: -0.488857, visibility: 0.999623 },  // Landmark 1
+    { x: 0.557145, y: 0.352081, z: -0.489366, visibility: 0.999599 },  // Landmark 2
+    { x: 0.568583, y: 0.351437, z: -0.489278, visibility: 0.999652 },  // Landmark 3
+    { x: 0.522819, y: 0.355367, z: -0.423627, visibility: 0.999711 },  // Landmark 4
+    { x: 0.515876, y: 0.355482, z: -0.424368, visibility: 0.999750 },  // Landmark 5
+    { x: 0.509539, y: 0.355708, z: -0.424778, visibility: 0.999801 },  // Landmark 6
+    { x: 0.593605, y: 0.354990, z: -0.378276, visibility: 0.999615 },  // Landmark 7
+    { x: 0.515776, y: 0.359101, z: -0.083701, visibility: 0.999467 },  // Landmark 8
+    { x: 0.550727, y: 0.379655, z: -0.432603, visibility: 0.999481 },  // Landmark 9
+    { x: 0.524750, y: 0.383549, z: -0.352401, visibility: 0.999504 },  // Landmark 10
+    { x: 0.643377, y: 0.423752, z: -0.480467, visibility: 0.999933 },  // Landmark 11
+    { x: 0.550118, y: 0.445288, z: 0.356885, visibility: 0.999747 },  // Landmark 12
+    { x: 0.581231, y: 0.556591, z: -0.602242, visibility: 0.866106 },  // Landmark 13
+    { x: 0.535587, y: 0.557149, z: 0.414094, visibility: 0.310937 },  // Landmark 14
+    { x: 0.418653, y: 0.581171, z: -0.638491, visibility: 0.857055 },  // Landmark 15
+    { x: 0.422853, y: 0.575348, z: 0.021982, visibility: 0.511542 },  // Landmark 16
+    { x: 0.380457, y: 0.590159, z: -0.714722, visibility: 0.858174 },  // Landmark 17
+    { x: 0.379396, y: 0.583831, z: -0.023504, visibility: 0.602628 },  // Landmark 18
+    { x: 0.380347, y: 0.571652, z: -0.705652, visibility: 0.862305 },  // Landmark 19
+    { x: 0.373521, y: 0.568538, z: -0.096214, visibility: 0.603769 },  // Landmark 20
+    { x: 0.395559, y: 0.567712, z: -0.627716, visibility: 0.826675 },  // Landmark 21
+    { x: 0.393558, y: 0.564002, z: -0.022955, visibility: 0.563829 },  // Landmark 22
+    { x: 0.660794, y: 0.648680, z: -0.288680, visibility: 0.999821 },  // Landmark 23
+    { x: 0.588571, y: 0.651453, z: 0.288440, visibility: 0.999776 },  // Landmark 24
+    { x: 0.555912, y: 0.788664, z: -0.515833, visibility: 0.937202 },  // Landmark 25
+    { x: 0.457138, y: 0.801713, z: 0.047105, visibility: 0.679660 },  // Landmark 26
+    { x: 0.729669, y: 0.954669, z: -0.350832, visibility: 0.922765 },  // Landmark 27
+    { x: 0.544656, y: 0.959032, z: 0.208470, visibility: 0.722043 },  // Landmark 28
+    { x: 0.771020, y: 0.977914, z: -0.341066, visibility: 0.778841 },  // Landmark 29
+    { x: 0.586845, y: 0.978202, z: 0.216052, visibility: 0.688302 },  // Landmark 30
+    { x: 0.639438, y: 1.007802, z: -0.619887, visibility: 0.922067 },  // Landmark 31
+    { x: 0.421240, y: 0.999075, z: 0.022409, visibility: 0.754237 },  // Landmark 32
+  ],
+  // ACCELERATION - Frame 182 (6.07s)
+  [
+    { x: 0.531820, y: 0.375077, z: -0.444005, visibility: 0.999840 },  // Landmark 0
+    { x: 0.547682, y: 0.358141, z: -0.446958, visibility: 0.999685 },  // Landmark 1
+    { x: 0.559257, y: 0.356782, z: -0.447448, visibility: 0.999664 },  // Landmark 2
+    { x: 0.570485, y: 0.355868, z: -0.447334, visibility: 0.999708 },  // Landmark 3
+    { x: 0.524539, y: 0.360246, z: -0.381488, visibility: 0.999757 },  // Landmark 4
+    { x: 0.517164, y: 0.360192, z: -0.382219, visibility: 0.999788 },  // Landmark 5
+    { x: 0.511345, y: 0.359915, z: -0.382618, visibility: 0.999830 },  // Landmark 6
+    { x: 0.594102, y: 0.358680, z: -0.349335, visibility: 0.999679 },  // Landmark 7
+    { x: 0.523196, y: 0.362022, z: -0.076580, visibility: 0.999539 },  // Landmark 8
+    { x: 0.552599, y: 0.384352, z: -0.393422, visibility: 0.999554 },  // Landmark 9
+    { x: 0.526348, y: 0.387323, z: -0.313508, visibility: 0.999554 },  // Landmark 10
+    { x: 0.644953, y: 0.426612, z: -0.457932, visibility: 0.999932 },  // Landmark 11
+    { x: 0.571821, y: 0.445121, z: 0.384603, visibility: 0.999682 },  // Landmark 12
+    { x: 0.565488, y: 0.555480, z: -0.581348, visibility: 0.889414 },  // Landmark 13
+    { x: 0.546656, y: 0.556752, z: 0.441737, visibility: 0.271178 },  // Landmark 14
+    { x: 0.408006, y: 0.579939, z: -0.605583, visibility: 0.878390 },  // Landmark 15
+    { x: 0.413229, y: 0.584642, z: 0.059448, visibility: 0.479112 },  // Landmark 16
+    { x: 0.373890, y: 0.593915, z: -0.680552, visibility: 0.876155 },  // Landmark 17
+    { x: 0.376046, y: 0.593707, z: 0.015618, visibility: 0.574198 },  // Landmark 18
+    { x: 0.367223, y: 0.577514, z: -0.673529, visibility: 0.879911 },  // Landmark 19
+    { x: 0.366566, y: 0.582899, z: -0.060061, visibility: 0.577684 },  // Landmark 20
+    { x: 0.381066, y: 0.572883, z: -0.595770, visibility: 0.843903 },  // Landmark 21
+    { x: 0.382088, y: 0.578380, z: 0.013273, visibility: 0.544171 },  // Landmark 22
+    { x: 0.663836, y: 0.649087, z: -0.283946, visibility: 0.999812 },  // Landmark 23
+    { x: 0.594076, y: 0.650705, z: 0.283662, visibility: 0.999769 },  // Landmark 24
+    { x: 0.575634, y: 0.790968, z: -0.499194, visibility: 0.946680 },  // Landmark 25
+    { x: 0.450466, y: 0.803648, z: 0.061592, visibility: 0.722701 },  // Landmark 26
+    { x: 0.753837, y: 0.955069, z: -0.341417, visibility: 0.934243 },  // Landmark 27
+    { x: 0.548669, y: 0.958709, z: 0.235439, visibility: 0.760468 },  // Landmark 28
+    { x: 0.796434, y: 0.978408, z: -0.336839, visibility: 0.801056 },  // Landmark 29
+    { x: 0.590550, y: 0.977873, z: 0.244667, visibility: 0.725744 },  // Landmark 30
+    { x: 0.685535, y: 1.005061, z: -0.609400, visibility: 0.932008 },  // Landmark 31
+    { x: 0.427404, y: 0.996208, z: 0.057483, visibility: 0.785197 },  // Landmark 32
+  ],
+  // RELEASE - Frame 185 (6.17s)
+  [
+    { x: 0.543426, y: 0.375373, z: -0.156292, visibility: 0.999864 },  // Landmark 0
+    { x: 0.559311, y: 0.358812, z: -0.168471, visibility: 0.999752 },  // Landmark 1
+    { x: 0.568986, y: 0.357553, z: -0.168962, visibility: 0.999738 },  // Landmark 2
+    { x: 0.577995, y: 0.356600, z: -0.168908, visibility: 0.999773 },  // Landmark 3
+    { x: 0.539259, y: 0.360513, z: -0.098927, visibility: 0.999801 },  // Landmark 4
+    { x: 0.534766, y: 0.360579, z: -0.099679, visibility: 0.999820 },  // Landmark 5
+    { x: 0.530982, y: 0.360369, z: -0.100044, visibility: 0.999850 },  // Landmark 6
+    { x: 0.610300, y: 0.359510, z: -0.129856, visibility: 0.999757 },  // Landmark 7
+    { x: 0.551948, y: 0.363196, z: 0.182977, visibility: 0.999595 },  // Landmark 8
+    { x: 0.567383, y: 0.384849, z: -0.128906, visibility: 0.999623 },  // Landmark 9
+    { x: 0.544393, y: 0.388094, z: -0.043511, visibility: 0.999565 },  // Landmark 10
+    { x: 0.645941, y: 0.426843, z: -0.293334, visibility: 0.999944 },  // Landmark 11
+    { x: 0.618787, y: 0.439185, z: 0.505389, visibility: 0.999442 },  // Landmark 12
+    { x: 0.547202, y: 0.527703, z: -0.436326, visibility: 0.919073 },  // Landmark 13
+    { x: 0.633229, y: 0.552366, z: 0.541135, visibility: 0.208446 },  // Landmark 14
+    { x: 0.380787, y: 0.568350, z: -0.452350, visibility: 0.910445 },  // Landmark 15
+    { x: 0.616784, y: 0.634074, z: 0.262556, visibility: 0.355913 },  // Landmark 16
+    { x: 0.341830, y: 0.577295, z: -0.533457, visibility: 0.907933 },  // Landmark 17
+    { x: 0.613676, y: 0.660759, z: 0.230949, visibility: 0.429685 },  // Landmark 18
+    { x: 0.334329, y: 0.569651, z: -0.505048, visibility: 0.910680 },  // Landmark 19
+    { x: 0.603137, y: 0.660043, z: 0.172596, visibility: 0.432400 },  // Landmark 20
+    { x: 0.350691, y: 0.566815, z: -0.434724, visibility: 0.882329 },  // Landmark 21
+    { x: 0.606719, y: 0.649355, z: 0.227094, visibility: 0.409802 },  // Landmark 22
+    { x: 0.666822, y: 0.648092, z: -0.268977, visibility: 0.999841 },  // Landmark 23
+    { x: 0.597415, y: 0.649531, z: 0.268648, visibility: 0.999776 },  // Landmark 24
+    { x: 0.634061, y: 0.795605, z: -0.422367, visibility: 0.959663 },  // Landmark 25
+    { x: 0.454674, y: 0.804759, z: 0.096252, visibility: 0.770983 },  // Landmark 26
+    { x: 0.806231, y: 0.957465, z: -0.286618, visibility: 0.949666 },  // Landmark 27
+    { x: 0.552157, y: 0.956162, z: 0.259651, visibility: 0.806433 },  // Landmark 28
+    { x: 0.849125, y: 0.978530, z: -0.286914, visibility: 0.837012 },  // Landmark 29
+    { x: 0.592591, y: 0.976540, z: 0.266661, visibility: 0.772677 },  // Landmark 30
+    { x: 0.765667, y: 1.005265, z: -0.552481, visibility: 0.946438 },  // Landmark 31
+    { x: 0.431711, y: 0.990905, z: 0.082754, visibility: 0.824692 },  // Landmark 32
+  ],
+  // FOLLOW_THROUGH - Frame 210 (7.00s)
+  [
+    { x: 0.550624, y: 0.367214, z: -0.692060, visibility: 0.999593 },  // Landmark 0
+    { x: 0.569677, y: 0.353795, z: -0.666614, visibility: 0.999210 },  // Landmark 1
+    { x: 0.581506, y: 0.354254, z: -0.667264, visibility: 0.999272 },  // Landmark 2
+    { x: 0.592652, y: 0.354755, z: -0.667087, visibility: 0.999427 },  // Landmark 3
+    { x: 0.539839, y: 0.351954, z: -0.641797, visibility: 0.999023 },  // Landmark 4
+    { x: 0.530518, y: 0.351320, z: -0.642473, visibility: 0.999030 },  // Landmark 5
+    { x: 0.520762, y: 0.350746, z: -0.642909, visibility: 0.998967 },  // Landmark 6
+    { x: 0.610353, y: 0.360710, z: -0.394688, visibility: 0.999693 },  // Landmark 7
+    { x: 0.515764, y: 0.353402, z: -0.336382, visibility: 0.997958 },  // Landmark 8
+    { x: 0.567675, y: 0.382073, z: -0.602081, visibility: 0.999518 },  // Landmark 9
+    { x: 0.530834, y: 0.380196, z: -0.574273, visibility: 0.999063 },  // Landmark 10
+    { x: 0.678646, y: 0.453461, z: -0.301573, visibility: 0.999889 },  // Landmark 11
+    { x: 0.419764, y: 0.413486, z: -0.119379, visibility: 0.998993 },  // Landmark 12
+    { x: 0.694524, y: 0.561683, z: -0.763599, visibility: 0.971993 },  // Landmark 13
+    { x: 0.282621, y: 0.374238, z: -0.346571, visibility: 0.714933 },  // Landmark 14
+    { x: 0.628253, y: 0.482025, z: -1.432417, visibility: 0.974733 },  // Landmark 15
+    { x: 0.171794, y: 0.284867, z: -0.750873, visibility: 0.745187 },  // Landmark 16
+    { x: 0.608977, y: 0.453984, z: -1.580720, visibility: 0.970811 },  // Landmark 17
+    { x: 0.137872, y: 0.258372, z: -0.852600, visibility: 0.750974 },  // Landmark 18
+    { x: 0.611196, y: 0.440436, z: -1.584561, visibility: 0.970212 },  // Landmark 19
+    { x: 0.151090, y: 0.249247, z: -0.903174, visibility: 0.745541 },  // Landmark 20
+    { x: 0.606327, y: 0.453600, z: -1.447571, visibility: 0.948565 },  // Landmark 21
+    { x: 0.161105, y: 0.259107, z: -0.786228, visibility: 0.732077 },  // Landmark 22
+    { x: 0.560054, y: 0.663970, z: -0.047641, visibility: 0.999719 },  // Landmark 23
+    { x: 0.397969, y: 0.658477, z: 0.047010, visibility: 0.999608 },  // Landmark 24
+    { x: 0.616799, y: 0.811492, z: -0.347856, visibility: 0.973940 },  // Landmark 25
+    { x: 0.298403, y: 0.826926, z: 0.136885, visibility: 0.872502 },  // Landmark 26
+    { x: 0.638842, y: 0.962748, z: -0.085174, visibility: 0.983975 },  // Landmark 27
+    { x: 0.296232, y: 0.911843, z: 0.851532, visibility: 0.932408 },  // Landmark 28
+    { x: 0.626778, y: 0.979044, z: -0.077006, visibility: 0.893951 },  // Landmark 29
+    { x: 0.318574, y: 0.919150, z: 0.909630, visibility: 0.849298 },  // Landmark 30
+    { x: 0.649925, y: 1.021579, z: -0.441550, visibility: 0.976684 },  // Landmark 31
+    { x: 0.226765, y: 0.980830, z: 0.677319, visibility: 0.907173 },  // Landmark 32
+  ],];
 
-/**
- * Real QB Throwing Keyframes - Motion Capture Data
- * 
- * Extracted from actual professional throwing motion
- * All 33 MediaPipe landmarks with natural, fluid movement
- */
-export function createThrowingKeyframes(): Keyframe[] {
-  return [
-
-    // NEUTRAL - Frame 60 (2.00s)
-    {
-      progress: 0.0,
-      phase: 'Neutral',
-      landmarks: [
-        createLandmark(0.443761, 0.300175, -0.825282, 1.00), // 0
-        createLandmark(0.442168, 0.287475, -0.788998, 0.99), // 1
-        createLandmark(0.445521, 0.287061, -0.789814, 0.99), // 2
-        createLandmark(0.449440, 0.286528, -0.789803, 1.00), // 3
-        createLandmark(0.425279, 0.287215, -0.794193, 0.99), // 4
-        createLandmark(0.417575, 0.286906, -0.794810, 0.99), // 5
-        createLandmark(0.406954, 0.286824, -0.795289, 1.00), // 6
-        createLandmark(0.435529, 0.291610, -0.519621, 1.00), // 7
-        createLandmark(0.374455, 0.292489, -0.537152, 0.99), // 8
-        createLandmark(0.447205, 0.312452, -0.713615, 1.00), // 9
-        createLandmark(0.425315, 0.312001, -0.723460, 1.00), // 10
-        createLandmark(0.516395, 0.359560, -0.378710, 1.00), // 11
-        createLandmark(0.286387, 0.371965, -0.270581, 1.00), // 12
-        createLandmark(0.590321, 0.467066, -0.610821, 0.60), // 13
-        createLandmark(0.233172, 0.476150, -0.572651, 0.79), // 14
-        createLandmark(0.452888, 0.432436, -1.145913, 0.63), // 15
-        createLandmark(0.287542, 0.432317, -1.191392, 0.78), // 16
-        createLandmark(0.414379, 0.425565, -1.280512, 0.62), // 17
-        createLandmark(0.297814, 0.426272, -1.339340, 0.76), // 18
-        createLandmark(0.413266, 0.409246, -1.289361, 0.62), // 19
-        createLandmark(0.305635, 0.408701, -1.340182, 0.74), // 20
-        createLandmark(0.420252, 0.410945, -1.157728, 0.54), // 21
-        createLandmark(0.310539, 0.413171, -1.209440, 0.64), // 22
-        createLandmark(0.466097, 0.555366, -0.062856, 1.00), // 23
-        createLandmark(0.335273, 0.552332, 0.062567, 1.00), // 24
-        createLandmark(0.431560, 0.705517, -0.149191, 0.84), // 25
-        createLandmark(0.249679, 0.699963, -0.026276, 0.84), // 26
-        createLandmark(0.460551, 0.839936, 0.351469, 0.89), // 27
-        createLandmark(0.241766, 0.827128, 0.481610, 0.93), // 28
-        createLandmark(0.463670, 0.854221, 0.370439, 0.67), // 29
-        createLandmark(0.267387, 0.846004, 0.517700, 0.76), // 30
-        createLandmark(0.449718, 0.892731, 0.013988, 0.86), // 31
-        createLandmark(0.159416, 0.871516, 0.231510, 0.88), // 32
-      ]
-    },
-
-    // WINDUP - Frame 64 (2.13s)
-    {
-      progress: 0.35,
-      phase: 'Windup',
-      landmarks: [
-        createLandmark(0.453029, 0.298928, -0.835618, 1.00), // 0
-        createLandmark(0.452358, 0.285962, -0.802342, 0.99), // 1
-        createLandmark(0.456472, 0.285596, -0.803142, 0.99), // 2
-        createLandmark(0.461521, 0.285058, -0.803114, 0.99), // 3
-        createLandmark(0.435216, 0.285557, -0.805803, 0.99), // 4
-        createLandmark(0.426599, 0.285057, -0.806399, 0.99), // 5
-        createLandmark(0.416261, 0.284702, -0.806847, 1.00), // 6
-        createLandmark(0.448405, 0.290391, -0.543182, 1.00), // 7
-        createLandmark(0.386573, 0.290610, -0.553875, 0.99), // 8
-        createLandmark(0.457238, 0.310944, -0.727697, 1.00), // 9
-        createLandmark(0.434393, 0.310690, -0.735767, 1.00), // 10
-        createLandmark(0.538149, 0.358807, -0.399907, 1.00), // 11
-        createLandmark(0.304371, 0.374905, -0.289358, 1.00), // 12
-        createLandmark(0.604004, 0.466309, -0.604693, 0.70), // 13
-        createLandmark(0.260055, 0.477448, -0.582509, 0.69), // 14
-        createLandmark(0.460454, 0.431058, -1.103483, 0.71), // 15
-        createLandmark(0.307930, 0.434346, -1.190296, 0.67), // 16
-        createLandmark(0.419478, 0.428822, -1.229779, 0.70), // 17
-        createLandmark(0.322674, 0.429867, -1.336506, 0.66), // 18
-        createLandmark(0.417196, 0.412820, -1.240409, 0.70), // 19
-        createLandmark(0.326104, 0.413865, -1.343147, 0.65), // 20
-        createLandmark(0.424586, 0.413531, -1.114527, 0.60), // 21
-        createLandmark(0.329802, 0.416782, -1.211108, 0.53), // 22
-        createLandmark(0.490669, 0.555916, -0.044790, 1.00), // 23
-        createLandmark(0.347156, 0.553612, 0.044564, 1.00), // 24
-        createLandmark(0.462195, 0.704383, -0.123526, 0.81), // 25
-        createLandmark(0.284165, 0.701092, -0.088184, 0.77), // 26
-        createLandmark(0.489907, 0.835541, 0.382435, 0.86), // 27
-        createLandmark(0.288712, 0.827506, 0.406968, 0.88), // 28
-        createLandmark(0.498813, 0.849204, 0.409644, 0.55), // 29
-        createLandmark(0.306937, 0.842202, 0.441512, 0.66), // 30
-        createLandmark(0.457769, 0.891754, 0.077268, 0.82), // 31
-        createLandmark(0.251376, 0.879184, 0.155351, 0.83), // 32
-      ]
-    },
-
-    // COCKING - Frame 73 (2.43s)
-    {
-      progress: 0.55,
-      phase: 'Cocking',
-      landmarks: [
-        createLandmark(0.484064, 0.319973, -0.510804, 1.00), // 0
-        createLandmark(0.478885, 0.307023, -0.486759, 1.00), // 1
-        createLandmark(0.482689, 0.306823, -0.487509, 1.00), // 2
-        createLandmark(0.486024, 0.306573, -0.487544, 1.00), // 3
-        createLandmark(0.463902, 0.306737, -0.485601, 1.00), // 4
-        createLandmark(0.455206, 0.306779, -0.486188, 1.00), // 5
-        createLandmark(0.446421, 0.306988, -0.486597, 1.00), // 6
-        createLandmark(0.468881, 0.311848, -0.304621, 1.00), // 7
-        createLandmark(0.414016, 0.313005, -0.296328, 0.99), // 8
-        createLandmark(0.482728, 0.331688, -0.433847, 1.00), // 9
-        createLandmark(0.463568, 0.332203, -0.435832, 1.00), // 10
-        createLandmark(0.555207, 0.382710, -0.268505, 1.00), // 11
-        createLandmark(0.341735, 0.400947, -0.072157, 1.00), // 12
-        createLandmark(0.558264, 0.485498, -0.402225, 0.83), // 13
-        createLandmark(0.271961, 0.483124, -0.339540, 0.57), // 14
-        createLandmark(0.389741, 0.475695, -0.675475, 0.80), // 15
-        createLandmark(0.300514, 0.456078, -0.884282, 0.52), // 16
-        createLandmark(0.351337, 0.470516, -0.767801, 0.79), // 17
-        createLandmark(0.296602, 0.449168, -1.000721, 0.55), // 18
-        createLandmark(0.351633, 0.455988, -0.768725, 0.79), // 19
-        createLandmark(0.313059, 0.437923, -1.002228, 0.54), // 20
-        createLandmark(0.361157, 0.461447, -0.677816, 0.68), // 21
-        createLandmark(0.322188, 0.444929, -0.901160, 0.43), // 22
-        createLandmark(0.538478, 0.580198, -0.083629, 1.00), // 23
-        createLandmark(0.412204, 0.582936, 0.083304, 1.00), // 24
-        createLandmark(0.584574, 0.715413, -0.212585, 0.84), // 25
-        createLandmark(0.316386, 0.722198, 0.059366, 0.67), // 26
-        createLandmark(0.685003, 0.840098, 0.074356, 0.84), // 27
-        createLandmark(0.290286, 0.847300, 0.289768, 0.86), // 28
-        createLandmark(0.692088, 0.857251, 0.083888, 0.45), // 29
-        createLandmark(0.309997, 0.866922, 0.300247, 0.61), // 30
-        createLandmark(0.702401, 0.890655, -0.192147, 0.80), // 31
-        createLandmark(0.235946, 0.882986, 0.040805, 0.81), // 32
-      ]
-    },
-
-    // ACCELERATION - Frame 83 (2.77s)
-    {
-      progress: 0.7,
-      phase: 'Acceleration',
-      landmarks: [
-        createLandmark(0.554719, 0.321845, -0.286245, 1.00), // 0
-        createLandmark(0.552943, 0.309242, -0.263361, 1.00), // 1
-        createLandmark(0.556324, 0.308835, -0.264080, 1.00), // 2
-        createLandmark(0.560202, 0.308325, -0.264049, 1.00), // 3
-        createLandmark(0.537758, 0.309802, -0.261887, 1.00), // 4
-        createLandmark(0.529298, 0.309898, -0.262471, 1.00), // 5
-        createLandmark(0.520226, 0.310178, -0.262735, 1.00), // 6
-        createLandmark(0.548173, 0.314913, -0.107365, 1.00), // 7
-        createLandmark(0.492456, 0.316477, -0.101174, 0.99), // 8
-        createLandmark(0.550421, 0.334161, -0.222459, 1.00), // 9
-        createLandmark(0.536222, 0.334780, -0.224576, 1.00), // 10
-        createLandmark(0.635325, 0.374824, -0.107255, 1.00), // 11
-        createLandmark(0.409011, 0.393112, 0.031566, 1.00), // 12
-        createLandmark(0.643065, 0.432078, -0.459027, 0.87), // 13
-        createLandmark(0.253125, 0.426822, -0.171438, 0.61), // 14
-        createLandmark(0.501406, 0.376044, -0.857333, 0.85), // 15
-        createLandmark(0.192346, 0.341492, -0.447565, 0.65), // 16
-        createLandmark(0.472758, 0.362885, -0.954138, 0.84), // 17
-        createLandmark(0.157850, 0.321287, -0.508896, 0.68), // 18
-        createLandmark(0.488892, 0.350604, -0.926716, 0.83), // 19
-        createLandmark(0.174826, 0.315232, -0.511719, 0.67), // 20
-        createLandmark(0.498199, 0.357604, -0.855660, 0.74), // 21
-        createLandmark(0.192924, 0.324851, -0.461923, 0.62), // 22
-        createLandmark(0.634214, 0.584359, -0.014546, 1.00), // 23
-        createLandmark(0.496172, 0.587585, 0.013972, 1.00), // 24
-        createLandmark(0.748335, 0.721832, -0.137238, 0.88), // 25
-        createLandmark(0.393859, 0.727845, -0.108738, 0.79), // 26
-        createLandmark(0.801767, 0.857593, 0.066264, 0.88), // 27
-        createLandmark(0.252067, 0.842005, 0.140597, 0.89), // 28
-        createLandmark(0.789431, 0.882792, 0.072584, 0.55), // 29
-        createLandmark(0.257200, 0.856118, 0.154685, 0.65), // 30
-        createLandmark(0.889657, 0.895260, -0.159995, 0.85), // 31
-        createLandmark(0.184462, 0.884169, -0.049247, 0.84), // 32
-      ]
-    },
-
-    // RELEASE - Frame 93 (3.10s)
-    {
-      progress: 0.82,
-      phase: 'Release',
-      landmarks: [
-        createLandmark(0.664646, 0.307240, 0.029398, 1.00), // 0
-        createLandmark(0.654422, 0.295076, 0.065493, 1.00), // 1
-        createLandmark(0.653269, 0.295268, 0.064852, 1.00), // 2
-        createLandmark(0.652516, 0.295476, 0.064882, 1.00), // 3
-        createLandmark(0.646499, 0.293991, -0.002360, 1.00), // 4
-        createLandmark(0.639564, 0.293607, -0.003111, 1.00), // 5
-        createLandmark(0.632286, 0.293079, -0.003455, 1.00), // 6
-        createLandmark(0.628189, 0.298675, 0.219798, 1.00), // 7
-        createLandmark(0.600483, 0.299398, -0.095041, 1.00), // 8
-        createLandmark(0.656616, 0.319443, 0.095277, 1.00), // 9
-        createLandmark(0.646353, 0.319517, 0.000788, 1.00), // 10
-        createLandmark(0.643048, 0.401971, 0.424713, 1.00), // 11
-        createLandmark(0.556828, 0.358036, -0.266357, 1.00), // 12
-        createLandmark(0.761699, 0.457039, 0.764901, 0.69), // 13
-        createLandmark(0.660882, 0.335034, -0.504938, 0.81), // 14
-        createLandmark(0.723902, 0.385267, 0.920483, 0.85), // 15
-        createLandmark(0.730522, 0.234456, -0.436988, 0.83), // 16
-        createLandmark(0.736442, 0.366681, 0.972257, 0.86), // 17
-        createLandmark(0.754862, 0.213215, -0.491308, 0.84), // 18
-        createLandmark(0.725193, 0.358837, 0.938283, 0.85), // 19
-        createLandmark(0.751515, 0.204386, -0.447352, 0.83), // 20
-        createLandmark(0.714307, 0.368831, 0.911542, 0.81), // 21
-        createLandmark(0.743149, 0.210682, -0.422461, 0.81), // 22
-        createLandmark(0.622047, 0.576748, 0.181297, 1.00), // 23
-        createLandmark(0.526219, 0.570972, -0.182024, 1.00), // 24
-        createLandmark(0.761211, 0.696541, 0.015813, 0.91), // 25
-        createLandmark(0.458578, 0.723399, -0.331607, 0.86), // 26
-        createLandmark(0.752603, 0.855092, 0.116146, 0.93), // 27
-        createLandmark(0.252897, 0.799424, -0.096101, 0.92), // 28
-        createLandmark(0.719190, 0.881640, 0.114929, 0.77), // 29
-        createLandmark(0.211150, 0.795586, -0.071710, 0.73), // 30
-        createLandmark(0.855119, 0.895341, -0.037809, 0.92), // 31
-        createLandmark(0.253331, 0.878755, -0.203298, 0.88), // 32
-      ]
-    },
-
-    // FOLLOWTHROUGH - Frame 103 (3.43s)
-    {
-      progress: 1.0,
-      phase: 'Followthrough',
-      landmarks: [
-        createLandmark(0.688083, 0.303755, 0.102437, 1.00), // 0
-        createLandmark(0.678527, 0.290316, 0.112899, 1.00), // 1
-        createLandmark(0.674481, 0.289890, 0.112413, 1.00), // 2
-        createLandmark(0.670726, 0.289621, 0.112490, 1.00), // 3
-        createLandmark(0.677994, 0.289821, 0.060604, 1.00), // 4
-        createLandmark(0.673719, 0.288976, 0.059812, 1.00), // 5
-        createLandmark(0.669445, 0.288231, 0.059617, 1.00), // 6
-        createLandmark(0.639024, 0.291220, 0.198600, 1.00), // 7
-        createLandmark(0.638155, 0.290228, -0.035034, 1.00), // 8
-        createLandmark(0.672860, 0.315187, 0.147131, 1.00), // 9
-        createLandmark(0.674193, 0.314498, 0.073684, 1.00), // 10
-        createLandmark(0.553493, 0.361414, 0.363553, 1.00), // 11
-        createLandmark(0.649626, 0.349696, -0.168245, 1.00), // 12
-        createLandmark(0.631719, 0.413697, 0.700801, 0.33), // 13
-        createLandmark(0.768718, 0.425560, -0.276441, 0.91), // 14
-        createLandmark(0.724661, 0.392663, 0.975209, 0.45), // 15
-        createLandmark(0.885332, 0.469544, -0.260321, 0.89), // 16
-        createLandmark(0.741468, 0.375493, 1.032339, 0.47), // 17
-        createLandmark(0.904830, 0.488548, -0.311416, 0.89), // 18
-        createLandmark(0.743051, 0.373091, 0.978586, 0.47), // 19
-        createLandmark(0.902984, 0.484177, -0.287493, 0.89), // 20
-        createLandmark(0.736612, 0.380714, 0.961872, 0.44), // 21
-        createLandmark(0.896239, 0.478413, -0.254373, 0.85), // 22
-        createLandmark(0.552800, 0.552347, 0.172957, 1.00), // 23
-        createLandmark(0.570591, 0.553230, -0.173346, 1.00), // 24
-        createLandmark(0.708814, 0.695031, 0.090869, 0.65), // 25
-        createLandmark(0.589587, 0.712725, -0.311845, 0.93), // 26
-        createLandmark(0.697104, 0.855380, 0.029216, 0.87), // 27
-        createLandmark(0.367743, 0.816090, -0.318541, 0.96), // 28
-        createLandmark(0.660383, 0.884464, 0.014492, 0.82), // 29
-        createLandmark(0.317543, 0.821533, -0.314970, 0.85), // 30
-        createLandmark(0.802724, 0.894746, -0.051831, 0.90), // 31
-        createLandmark(0.373267, 0.893354, -0.361509, 0.94), // 32
-      ]
-    }
-
-  ];
-}
-
-/**
- * Interpolate between keyframes to generate smooth animation
- */
-export function interpolateKeyframes(keyframes: Keyframe[], progress: number): Keyframe {
-  // Clamp progress
-  progress = Math.max(0, Math.min(1, progress));
+// Interpolate between keyframes to generate smooth motion
+export function interpolateKeyframes(progress: number): Landmark[] {
+  const numKeyframes = PROFESSIONAL_KEYFRAMES.length;
+  const scaledProgress = progress * (numKeyframes - 1);
+  const keyframeIndex = Math.floor(scaledProgress);
+  const t = scaledProgress - keyframeIndex;
   
-  // Find surrounding keyframes
-  let prevFrame = keyframes[0];
-  let nextFrame = keyframes[keyframes.length - 1];
-  
-  for (let i = 0; i < keyframes.length - 1; i++) {
-    if (progress >= keyframes[i].progress && progress <= keyframes[i + 1].progress) {
-      prevFrame = keyframes[i];
-      nextFrame = keyframes[i + 1];
-      break;
-    }
+  if (keyframeIndex >= numKeyframes - 1) {
+    return PROFESSIONAL_KEYFRAMES[numKeyframes - 1];
   }
   
-  // Calculate interpolation factor
-  const range = nextFrame.progress - prevFrame.progress;
-  const t = range > 0 ? (progress - prevFrame.progress) / range : 0;
+  const keyframe1 = PROFESSIONAL_KEYFRAMES[keyframeIndex];
+  const keyframe2 = PROFESSIONAL_KEYFRAMES[keyframeIndex + 1];
   
-  // Interpolate landmarks
-  const interpolatedLandmarks = prevFrame.landmarks.map((prevLm: any, i: number) => {
-    const nextLm = nextFrame.landmarks[i];
+  return keyframe1.map((lm1, i) => {
+    const lm2 = keyframe2[i];
     return {
-      x: prevLm.x + (nextLm.x - prevLm.x) * t,
-      y: prevLm.y + (nextLm.y - prevLm.y) * t,
-      z: prevLm.z + (nextLm.z - prevLm.z) * t,
-      visibility: prevLm.visibility + (nextLm.visibility - prevLm.visibility) * t
+      x: lm1.x + (lm2.x - lm1.x) * t,
+      y: lm1.y + (lm2.y - lm1.y) * t,
+      z: lm1.z + (lm2.z - lm1.z) * t,
+      visibility: lm1.visibility || 1.0
     };
   });
-  
-  return {
-    phase: t < 0.5 ? prevFrame.phase : nextFrame.phase,
-    progress,
-    landmarks: interpolatedLandmarks
-  };
 }
