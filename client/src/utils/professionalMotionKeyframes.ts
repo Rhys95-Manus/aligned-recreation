@@ -1,7 +1,7 @@
 /**
- * Keyframe-based professional quarterback throwing motion
- * Based on proper biomechanics research: z-axis → x-axis → z-axis rotation
- * Hip-shoulder separation creates torque during acceleration phase
+ * Professional quarterback throwing motion - REAL MOTION CAPTURE
+ * Extracted from Facebook reel using MediaPipe Pose (seconds 2-4)
+ * Source: https://www.facebook.com/reel/912999550989454
  */
 
 export interface Keyframe {
@@ -18,427 +18,300 @@ function createLandmark(x: number, y: number, z: number, visibility: number = 0.
 }
 
 /**
- * Professional QB Throwing Keyframes - Biomechanically Accurate
+ * Real QB Throwing Keyframes - Motion Capture Data
  * 
- * Rotation Sequence (Right-Handed QB):
- * - Neutral: Hips & shoulders on z-axis (facing target, z ≈ 0)
- * - Wind-up: Begin rotation to x-axis (~45° rotation)
- * - Cocking: Maximum x-axis rotation (~90°, perpendicular to target)
- *   * Left side FORWARD (z < 0), Right side BACK (z > 0)
- * - Acceleration: Hips rotate FIRST back to z-axis, shoulders lag (torque!)
- * - Release: Both square to target (z-axis, z ≈ 0)
- * - Follow-through: Continue past z-axis
+ * Extracted from actual professional throwing motion
+ * All 33 MediaPipe landmarks with natural, fluid movement
  */
 export function createThrowingKeyframes(): Keyframe[] {
-  const baseX = 0.5;
-  const baseY = 0.5;
-  
   return [
-    // ============================================================
-    // KEYFRAME 1: NEUTRAL STANCE (0%) - Loading Phase
-    // Hips and shoulders aligned on z-axis, facing target
-    // Weight balanced, ready position
-    // ============================================================
+
+    // NEUTRAL - Frame 60 (2.00s)
     {
-      phase: "Neutral",
       progress: 0.0,
+      phase: 'Neutral',
       landmarks: [
-        // Face (0-10) - head upright, eyes on target
-        ...Array(11).fill(null).map((_, i) => 
-          createLandmark(baseX + (i % 3 - 1) * 0.015, baseY - 0.35, -0.05)
-        ),
-        
-        // Shoulders (11-12) - SQUARE TO TARGET (z ≈ 0)
-        createLandmark(baseX - 0.09, baseY - 0.23, -0.01), // Left shoulder
-        createLandmark(baseX + 0.09, baseY - 0.23, 0.01), // Right shoulder
-        
-        // Elbows (13-14) - arms relaxed
-        createLandmark(baseX - 0.12, baseY - 0.10, -0.02), // Left elbow
-        createLandmark(baseX + 0.12, baseY - 0.08, 0.02), // Right elbow (ball in hand)
-        
-        // Wrists (15-16)
-        createLandmark(baseX - 0.13, baseY + 0.02, -0.01), // Left wrist
-        createLandmark(baseX + 0.10, baseY + 0.02, 0.03), // Right wrist (holding ball)
-        
-        // Hands (17-22)
-        ...Array(6).fill(null).map((_, i) => 
-          createLandmark(baseX + (i < 3 ? -0.14 : 0.11), baseY + 0.04, i < 3 ? 0 : 0.04, 0.85)
-        ),
-        
-        // Hips (23-24) - SQUARE TO TARGET (z ≈ 0)
-        createLandmark(baseX - 0.08, baseY + 0.05, -0.01), // Left hip
-        createLandmark(baseX + 0.08, baseY + 0.05, 0.01), // Right hip
-        
-        // Knees (25-26) - slight bend
-        createLandmark(baseX - 0.08, baseY + 0.20, -0.01), // Left knee
-        createLandmark(baseX + 0.08, baseY + 0.20, 0.01), // Right knee
-        
-        // Ankles (27-28)
-        createLandmark(baseX - 0.09, baseY + 0.35, 0), // Left ankle
-        createLandmark(baseX + 0.09, baseY + 0.35, 0), // Right ankle
-        
-        // Feet (29-32) - shoulder width, both pointing forward
-        createLandmark(baseX - 0.10, baseY + 0.37, 0.02, 0.88), // Left heel
-        createLandmark(baseX - 0.10, baseY + 0.37, -0.04, 0.88), // Left toe
-        createLandmark(baseX + 0.10, baseY + 0.37, 0.02, 0.88), // Right heel
-        createLandmark(baseX + 0.10, baseY + 0.37, -0.04, 0.88), // Right toe
+        createLandmark(0.443761, 0.300175, -0.825282, 1.00), // 0
+        createLandmark(0.442168, 0.287475, -0.788998, 0.99), // 1
+        createLandmark(0.445521, 0.287061, -0.789814, 0.99), // 2
+        createLandmark(0.449440, 0.286528, -0.789803, 1.00), // 3
+        createLandmark(0.425279, 0.287215, -0.794193, 0.99), // 4
+        createLandmark(0.417575, 0.286906, -0.794810, 0.99), // 5
+        createLandmark(0.406954, 0.286824, -0.795289, 1.00), // 6
+        createLandmark(0.435529, 0.291610, -0.519621, 1.00), // 7
+        createLandmark(0.374455, 0.292489, -0.537152, 0.99), // 8
+        createLandmark(0.447205, 0.312452, -0.713615, 1.00), // 9
+        createLandmark(0.425315, 0.312001, -0.723460, 1.00), // 10
+        createLandmark(0.516395, 0.359560, -0.378710, 1.00), // 11
+        createLandmark(0.286387, 0.371965, -0.270581, 1.00), // 12
+        createLandmark(0.590321, 0.467066, -0.610821, 0.60), // 13
+        createLandmark(0.233172, 0.476150, -0.572651, 0.79), // 14
+        createLandmark(0.452888, 0.432436, -1.145913, 0.63), // 15
+        createLandmark(0.287542, 0.432317, -1.191392, 0.78), // 16
+        createLandmark(0.414379, 0.425565, -1.280512, 0.62), // 17
+        createLandmark(0.297814, 0.426272, -1.339340, 0.76), // 18
+        createLandmark(0.413266, 0.409246, -1.289361, 0.62), // 19
+        createLandmark(0.305635, 0.408701, -1.340182, 0.74), // 20
+        createLandmark(0.420252, 0.410945, -1.157728, 0.54), // 21
+        createLandmark(0.310539, 0.413171, -1.209440, 0.64), // 22
+        createLandmark(0.466097, 0.555366, -0.062856, 1.00), // 23
+        createLandmark(0.335273, 0.552332, 0.062567, 1.00), // 24
+        createLandmark(0.431560, 0.705517, -0.149191, 0.84), // 25
+        createLandmark(0.249679, 0.699963, -0.026276, 0.84), // 26
+        createLandmark(0.460551, 0.839936, 0.351469, 0.89), // 27
+        createLandmark(0.241766, 0.827128, 0.481610, 0.93), // 28
+        createLandmark(0.463670, 0.854221, 0.370439, 0.67), // 29
+        createLandmark(0.267387, 0.846004, 0.517700, 0.76), // 30
+        createLandmark(0.449718, 0.892731, 0.013988, 0.86), // 31
+        createLandmark(0.159416, 0.871516, 0.231510, 0.88), // 32
       ]
     },
-    
-    // ============================================================
-    // KEYFRAME 2: WIND-UP (35%) - Early Arm-Cocking Phase
-    // Begin rotation toward x-axis (~45° rotation)
-    // Left side starts moving FORWARD, right side starts moving BACK
-    // Weight shifts to back foot
-    // ============================================================
+
+    // WINDUP - Frame 64 (2.13s)
     {
-      phase: "Wind-up",
       progress: 0.35,
+      phase: 'Windup',
       landmarks: [
-        // Face - head turns with body
-        ...Array(11).fill(null).map((_, i) => 
-          createLandmark(baseX + 0.02 + (i % 3 - 1) * 0.015, baseY - 0.36, -0.02)
-        ),
-        
-        // Shoulders - BEGIN ROTATION (~45°)
-        // Left forward (z < 0), Right back (z > 0)
-        createLandmark(baseX - 0.09, baseY - 0.22, -0.10), // Left shoulder FORWARD
-        createLandmark(baseX + 0.09, baseY - 0.22, 0.10), // Right shoulder BACK
-        
-        // Elbows - right arm rises, begins external rotation
-        createLandmark(baseX - 0.13, baseY - 0.12, -0.06), // Left elbow forward
-        createLandmark(baseX + 0.13, baseY - 0.18, 0.12), // Right elbow BACK and UP
-        
-        // Wrists - right hand at ear level
-        createLandmark(baseX - 0.14, baseY, -0.04), // Left wrist
-        createLandmark(baseX + 0.14, baseY - 0.22, 0.15), // Right wrist BACK
-        
-        // Hands
-        ...Array(6).fill(null).map((_, i) => 
-          createLandmark(baseX + (i < 3 ? -0.15 : 0.15), baseY + (i < 3 ? 0.02 : -0.24), i < 3 ? -0.03 : 0.16, 0.85)
-        ),
-        
-        // Hips - BEGIN ROTATION (~45°)
-        // Left forward (z < 0), Right back (z > 0)
-        createLandmark(baseX - 0.12, baseY + 0.06, -0.10), // Left hip FORWARD
-        createLandmark(baseX + 0.04, baseY + 0.04, 0.10), // Right hip BACK
-        
-        // Knees - right knee bends, weight loading
-        // Z-rotation MATCHES hips: -0.10 left, +0.10 right
-        createLandmark(baseX - 0.11, baseY + 0.21, -0.10), // Left knee forward
-        createLandmark(baseX + 0.05, baseY + 0.18, 0.10), // Right knee BENT, back
-        
-        // Ankles - Z-rotation MATCHES hips: -0.10 left, +0.10 right
-        createLandmark(baseX - 0.12, baseY + 0.34, -0.10), // Left ankle forward
-        createLandmark(baseX + 0.06, baseY + 0.32, 0.10), // Right ankle back
-        
-        // Feet - weight shifting to back foot
-        // Z-rotation MATCHES hips: -0.10 left, +0.10 right
-        createLandmark(baseX - 0.14, baseY + 0.36, -0.10, 0.88), // Left heel forward
-        createLandmark(baseX - 0.14, baseY + 0.36, -0.15, 0.88), // Left toe forward
-        createLandmark(baseX + 0.08, baseY + 0.34, 0.10, 0.88), // Right heel BACK (loaded)
-        createLandmark(baseX + 0.08, baseY + 0.34, 0.05, 0.88), // Right toe back
+        createLandmark(0.453029, 0.298928, -0.835618, 1.00), // 0
+        createLandmark(0.452358, 0.285962, -0.802342, 0.99), // 1
+        createLandmark(0.456472, 0.285596, -0.803142, 0.99), // 2
+        createLandmark(0.461521, 0.285058, -0.803114, 0.99), // 3
+        createLandmark(0.435216, 0.285557, -0.805803, 0.99), // 4
+        createLandmark(0.426599, 0.285057, -0.806399, 0.99), // 5
+        createLandmark(0.416261, 0.284702, -0.806847, 1.00), // 6
+        createLandmark(0.448405, 0.290391, -0.543182, 1.00), // 7
+        createLandmark(0.386573, 0.290610, -0.553875, 0.99), // 8
+        createLandmark(0.457238, 0.310944, -0.727697, 1.00), // 9
+        createLandmark(0.434393, 0.310690, -0.735767, 1.00), // 10
+        createLandmark(0.538149, 0.358807, -0.399907, 1.00), // 11
+        createLandmark(0.304371, 0.374905, -0.289358, 1.00), // 12
+        createLandmark(0.604004, 0.466309, -0.604693, 0.70), // 13
+        createLandmark(0.260055, 0.477448, -0.582509, 0.69), // 14
+        createLandmark(0.460454, 0.431058, -1.103483, 0.71), // 15
+        createLandmark(0.307930, 0.434346, -1.190296, 0.67), // 16
+        createLandmark(0.419478, 0.428822, -1.229779, 0.70), // 17
+        createLandmark(0.322674, 0.429867, -1.336506, 0.66), // 18
+        createLandmark(0.417196, 0.412820, -1.240409, 0.70), // 19
+        createLandmark(0.326104, 0.413865, -1.343147, 0.65), // 20
+        createLandmark(0.424586, 0.413531, -1.114527, 0.60), // 21
+        createLandmark(0.329802, 0.416782, -1.211108, 0.53), // 22
+        createLandmark(0.490669, 0.555916, -0.044790, 1.00), // 23
+        createLandmark(0.347156, 0.553612, 0.044564, 1.00), // 24
+        createLandmark(0.462195, 0.704383, -0.123526, 0.81), // 25
+        createLandmark(0.284165, 0.701092, -0.088184, 0.77), // 26
+        createLandmark(0.489907, 0.835541, 0.382435, 0.86), // 27
+        createLandmark(0.288712, 0.827506, 0.406968, 0.88), // 28
+        createLandmark(0.498813, 0.849204, 0.409644, 0.55), // 29
+        createLandmark(0.306937, 0.842202, 0.441512, 0.66), // 30
+        createLandmark(0.457769, 0.891754, 0.077268, 0.82), // 31
+        createLandmark(0.251376, 0.879184, 0.155351, 0.83), // 32
       ]
     },
-    
-    // ============================================================
-    // KEYFRAME 3: COCKING (55%) - Maximum External Rotation
-    // MAXIMUM x-axis rotation (~90°, perpendicular to target)
-    // Left side MAXIMUM FORWARD, right side MAXIMUM BACK
-    // "Layback" position - arm at maximum external rotation
-    // Weight fully on back foot
-    // ============================================================
+
+    // COCKING - Frame 73 (2.43s)
     {
-      phase: "Cocking",
       progress: 0.55,
+      phase: 'Cocking',
       landmarks: [
-        // Face - head turned with shoulders
-        ...Array(11).fill(null).map((_, i) => 
-          createLandmark(baseX + 0.03 + (i % 3 - 1) * 0.015, baseY - 0.37, 0)
-        ),
-        
-        // Shoulders - MAXIMUM ROTATION (~90°, perpendicular)
-        // Left MAXIMUM forward (z << 0), Right MAXIMUM back (z >> 0)
-        // Torso length = 0.28, shoulder width = 0.18
-        createLandmark(baseX - 0.09, baseY - 0.22, -0.14), // Left shoulder MAXIMUM FORWARD
-        createLandmark(baseX + 0.09, baseY - 0.22, 0.14), // Right shoulder MAXIMUM BACK
-        
-        // Elbows - right elbow high, maximum layback
-        createLandmark(baseX - 0.14, baseY - 0.13, -0.12), // Left elbow forward
-        createLandmark(baseX + 0.10, baseY - 0.28, 0.18), // Right elbow MAXIMUM BACK, HIGH
-        
-        // Wrists - maximum external rotation
-        createLandmark(baseX - 0.15, baseY - 0.01, -0.10), // Left wrist
-        createLandmark(baseX + 0.08, baseY - 0.35, 0.20), // Right wrist MAXIMUM BACK
-        
-        // Hands
-        ...Array(6).fill(null).map((_, i) => 
-          createLandmark(baseX + (i < 3 ? -0.16 : 0.09), baseY + (i < 3 ? 0 : -0.37), i < 3 ? -0.09 : 0.21, 0.85)
-        ),
-        
-        // Hips - MAXIMUM ROTATION (~90°, perpendicular)
-        // Left MAXIMUM forward, Right MAXIMUM back
-        createLandmark(baseX - 0.08, baseY + 0.06, -0.14), // Left hip MAXIMUM FORWARD
-        createLandmark(baseX + 0.08, baseY + 0.06, 0.14), // Right hip MAXIMUM BACK
-        
-        // Knees - back leg loaded, front leg planted
-        // Z-rotation MATCHES hips: -0.14 left, +0.14 right
-        createLandmark(baseX - 0.15, baseY + 0.22, -0.14), // Left knee forward
-        createLandmark(baseX + 0.02, baseY + 0.16, 0.14), // Right knee MAXIMUM BENT, loaded
-        
-        // Ankles - Z-rotation MATCHES hips: -0.14 left, +0.14 right
-        createLandmark(baseX - 0.16, baseY + 0.33, -0.14), // Left ankle forward
-        createLandmark(baseX + 0.03, baseY + 0.30, 0.14), // Right ankle back
-        
-        // Feet - weight FULLY on back foot
-        // Z-rotation MATCHES hips: -0.14 left, +0.14 right
-        createLandmark(baseX - 0.18, baseY + 0.35, -0.14, 0.88), // Left heel forward (light)
-        createLandmark(baseX - 0.18, baseY + 0.35, -0.20, 0.88), // Left toe forward
-        createLandmark(baseX + 0.05, baseY + 0.32, 0.14, 0.88), // Right heel MAXIMUM LOADED
-        createLandmark(baseX + 0.05, baseY + 0.32, 0.08, 0.88), // Right toe back
+        createLandmark(0.484064, 0.319973, -0.510804, 1.00), // 0
+        createLandmark(0.478885, 0.307023, -0.486759, 1.00), // 1
+        createLandmark(0.482689, 0.306823, -0.487509, 1.00), // 2
+        createLandmark(0.486024, 0.306573, -0.487544, 1.00), // 3
+        createLandmark(0.463902, 0.306737, -0.485601, 1.00), // 4
+        createLandmark(0.455206, 0.306779, -0.486188, 1.00), // 5
+        createLandmark(0.446421, 0.306988, -0.486597, 1.00), // 6
+        createLandmark(0.468881, 0.311848, -0.304621, 1.00), // 7
+        createLandmark(0.414016, 0.313005, -0.296328, 0.99), // 8
+        createLandmark(0.482728, 0.331688, -0.433847, 1.00), // 9
+        createLandmark(0.463568, 0.332203, -0.435832, 1.00), // 10
+        createLandmark(0.555207, 0.382710, -0.268505, 1.00), // 11
+        createLandmark(0.341735, 0.400947, -0.072157, 1.00), // 12
+        createLandmark(0.558264, 0.485498, -0.402225, 0.83), // 13
+        createLandmark(0.271961, 0.483124, -0.339540, 0.57), // 14
+        createLandmark(0.389741, 0.475695, -0.675475, 0.80), // 15
+        createLandmark(0.300514, 0.456078, -0.884282, 0.52), // 16
+        createLandmark(0.351337, 0.470516, -0.767801, 0.79), // 17
+        createLandmark(0.296602, 0.449168, -1.000721, 0.55), // 18
+        createLandmark(0.351633, 0.455988, -0.768725, 0.79), // 19
+        createLandmark(0.313059, 0.437923, -1.002228, 0.54), // 20
+        createLandmark(0.361157, 0.461447, -0.677816, 0.68), // 21
+        createLandmark(0.322188, 0.444929, -0.901160, 0.43), // 22
+        createLandmark(0.538478, 0.580198, -0.083629, 1.00), // 23
+        createLandmark(0.412204, 0.582936, 0.083304, 1.00), // 24
+        createLandmark(0.584574, 0.715413, -0.212585, 0.84), // 25
+        createLandmark(0.316386, 0.722198, 0.059366, 0.67), // 26
+        createLandmark(0.685003, 0.840098, 0.074356, 0.84), // 27
+        createLandmark(0.290286, 0.847300, 0.289768, 0.86), // 28
+        createLandmark(0.692088, 0.857251, 0.083888, 0.45), // 29
+        createLandmark(0.309997, 0.866922, 0.300247, 0.61), // 30
+        createLandmark(0.702401, 0.890655, -0.192147, 0.80), // 31
+        createLandmark(0.235946, 0.882986, 0.040805, 0.81), // 32
       ]
     },
-    
-    // ============================================================
-    // KEYFRAME 4: ACCELERATION (70%) - Hip-Shoulder Separation
-    // HIPS rotate FIRST back toward z-axis (explosive)
-    // SHOULDERS still rotated (lag behind) - creates TORQUE!
-    // This separation is KEY for power generation
-    // Weight transfers from back to front
-    // ============================================================
+
+    // ACCELERATION - Frame 83 (2.77s)
     {
-      phase: "Acceleration",
-      progress: 0.70,
+      progress: 0.7,
+      phase: 'Acceleration',
       landmarks: [
-        // Face - head starts turning back to target
-        ...Array(11).fill(null).map((_, i) => 
-          createLandmark(baseX + 0.01 + (i % 3 - 1) * 0.015, baseY - 0.36, -0.03)
-        ),
-        
-        // Shoulders - STILL ROTATED (lagging behind hips)
-        // Still ~60° rotated while hips are ~30° = SEPARATION!
-        // Torso length = 0.28, shoulder width = 0.18
-        createLandmark(baseX - 0.09, baseY - 0.22, -0.10), // Left shoulder still forward
-        createLandmark(baseX + 0.09, baseY - 0.22, 0.10), // Right shoulder still back
-        
-        // Elbows - right elbow drives forward
-        createLandmark(baseX - 0.13, baseY - 0.12, -0.08), // Left elbow
-        createLandmark(baseX + 0.08, baseY - 0.25, 0.12), // Right elbow driving forward
-        
-        // Wrists - arm accelerating
-        createLandmark(baseX - 0.14, baseY, -0.06), // Left wrist
-        createLandmark(baseX + 0.05, baseY - 0.30, 0.10), // Right wrist accelerating
-        
-        // Hands
-        ...Array(6).fill(null).map((_, i) => 
-          createLandmark(baseX + (i < 3 ? -0.15 : 0.06), baseY + (i < 3 ? 0.02 : -0.32), i < 3 ? -0.05 : 0.11, 0.85)
-        ),
-        
-        // Hips - ROTATING BACK TO Z-AXIS (explosive, leading shoulders)
-        // Hips at ~30° while shoulders still at ~60° = SEPARATION!
-        createLandmark(baseX - 0.10, baseY + 0.06, -0.06), // Left hip rotating back
-        createLandmark(baseX + 0.06, baseY + 0.04, 0.06), // Right hip driving forward
-        
-        // Knees - explosive leg drive, weight transferring
-        // Z-rotation MATCHES hips: -0.06 left, +0.06 right
-        createLandmark(baseX - 0.12, baseY + 0.21, -0.06), // Left knee straightening
-        createLandmark(baseX + 0.05, baseY + 0.18, 0.06), // Right knee driving
-        
-        // Ankles - weight shifting forward
-        // Z-rotation MATCHES hips: -0.06 left, +0.06 right
-        createLandmark(baseX - 0.13, baseY + 0.34, -0.06), // Left ankle
-        createLandmark(baseX + 0.06, baseY + 0.32, 0.06), // Right ankle
-        
-        // Feet - weight TRANSFERRING from back to front
-        // Z-rotation MATCHES hips: -0.06 left, +0.06 right
-        createLandmark(baseX - 0.15, baseY + 0.36, -0.06, 0.88), // Left heel loading
-        createLandmark(baseX - 0.15, baseY + 0.36, -0.11, 0.88), // Left toe
-        createLandmark(baseX + 0.08, baseY + 0.34, 0.06, 0.88), // Right heel unloading
-        createLandmark(baseX + 0.08, baseY + 0.34, 0.01, 0.88), // Right toe
+        createLandmark(0.554719, 0.321845, -0.286245, 1.00), // 0
+        createLandmark(0.552943, 0.309242, -0.263361, 1.00), // 1
+        createLandmark(0.556324, 0.308835, -0.264080, 1.00), // 2
+        createLandmark(0.560202, 0.308325, -0.264049, 1.00), // 3
+        createLandmark(0.537758, 0.309802, -0.261887, 1.00), // 4
+        createLandmark(0.529298, 0.309898, -0.262471, 1.00), // 5
+        createLandmark(0.520226, 0.310178, -0.262735, 1.00), // 6
+        createLandmark(0.548173, 0.314913, -0.107365, 1.00), // 7
+        createLandmark(0.492456, 0.316477, -0.101174, 0.99), // 8
+        createLandmark(0.550421, 0.334161, -0.222459, 1.00), // 9
+        createLandmark(0.536222, 0.334780, -0.224576, 1.00), // 10
+        createLandmark(0.635325, 0.374824, -0.107255, 1.00), // 11
+        createLandmark(0.409011, 0.393112, 0.031566, 1.00), // 12
+        createLandmark(0.643065, 0.432078, -0.459027, 0.87), // 13
+        createLandmark(0.253125, 0.426822, -0.171438, 0.61), // 14
+        createLandmark(0.501406, 0.376044, -0.857333, 0.85), // 15
+        createLandmark(0.192346, 0.341492, -0.447565, 0.65), // 16
+        createLandmark(0.472758, 0.362885, -0.954138, 0.84), // 17
+        createLandmark(0.157850, 0.321287, -0.508896, 0.68), // 18
+        createLandmark(0.488892, 0.350604, -0.926716, 0.83), // 19
+        createLandmark(0.174826, 0.315232, -0.511719, 0.67), // 20
+        createLandmark(0.498199, 0.357604, -0.855660, 0.74), // 21
+        createLandmark(0.192924, 0.324851, -0.461923, 0.62), // 22
+        createLandmark(0.634214, 0.584359, -0.014546, 1.00), // 23
+        createLandmark(0.496172, 0.587585, 0.013972, 1.00), // 24
+        createLandmark(0.748335, 0.721832, -0.137238, 0.88), // 25
+        createLandmark(0.393859, 0.727845, -0.108738, 0.79), // 26
+        createLandmark(0.801767, 0.857593, 0.066264, 0.88), // 27
+        createLandmark(0.252067, 0.842005, 0.140597, 0.89), // 28
+        createLandmark(0.789431, 0.882792, 0.072584, 0.55), // 29
+        createLandmark(0.257200, 0.856118, 0.154685, 0.65), // 30
+        createLandmark(0.889657, 0.895260, -0.159995, 0.85), // 31
+        createLandmark(0.184462, 0.884169, -0.049247, 0.84), // 32
       ]
     },
-    
-    // ============================================================
-    // KEYFRAME 5: RELEASE (82%) - Square to Target
-    // Hips AND shoulders SQUARE to target (z-axis, z ≈ 0)
-    // Arm fully extended forward
-    // Weight centered/forward
-    // Ball release point
-    // ============================================================
+
+    // RELEASE - Frame 93 (3.10s)
     {
-      phase: "Release",
       progress: 0.82,
+      phase: 'Release',
       landmarks: [
-        // Face - eyes locked on target
-        ...Array(11).fill(null).map((_, i) => 
-          createLandmark(baseX + (i % 3 - 1) * 0.015, baseY - 0.35, -0.05)
-        ),
-        
-        // Shoulders - SQUARE TO TARGET (z ≈ 0)
-        // Torso length = 0.28, shoulder width = 0.18
-        createLandmark(baseX - 0.09, baseY - 0.22, -0.02), // Left shoulder
-        createLandmark(baseX + 0.09, baseY - 0.22, 0.02), // Right shoulder
-        
-        // Elbows - right arm FULLY EXTENDED
-        createLandmark(baseX - 0.12, baseY - 0.10, -0.01), // Left elbow
-        createLandmark(baseX + 0.02, baseY - 0.30, -0.15), // Right elbow EXTENDED FORWARD
-        
-        // Wrists - release point FAR FORWARD
-        createLandmark(baseX - 0.13, baseY + 0.02, 0), // Left wrist
-        createLandmark(baseX - 0.05, baseY - 0.38, -0.22), // Right wrist MAXIMUM FORWARD
-        
-        // Hands - ball released
-        ...Array(6).fill(null).map((_, i) => 
-          createLandmark(baseX + (i < 3 ? -0.14 : -0.06), baseY + (i < 3 ? 0.04 : -0.40), i < 3 ? 0 : -0.23, 0.85)
-        ),
-        
-        // Hips - SQUARE TO TARGET (z ≈ 0)
-        createLandmark(baseX - 0.08, baseY + 0.06, -0.02), // Left hip
-        createLandmark(baseX + 0.08, baseY + 0.06, 0.02), // Right hip
-        
-        // Knees - weight centered
-        // Z-rotation MATCHES hips: -0.02 left, +0.02 right
-        createLandmark(baseX - 0.09, baseY + 0.20, -0.02), // Left knee
-        createLandmark(baseX + 0.08, baseY + 0.20, 0.02), // Right knee
-        
-        // Ankles - balanced
-        // Z-rotation MATCHES hips: -0.02 left, +0.02 right
-        createLandmark(baseX - 0.10, baseY + 0.35, -0.02), // Left ankle
-        createLandmark(baseX + 0.09, baseY + 0.35, 0.02), // Right ankle
-        
-        // Feet - weight centered/forward
-        // Z-rotation MATCHES hips: -0.02 left, +0.02 right
-        createLandmark(baseX - 0.11, baseY + 0.37, -0.02, 0.88), // Left heel
-        createLandmark(baseX - 0.11, baseY + 0.37, -0.07, 0.88), // Left toe
-        createLandmark(baseX + 0.10, baseY + 0.37, 0.02, 0.88), // Right heel
-        createLandmark(baseX + 0.10, baseY + 0.37, -0.03, 0.88), // Right toe
+        createLandmark(0.664646, 0.307240, 0.029398, 1.00), // 0
+        createLandmark(0.654422, 0.295076, 0.065493, 1.00), // 1
+        createLandmark(0.653269, 0.295268, 0.064852, 1.00), // 2
+        createLandmark(0.652516, 0.295476, 0.064882, 1.00), // 3
+        createLandmark(0.646499, 0.293991, -0.002360, 1.00), // 4
+        createLandmark(0.639564, 0.293607, -0.003111, 1.00), // 5
+        createLandmark(0.632286, 0.293079, -0.003455, 1.00), // 6
+        createLandmark(0.628189, 0.298675, 0.219798, 1.00), // 7
+        createLandmark(0.600483, 0.299398, -0.095041, 1.00), // 8
+        createLandmark(0.656616, 0.319443, 0.095277, 1.00), // 9
+        createLandmark(0.646353, 0.319517, 0.000788, 1.00), // 10
+        createLandmark(0.643048, 0.401971, 0.424713, 1.00), // 11
+        createLandmark(0.556828, 0.358036, -0.266357, 1.00), // 12
+        createLandmark(0.761699, 0.457039, 0.764901, 0.69), // 13
+        createLandmark(0.660882, 0.335034, -0.504938, 0.81), // 14
+        createLandmark(0.723902, 0.385267, 0.920483, 0.85), // 15
+        createLandmark(0.730522, 0.234456, -0.436988, 0.83), // 16
+        createLandmark(0.736442, 0.366681, 0.972257, 0.86), // 17
+        createLandmark(0.754862, 0.213215, -0.491308, 0.84), // 18
+        createLandmark(0.725193, 0.358837, 0.938283, 0.85), // 19
+        createLandmark(0.751515, 0.204386, -0.447352, 0.83), // 20
+        createLandmark(0.714307, 0.368831, 0.911542, 0.81), // 21
+        createLandmark(0.743149, 0.210682, -0.422461, 0.81), // 22
+        createLandmark(0.622047, 0.576748, 0.181297, 1.00), // 23
+        createLandmark(0.526219, 0.570972, -0.182024, 1.00), // 24
+        createLandmark(0.761211, 0.696541, 0.015813, 0.91), // 25
+        createLandmark(0.458578, 0.723399, -0.331607, 0.86), // 26
+        createLandmark(0.752603, 0.855092, 0.116146, 0.93), // 27
+        createLandmark(0.252897, 0.799424, -0.096101, 0.92), // 28
+        createLandmark(0.719190, 0.881640, 0.114929, 0.77), // 29
+        createLandmark(0.211150, 0.795586, -0.071710, 0.73), // 30
+        createLandmark(0.855119, 0.895341, -0.037809, 0.92), // 31
+        createLandmark(0.253331, 0.878755, -0.203298, 0.88), // 32
       ]
     },
-    
-    // ============================================================
-    // KEYFRAME 6: FOLLOW-THROUGH (100%) - Deceleration
-    // Continue rotation PAST z-axis (negative rotation)
-    // Right side now FORWARD, left side now BACK (opposite of cocking)
-    // Weight fully on front foot
-    // Arm across body
-    // ============================================================
+
+    // FOLLOWTHROUGH - Frame 103 (3.43s)
     {
-      phase: "Follow-through",
       progress: 1.0,
+      phase: 'Followthrough',
       landmarks: [
-        // Face - head turned left with follow-through
-        ...Array(11).fill(null).map((_, i) => 
-          createLandmark(baseX - 0.02 + (i % 3 - 1) * 0.015, baseY - 0.34, 0.03)
-        ),
-        
-        // Shoulders - ROTATED PAST Z-AXIS (opposite direction)
-        // Right forward (z < 0), Left back (z > 0)
-        // Torso length = 0.28, shoulder width = 0.18
-        createLandmark(baseX - 0.09, baseY - 0.22, 0.12), // Left shoulder BACK
-        createLandmark(baseX + 0.09, baseY - 0.22, -0.12), // Right shoulder FORWARD
-        
-        // Elbows - right arm across body
-        createLandmark(baseX - 0.10, baseY - 0.08, 0.08), // Left elbow back
-        createLandmark(baseX - 0.08, baseY - 0.15, -0.12), // Right elbow across body
-        
-        // Wrists - right hand across left side
-        createLandmark(baseX - 0.11, baseY + 0.02, 0.06), // Left wrist
-        createLandmark(baseX - 0.15, baseY - 0.05, -0.15), // Right wrist across
-        
-        // Hands
-        ...Array(6).fill(null).map((_, i) => 
-          createLandmark(baseX + (i < 3 ? -0.12 : -0.16), baseY + (i < 3 ? 0.04 : -0.03), i < 3 ? 0.05 : -0.16, 0.85)
-        ),
-        
-        // Hips - ROTATED PAST Z-AXIS
-        // Right forward (z < 0), Left back (z > 0)
-        createLandmark(baseX - 0.08, baseY + 0.06, 0.12), // Left hip BACK
-        createLandmark(baseX + 0.08, baseY + 0.06, -0.12), // Right hip FORWARD
-        
-        // Knees - weight on front leg
-        // Z-rotation MATCHES hips: +0.12 left (back), -0.12 right (forward)
-        createLandmark(baseX - 0.05, baseY + 0.22, 0.12), // Left knee back
-        createLandmark(baseX + 0.12, baseY + 0.19, -0.12), // Right knee forward
-        
-        // Ankles - weight forward
-        // Z-rotation MATCHES hips: +0.12 left (back), -0.12 right (forward)
-        createLandmark(baseX - 0.04, baseY + 0.36, 0.12), // Left ankle back
-        createLandmark(baseX + 0.14, baseY + 0.34, -0.12), // Right ankle forward
-        
-        // Feet - weight FULLY on front foot
-        // Z-rotation MATCHES hips: +0.12 left (back), -0.12 right (forward)
-        createLandmark(baseX - 0.03, baseY + 0.38, 0.12, 0.88), // Left heel back (light)
-        createLandmark(baseX - 0.03, baseY + 0.38, 0.07, 0.88), // Left toe back
-        createLandmark(baseX + 0.16, baseY + 0.36, -0.12, 0.88), // Right heel forward (loaded)
-        createLandmark(baseX + 0.16, baseY + 0.36, -0.17, 0.88), // Right toe forward
+        createLandmark(0.688083, 0.303755, 0.102437, 1.00), // 0
+        createLandmark(0.678527, 0.290316, 0.112899, 1.00), // 1
+        createLandmark(0.674481, 0.289890, 0.112413, 1.00), // 2
+        createLandmark(0.670726, 0.289621, 0.112490, 1.00), // 3
+        createLandmark(0.677994, 0.289821, 0.060604, 1.00), // 4
+        createLandmark(0.673719, 0.288976, 0.059812, 1.00), // 5
+        createLandmark(0.669445, 0.288231, 0.059617, 1.00), // 6
+        createLandmark(0.639024, 0.291220, 0.198600, 1.00), // 7
+        createLandmark(0.638155, 0.290228, -0.035034, 1.00), // 8
+        createLandmark(0.672860, 0.315187, 0.147131, 1.00), // 9
+        createLandmark(0.674193, 0.314498, 0.073684, 1.00), // 10
+        createLandmark(0.553493, 0.361414, 0.363553, 1.00), // 11
+        createLandmark(0.649626, 0.349696, -0.168245, 1.00), // 12
+        createLandmark(0.631719, 0.413697, 0.700801, 0.33), // 13
+        createLandmark(0.768718, 0.425560, -0.276441, 0.91), // 14
+        createLandmark(0.724661, 0.392663, 0.975209, 0.45), // 15
+        createLandmark(0.885332, 0.469544, -0.260321, 0.89), // 16
+        createLandmark(0.741468, 0.375493, 1.032339, 0.47), // 17
+        createLandmark(0.904830, 0.488548, -0.311416, 0.89), // 18
+        createLandmark(0.743051, 0.373091, 0.978586, 0.47), // 19
+        createLandmark(0.902984, 0.484177, -0.287493, 0.89), // 20
+        createLandmark(0.736612, 0.380714, 0.961872, 0.44), // 21
+        createLandmark(0.896239, 0.478413, -0.254373, 0.85), // 22
+        createLandmark(0.552800, 0.552347, 0.172957, 1.00), // 23
+        createLandmark(0.570591, 0.553230, -0.173346, 1.00), // 24
+        createLandmark(0.708814, 0.695031, 0.090869, 0.65), // 25
+        createLandmark(0.589587, 0.712725, -0.311845, 0.93), // 26
+        createLandmark(0.697104, 0.855380, 0.029216, 0.87), // 27
+        createLandmark(0.367743, 0.816090, -0.318541, 0.96), // 28
+        createLandmark(0.660383, 0.884464, 0.014492, 0.82), // 29
+        createLandmark(0.317543, 0.821533, -0.314970, 0.85), // 30
+        createLandmark(0.802724, 0.894746, -0.051831, 0.90), // 31
+        createLandmark(0.373267, 0.893354, -0.361509, 0.94), // 32
       ]
     }
+
   ];
 }
 
 /**
- * Interpolate between keyframes based on progress (0.0 to 1.0)
+ * Interpolate between keyframes to generate smooth animation
  */
 export function interpolateKeyframes(keyframes: Keyframe[], progress: number): Keyframe {
   // Clamp progress
   progress = Math.max(0, Math.min(1, progress));
   
   // Find surrounding keyframes
-  let prevKeyframe = keyframes[0];
-  let nextKeyframe = keyframes[keyframes.length - 1];
+  let prevFrame = keyframes[0];
+  let nextFrame = keyframes[keyframes.length - 1];
   
   for (let i = 0; i < keyframes.length - 1; i++) {
     if (progress >= keyframes[i].progress && progress <= keyframes[i + 1].progress) {
-      prevKeyframe = keyframes[i];
-      nextKeyframe = keyframes[i + 1];
+      prevFrame = keyframes[i];
+      nextFrame = keyframes[i + 1];
       break;
     }
   }
   
   // Calculate interpolation factor
-  const range = nextKeyframe.progress - prevKeyframe.progress;
-  const t = range === 0 ? 0 : (progress - prevKeyframe.progress) / range;
+  const range = nextFrame.progress - prevFrame.progress;
+  const t = range > 0 ? (progress - prevFrame.progress) / range : 0;
   
   // Interpolate landmarks
-  const interpolatedLandmarks = prevKeyframe.landmarks.map((prevLm: any, index: number) => {
-    const nextLm = nextKeyframe.landmarks[index];
+  const interpolatedLandmarks = prevFrame.landmarks.map((prevLm: any, i: number) => {
+    const nextLm = nextFrame.landmarks[i];
     return {
       x: prevLm.x + (nextLm.x - prevLm.x) * t,
       y: prevLm.y + (nextLm.y - prevLm.y) * t,
       z: prevLm.z + (nextLm.z - prevLm.z) * t,
-      visibility: prevLm.visibility
+      visibility: prevLm.visibility + (nextLm.visibility - prevLm.visibility) * t
     };
   });
   
-  // Determine current phase
-  let currentPhase = prevKeyframe.phase;
-  if (t > 0.5) {
-    currentPhase = nextKeyframe.phase;
-  }
-  
-  // Debug logging (can be removed in production)
-  if (Math.random() < 0.05) { // Log ~5% of frames to avoid spam
-    console.log(`🎯 Progress: ${progress.toFixed(2)} (${currentPhase})`);
-    console.log(`👤 FULL BODY POSITIONS:`);
-    console.log(`  💪 Arms:`);
-    console.log(`    L Shoulder (11): ${interpolatedLandmarks[11].x.toFixed(3)} ${interpolatedLandmarks[11].y.toFixed(3)} z: ${interpolatedLandmarks[11].z.toFixed(3)}`);
-    console.log(`    R Shoulder (12): ${interpolatedLandmarks[12].x.toFixed(3)} ${interpolatedLandmarks[12].y.toFixed(3)} z: ${interpolatedLandmarks[12].z.toFixed(3)}`);
-    console.log(`    L Elbow (13): ${interpolatedLandmarks[13].x.toFixed(3)} ${interpolatedLandmarks[13].y.toFixed(3)} z: ${interpolatedLandmarks[13].z.toFixed(3)}`);
-    console.log(`    R Elbow (14): ${interpolatedLandmarks[14].x.toFixed(3)} ${interpolatedLandmarks[14].y.toFixed(3)} z: ${interpolatedLandmarks[14].z.toFixed(3)}`);
-    console.log(`  🦴 Hips:`);
-    console.log(`    L Hip (23): ${interpolatedLandmarks[23].x.toFixed(3)} ${interpolatedLandmarks[23].y.toFixed(3)} z: ${interpolatedLandmarks[23].z.toFixed(3)}`);
-    console.log(`    R Hip (24): ${interpolatedLandmarks[24].x.toFixed(3)} ${interpolatedLandmarks[24].y.toFixed(3)} z: ${interpolatedLandmarks[24].z.toFixed(3)}`);
-    console.log(`  🦵 Legs:`);
-    console.log(`    L Knee (25): ${interpolatedLandmarks[25].x.toFixed(3)} ${interpolatedLandmarks[25].y.toFixed(3)} z: ${interpolatedLandmarks[25].z.toFixed(3)}`);
-    console.log(`    R Knee (26): ${interpolatedLandmarks[26].x.toFixed(3)} ${interpolatedLandmarks[26].y.toFixed(3)} z: ${interpolatedLandmarks[26].z.toFixed(3)}`);
-    console.log(`    L Ankle (27): ${interpolatedLandmarks[27].x.toFixed(3)} ${interpolatedLandmarks[27].y.toFixed(3)} z: ${interpolatedLandmarks[27].z.toFixed(3)}`);
-    console.log(`    R Ankle (28): ${interpolatedLandmarks[28].x.toFixed(3)} ${interpolatedLandmarks[28].y.toFixed(3)} z: ${interpolatedLandmarks[28].z.toFixed(3)}`);
-  }
-  
   return {
-    phase: currentPhase,
+    phase: t < 0.5 ? prevFrame.phase : nextFrame.phase,
     progress,
     landmarks: interpolatedLandmarks
   };
 }
-

@@ -160,7 +160,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           
           // Scale based on depth (further = smaller, closer = larger)
           // Subtle scaling to show depth without distortion
-          const scale = 1.0 / (1.0 + depth * 0.8);
+          // Clamp to prevent negative scale values
+          const scale = Math.max(0.2, Math.min(2.0, 1.0 / (1.0 + depth * 0.8)));
           
           // Opacity based on depth (further = dimmer)
           const opacity = Math.max(0.5, Math.min(1.0, 1.0 - depth * 1.5));

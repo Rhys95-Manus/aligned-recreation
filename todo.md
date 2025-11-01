@@ -258,3 +258,20 @@
 - **Follow-through**: All body parts rotate together (all at -0.24 z-rotation)
 - **Proportions**: Shoulder width, hip width, and torso length now constant across all phases
 
+
+
+
+## Video-Based Professional Motion Capture - Current Session - COMPLETE! ✅
+- [x] Download YouTube video: https://www.youtube.com/watch?v=CPMHEARywsU (WRONG VIDEO - discarded)
+- [x] Joe Burrow YouTube Shorts: https://www.youtube.com/shorts/P7QqoTKbrgI (BLOCKED - bot detection)
+- [x] Tom Brady instructional video: https://www.youtube.com/watch?v=lv5p2Xqkxyk (USER REQUESTED NOT TO USE)
+- [x] Download Facebook reel: https://www.facebook.com/reel/912999550989454 (SUCCESS!)
+- [x] Process full video with MediaPipe (406/423 frames detected - 96% success rate)
+- [x] Re-analyze focusing on seconds 2-4 (frames 60-120) for throwing motion
+- [x] Extract 6 keyframes from seconds 2-4 timeframe (Neutral, Wind-up, Cocking, Acceleration, Release, Follow-through)
+- [x] Convert pose data to TypeScript keyframe format
+- [x] Replace manual keyframes with real QB motion data
+- [x] Fix negative radius error (clamped scale to 0.2-2.0 range)
+- [ ] Test hologram rendering with real motion
+- [ ] Verify natural, fluid throwing motion with proper leg differentiation
+
