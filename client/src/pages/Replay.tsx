@@ -137,55 +137,57 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         // Draw holographic effect (glowing wireframe) - filter face landmarks
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#ff00ff';
-              // Mirror x-coordinates for proper right/left orientation
-        // (MediaPipe x:0 = left, x:1 = right, but we need to flip for viewer perspective)
-        // Apply additional flip if user wants left-handed hologram
-        const mirroredLandmarks = proFrame.landmarks.map((lm: any) => ({
-          ...lm,
-          x: isRightHanded ? (1 - lm.x) : lm.x  // Right-handed: flip, Left-handed: no flip
-        }));
+              // Calculate body center (hip midpoint) for rotation pivot
+        const leftHip = proFrame.landmarks[23];
+        const rightHip = proFrame.landmarks[24];
+        const bodyCenterX = (leftHip.x + rightHip.x) / 2;
+        const bodyCenterZ = (leftHip.z + rightHip.z) / 2;
         
-        // Apply Y-axis rotation (user-controlled viewing angle)
+        // Apply Y-axis rotation around body center (user-controlled viewing angle)
         const rotationRad = (rotationAngle * Math.PI) / 180;
         const cosTheta = Math.cos(rotationRad);
         const sinTheta = Math.sin(rotationRad);
         
-        const rotatedLandmarks = mirroredLandmarks.map((lm: any) => {
-          // Rotate around Y-axis: x' = x*cos(θ) + z*sin(θ), z' = -x*sin(θ) + z*cos(θ)
-          const rotatedX = lm.x * cosTheta + lm.z * sinTheta;
-          const rotatedZ = -lm.x * sinTheta + lm.z * cosTheta;
+        const rotatedLandmarks = proFrame.landmarks.map((lm: any) => {
+          // Translate to body center
+          const relX = lm.x - bodyCenterX;
+          const relZ = lm.z - bodyCenterZ;
           
+          // Rotate around Y-axis: x' = x*cos(θ) + z*sin(θ), z' = -x*sin(θ) + z*cos(θ)
+          const rotatedX = relX * cosTheta + relZ * sinTheta;
+          const rotatedZ = -relX * sinTheta + relZ * cosTheta;
+          
+          // Translate back
           return {
             ...lm,
-            x: rotatedX,
-            z: rotatedZ
+            x: rotatedX + bodyCenterX,
+            z: rotatedZ + bodyCenterZ
           };
         });
         
-        // CORRECT 3D PERSPECTIVE TRANSFORMATION
-        // Apply isometric-style projection: shift x-position based on z-depth
-        // This makes rotation visible without distorting the skeleton
-        const transformedLandmarks = rotatedLandmarks.map((lm: any, index: number) => {
-          // Z-axis: positive = away from camera (back), negative = toward camera (forward)
+        // Mirror for left-handed mode (flip x-coordinates)
+        const mirroredLandmarks = rotatedLandmarks.map((lm: any) => ({
+          ...lm,
+          x: isRightHanded ? lm.x : (1 - lm.x)  // Left-handed: flip x
+        }));
+        
+        // Apply 3D perspective transformation with MINIMAL scaling to maintain proportions
+        const transformedLandmarks = mirroredLandmarks.map((lm: any, index: number) => {
           const depth = lm.z || 0;
           
           // Isometric projection: shift x based on z-depth
-          // Parts further back (positive z) shift RIGHT
-          // Parts closer (negative z) shift LEFT
-          const perspectiveShift = depth * 0.4; // Adjust multiplier for effect strength
+          const perspectiveShift = depth * 0.3;
           const projectedX = lm.x + perspectiveShift;
           
-          // Scale based on depth (further = smaller, closer = larger)
-          // Subtle scaling to show depth without distortion
-          // Clamp to prevent negative scale values
-          const scale = Math.max(0.2, Math.min(2.0, 1.0 / (1.0 + depth * 0.8)));
+          // MINIMAL scaling to maintain full-body view and proportions
+          // Only scale by 5% max to show depth without distortion
+          const scale = Math.max(0.95, Math.min(1.05, 1.0 - depth * 0.05));
           
-          // Opacity based on depth (further = dimmer)
-          const opacity = Math.max(0.5, Math.min(1.0, 1.0 - depth * 1.5));
+          // Opacity based on depth (subtle)
+          const opacity = Math.max(0.7, Math.min(1.0, 1.0 - depth * 0.3));
           
-          // Magenta/Purple color (matching professional reference theme)
-          // Brighter for closer, dimmer for further
-          const brightness = Math.max(0.6, Math.min(1.0, 1.0 - depth * 1.2));
+          // Magenta/Purple color with depth-based brightness
+          const brightness = Math.max(0.7, Math.min(1.0, 1.0 - depth * 0.3));
           const r = Math.floor(255 * brightness);
           const g = Math.floor(0 * brightness);
           const b = Math.floor(255 * brightness);
