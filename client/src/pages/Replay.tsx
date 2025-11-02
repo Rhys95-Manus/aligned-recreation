@@ -37,6 +37,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isRightHanded, setIsRightHanded] = useState(true); // Toggle for left/right handed
   const [currentPhase, setCurrentPhase] = useState<MotionPhase>("Neutral");
+  const [rotationAngle, setRotationAngle] = useState(0); // 3D rotation angle in degrees (-180 to 180)
   
   // Generate professional motion sequence (same length as user motion)
   const professionalFrames = useRef<ProfessionalFrame[]>(
@@ -144,10 +145,27 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           x: isRightHanded ? (1 - lm.x) : lm.x  // Right-handed: flip, Left-handed: no flip
         }));
         
+        // Apply Y-axis rotation (user-controlled viewing angle)
+        const rotationRad = (rotationAngle * Math.PI) / 180;
+        const cosTheta = Math.cos(rotationRad);
+        const sinTheta = Math.sin(rotationRad);
+        
+        const rotatedLandmarks = mirroredLandmarks.map((lm: any) => {
+          // Rotate around Y-axis: x' = x*cos(θ) + z*sin(θ), z' = -x*sin(θ) + z*cos(θ)
+          const rotatedX = lm.x * cosTheta + lm.z * sinTheta;
+          const rotatedZ = -lm.x * sinTheta + lm.z * cosTheta;
+          
+          return {
+            ...lm,
+            x: rotatedX,
+            z: rotatedZ
+          };
+        });
+        
         // CORRECT 3D PERSPECTIVE TRANSFORMATION
         // Apply isometric-style projection: shift x-position based on z-depth
         // This makes rotation visible without distorting the skeleton
-        const transformedLandmarks = mirroredLandmarks.map((lm: any, index: number) => {
+        const transformedLandmarks = rotatedLandmarks.map((lm: any, index: number) => {
           // Z-axis: positive = away from camera (back), negative = toward camera (forward)
           const depth = lm.z || 0;
           
@@ -241,7 +259,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         ctx.shadowBlur = 0;
       }
     }
-  }, [currentFrameIndex, recordedFrames, isRightHanded]);
+  }, [currentFrameIndex, recordedFrames, isRightHanded, rotationAngle]);
   
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -294,16 +312,36 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           
           {/* Professional Hologram */}
           <div className="bg-[#1a1f2e] rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-pink-400">Professional Reference</h2>
-              <Button 
-                onClick={() => setIsRightHanded(!isRightHanded)} 
-                variant="outline" 
-                size="sm"
-                className="text-xs"
-              >
-                {isRightHanded ? '🤜 Right-Handed' : '🤛 Left-Handed'}
-              </Button>
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-pink-400">Professional Reference</h2>
+                <Button 
+                  onClick={() => setIsRightHanded(!isRightHanded)} 
+                  variant="outline" 
+                  size="sm"
+                  className="text-xs"
+                >
+                  {isRightHanded ? '🤜 Right-Handed' : '🤛 Left-Handed'}
+                </Button>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-400 whitespace-nowrap">View Angle:</span>
+                <input
+                  type="range"
+                  min="-180"
+                  max="180"
+                  value={rotationAngle}
+                  onChange={(e) => setRotationAngle(parseInt(e.target.value))}
+                  className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                />
+                <span className="text-sm text-pink-400 font-mono w-12">{rotationAngle}°</span>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => setRotationAngle(0)} variant="outline" size="sm" className="text-xs">Front</Button>
+                <Button onClick={() => setRotationAngle(90)} variant="outline" size="sm" className="text-xs">Side</Button>
+                <Button onClick={() => setRotationAngle(180)} variant="outline" size="sm" className="text-xs">Back</Button>
+                <Button onClick={() => setRotationAngle(-90)} variant="outline" size="sm" className="text-xs">Other Side</Button>
+              </div>
             </div>
             <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
               <canvas

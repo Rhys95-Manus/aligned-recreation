@@ -1,0 +1,8 @@
+{
+  "video": "video1_side_fluid.mp4",
+  "fps": 30.0,
+  "time_range": "2.0-4.0s",
+  "angle": "side",
+  "detection_rate": 0.0,
+  "poses": []
+}
