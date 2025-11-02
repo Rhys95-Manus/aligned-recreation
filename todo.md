@@ -344,3 +344,20 @@
 - [x] Implement true 3D Y-axis rotation around body center (hip midpoint)
 - [ ] Test rotation at different angles (0°, 90°, 180°, -90°) to verify 3D effect
 
+
+
+
+## Hologram Fixes Round 2 - Current Session (User Feedback)
+- [x] Fix neutral pose - switched to Video 3 (side-view, 0-2s) with 0.757-0.929 visibility
+- [x] Select cleaner neutral frame - found best frames across all videos
+- [x] Reorder keyframes to correct sequence: Neutral → Wind-up → Cocking → Acceleration → Release → Follow-through
+  * Neutral: elbow 109° (relaxed stance)
+  * Cocking: elbow 80° (arm back)
+  * Release: elbow 172° (arm extended)
+  * No dropback - starts at neutral
+- [x] Fix left/right toggle - applied 90° counter-clockwise rotation to preserve right-handedness
+  * Right-handed: Shows right arm throwing
+  * Left-handed: Mirrors to show left arm throwing
+- [x] Verify follow-through phase is included - elbow 172° at end
+- [ ] Test final hologram to confirm all issues resolved
+
