@@ -1,0 +1,258 @@
+// Professional QB throwing motion keyframes
+// Extracted from real QB video (FRONT-FACING, 3-4 seconds)
+// Source: https://www.facebook.com/reel/1503596520253163
+// Shows dramatic rotation progression and weight transfer:
+// - Shoulder rotation: 0.867 → 0.221 (4x decrease, body opens up)
+// - Hip rotation: 0.583 → 0.144 (4x decrease)
+// - Elbow range: 68.2° → 154.4° (86.2° total)
+// - Weight transfer: Foot diff 0.542 → 1.010 (back to front)
+
+export interface Landmark {
+  x: number;
+  y: number;
+  z: number;
+  visibility?: number;
+}
+
+export const PROFESSIONAL_KEYFRAMES: Landmark[][] = [
+  // NEUTRAL - Frame 2 (3.07s)
+  [
+    { x: 0.5304, y: 0.3758, z: -0.4485, visibility: 1.0 },  // Landmark 0
+    { x: 0.547, y: 0.3592, z: -0.4513, visibility: 1.0 },  // Landmark 1
+    { x: 0.5583, y: 0.3584, z: -0.4518, visibility: 1.0 },  // Landmark 2
+    { x: 0.5688, y: 0.3581, z: -0.4517, visibility: 1.0 },  // Landmark 3
+    { x: 0.5236, y: 0.3607, z: -0.3822, visibility: 1.0 },  // Landmark 4
+    { x: 0.5168, y: 0.3609, z: -0.383, visibility: 1.0 },  // Landmark 5
+    { x: 0.5106, y: 0.3609, z: -0.3834, visibility: 1.0 },  // Landmark 6
+    { x: 0.5968, y: 0.3606, z: -0.3486, visibility: 1.0 },  // Landmark 7
+    { x: 0.5228, y: 0.3633, z: -0.0354, visibility: 0.9999 },  // Landmark 8
+    { x: 0.5525, y: 0.3856, z: -0.3967, visibility: 1.0 },  // Landmark 9
+    { x: 0.526, y: 0.3884, z: -0.3115, visibility: 0.9999 },  // Landmark 10
+    { x: 0.6439, y: 0.4265, z: -0.4667, visibility: 1.0 },  // Landmark 11
+    { x: 0.5562, y: 0.448, z: 0.3998, visibility: 0.9998 },  // Landmark 12
+    { x: 0.5839, y: 0.5549, z: -0.5868, visibility: 0.9949 },  // Landmark 13
+    { x: 0.5461, y: 0.5595, z: 0.4283, visibility: 0.1642 },  // Landmark 14
+    { x: 0.4226, y: 0.5764, z: -0.6054, visibility: 0.9826 },  // Landmark 15
+    { x: 0.4306, y: 0.5812, z: 0.0564, visibility: 0.466 },  // Landmark 16
+    { x: 0.3837, y: 0.5877, z: -0.6782, visibility: 0.9679 },  // Landmark 17
+    { x: 0.3886, y: 0.5872, z: 0.0114, visibility: 0.5748 },  // Landmark 18
+    { x: 0.3812, y: 0.5697, z: -0.6684, visibility: 0.9678 },  // Landmark 19
+    { x: 0.3823, y: 0.5716, z: -0.0629, visibility: 0.575 },  // Landmark 20
+    { x: 0.3958, y: 0.5645, z: -0.5936, visibility: 0.9441 },  // Landmark 21
+    { x: 0.4023, y: 0.5664, z: 0.0105, visibility: 0.5603 },  // Landmark 22
+    { x: 0.6617, y: 0.6465, z: -0.2916, visibility: 0.9999 },  // Landmark 23
+    { x: 0.5897, y: 0.6475, z: 0.2914, visibility: 0.9999 },  // Landmark 24
+    { x: 0.5598, y: 0.7859, z: -0.4856, visibility: 0.9845 },  // Landmark 25
+    { x: 0.4296, y: 0.7995, z: 0.0228, visibility: 0.8924 },  // Landmark 26
+    { x: 0.7135, y: 0.9518, z: -0.3054, visibility: 0.9567 },  // Landmark 27
+    { x: 0.5421, y: 0.9546, z: 0.1787, visibility: 0.8816 },  // Landmark 28
+    { x: 0.7506, y: 0.9748, z: -0.2983, visibility: 0.8044 },  // Landmark 29
+    { x: 0.585, y: 0.9788, z: 0.1873, visibility: 0.8521 },  // Landmark 30
+    { x: 0.6075, y: 1.0174, z: -0.5332, visibility: 0.9397 },  // Landmark 31
+    { x: 0.4265, y: 0.9991, z: 0.0084, visibility: 0.8749 },  // Landmark 32
+  ],
+  // WIND-UP - Frame 4 (3.13s)
+  [
+    { x: 0.5326, y: 0.3768, z: -0.1842, visibility: 1.0 },  // Landmark 0
+    { x: 0.5501, y: 0.3599, z: -0.1997, visibility: 1.0 },  // Landmark 1
+    { x: 0.5611, y: 0.3589, z: -0.2002, visibility: 1.0 },  // Landmark 2
+    { x: 0.5712, y: 0.3583, z: -0.2002, visibility: 1.0 },  // Landmark 3
+    { x: 0.5287, y: 0.3614, z: -0.1279, visibility: 1.0 },  // Landmark 4
+    { x: 0.5241, y: 0.3615, z: -0.1287, visibility: 1.0 },  // Landmark 5
+    { x: 0.5197, y: 0.3613, z: -0.1291, visibility: 1.0 },  // Landmark 6
+    { x: 0.6009, y: 0.361, z: -0.1781, visibility: 1.0 },  // Landmark 7
+    { x: 0.5404, y: 0.3638, z: 0.152, visibility: 0.9999 },  // Landmark 8
+    { x: 0.555, y: 0.3868, z: -0.1588, visibility: 0.9999 },  // Landmark 9
+    { x: 0.5322, y: 0.3893, z: -0.0708, visibility: 0.9999 },  // Landmark 10
+    { x: 0.6462, y: 0.4287, z: -0.3436, visibility: 1.0 },  // Landmark 11
+    { x: 0.5862, y: 0.444, z: 0.4837, visibility: 0.9996 },  // Landmark 12
+    { x: 0.5589, y: 0.5479, z: -0.4643, visibility: 0.9951 },  // Landmark 13
+    { x: 0.6026, y: 0.5536, z: 0.5608, visibility: 0.1471 },  // Landmark 14
+    { x: 0.4046, y: 0.5775, z: -0.4401, visibility: 0.9839 },  // Landmark 15
+    { x: 0.6078, y: 0.6175, z: 0.2899, visibility: 0.4089 },  // Landmark 16
+    { x: 0.367, y: 0.5922, z: -0.5325, visibility: 0.9706 },  // Landmark 17
+    { x: 0.61, y: 0.6424, z: 0.2596, visibility: 0.5089 },  // Landmark 18
+    { x: 0.3574, y: 0.5774, z: -0.4902, visibility: 0.9707 },  // Landmark 19
+    { x: 0.599, y: 0.6404, z: 0.2047, visibility: 0.5107 },  // Landmark 20
+    { x: 0.3715, y: 0.5724, z: -0.4178, visibility: 0.9485 },  // Landmark 21
+    { x: 0.6007, y: 0.63, z: 0.2561, visibility: 0.5 },  // Landmark 22
+    { x: 0.6626, y: 0.6499, z: -0.2727, visibility: 0.9999 },  // Landmark 23
+    { x: 0.5929, y: 0.6505, z: 0.2725, visibility: 0.9998 },  // Landmark 24
+    { x: 0.5922, y: 0.7922, z: -0.4723, visibility: 0.9858 },  // Landmark 25
+    { x: 0.4358, y: 0.8039, z: 0.0402, visibility: 0.8983 },  // Landmark 26
+    { x: 0.7706, y: 0.9547, z: -0.3081, visibility: 0.9622 },  // Landmark 27
+    { x: 0.5459, y: 0.9575, z: 0.1723, visibility: 0.89 },  // Landmark 28
+    { x: 0.8135, y: 0.9765, z: -0.3043, visibility: 0.8253 },  // Landmark 29
+    { x: 0.5895, y: 0.9794, z: 0.1765, visibility: 0.8605 },  // Landmark 30
+    { x: 0.7149, y: 1.0141, z: -0.5698, visibility: 0.9469 },  // Landmark 31
+    { x: 0.4289, y: 0.9979, z: -0.0176, visibility: 0.8837 },  // Landmark 32
+  ],
+  // COCKING - Frame 5 (3.17s)
+  [
+    { x: 0.5343, y: 0.3769, z: -0.2056, visibility: 1.0 },  // Landmark 0
+    { x: 0.5516, y: 0.3599, z: -0.2151, visibility: 1.0 },  // Landmark 1
+    { x: 0.5626, y: 0.3589, z: -0.2155, visibility: 1.0 },  // Landmark 2
+    { x: 0.5726, y: 0.3582, z: -0.2155, visibility: 1.0 },  // Landmark 3
+    { x: 0.531, y: 0.3615, z: -0.1457, visibility: 1.0 },  // Landmark 4
+    { x: 0.5265, y: 0.3615, z: -0.1465, visibility: 1.0 },  // Landmark 5
+    { x: 0.5224, y: 0.3613, z: -0.1468, visibility: 1.0 },  // Landmark 6
+    { x: 0.6025, y: 0.3609, z: -0.1693, visibility: 1.0 },  // Landmark 7
+    { x: 0.5429, y: 0.3639, z: 0.1513, visibility: 0.9999 },  // Landmark 8
+    { x: 0.5565, y: 0.3868, z: -0.1714, visibility: 0.9999 },  // Landmark 9
+    { x: 0.5349, y: 0.3893, z: -0.0864, visibility: 0.9999 },  // Landmark 10
+    { x: 0.6461, y: 0.4292, z: -0.339, visibility: 1.0 },  // Landmark 11
+    { x: 0.5882, y: 0.4427, z: 0.5013, visibility: 0.9995 },  // Landmark 12
+    { x: 0.5574, y: 0.5442, z: -0.4505, visibility: 0.9955 },  // Landmark 13
+    { x: 0.6037, y: 0.5507, z: 0.5735, visibility: 0.1363 },  // Landmark 14
+    { x: 0.4033, y: 0.5781, z: -0.4255, visibility: 0.9852 },  // Landmark 15
+    { x: 0.5885, y: 0.6132, z: 0.2827, visibility: 0.371 },  // Landmark 16
+    { x: 0.3645, y: 0.5925, z: -0.5008, visibility: 0.973 },  // Landmark 17
+    { x: 0.5844, y: 0.6359, z: 0.2513, visibility: 0.4631 },  // Landmark 18
+    { x: 0.3562, y: 0.578, z: -0.4758, visibility: 0.9731 },  // Landmark 19
+    { x: 0.5718, y: 0.6335, z: 0.1926, visibility: 0.4649 },  // Landmark 20
+    { x: 0.3703, y: 0.5734, z: -0.4073, visibility: 0.9524 },  // Landmark 21
+    { x: 0.5765, y: 0.6243, z: 0.2467, visibility: 0.456 },  // Landmark 22
+    { x: 0.6631, y: 0.6501, z: -0.2701, visibility: 0.9999 },  // Landmark 23
+    { x: 0.5941, y: 0.6505, z: 0.2699, visibility: 0.9998 },  // Landmark 24
+    { x: 0.5949, y: 0.7931, z: -0.4711, visibility: 0.9869 },  // Landmark 25
+    { x: 0.4387, y: 0.8041, z: 0.0565, visibility: 0.9016 },  // Landmark 26
+    { x: 0.7757, y: 0.9556, z: -0.3011, visibility: 0.9651 },  // Landmark 27
+    { x: 0.5468, y: 0.9577, z: 0.1907, visibility: 0.8954 },  // Landmark 28
+    { x: 0.8188, y: 0.977, z: -0.2964, visibility: 0.837 },  // Landmark 29
+    { x: 0.5897, y: 0.9793, z: 0.1948, visibility: 0.8657 },  // Landmark 30
+    { x: 0.7197, y: 1.0115, z: -0.5533, visibility: 0.9509 },  // Landmark 31
+    { x: 0.4271, y: 0.9969, z: -0.0004, visibility: 0.8897 },  // Landmark 32
+  ],
+  // ACCELERATION - Frame 12 (3.40s)
+  [
+    { x: 0.5742, y: 0.3607, z: -0.2949, visibility: 0.9998 },  // Landmark 0
+    { x: 0.5928, y: 0.3477, z: -0.3041, visibility: 0.9998 },  // Landmark 1
+    { x: 0.6035, y: 0.3477, z: -0.3047, visibility: 0.9998 },  // Landmark 2
+    { x: 0.6131, y: 0.3477, z: -0.3047, visibility: 0.9999 },  // Landmark 3
+    { x: 0.571, y: 0.3476, z: -0.2398, visibility: 0.9998 },  // Landmark 4
+    { x: 0.5665, y: 0.3475, z: -0.2406, visibility: 0.9998 },  // Landmark 5
+    { x: 0.5619, y: 0.3472, z: -0.241, visibility: 0.9997 },  // Landmark 6
+    { x: 0.6417, y: 0.3509, z: -0.246, visibility: 0.9999 },  // Landmark 7
+    { x: 0.5803, y: 0.3516, z: 0.0451, visibility: 0.9994 },  // Landmark 8
+    { x: 0.5954, y: 0.3719, z: -0.2605, visibility: 0.9996 },  // Landmark 9
+    { x: 0.5719, y: 0.3736, z: -0.1817, visibility: 0.9991 },  // Landmark 10
+    { x: 0.6832, y: 0.4152, z: -0.3921, visibility: 1.0 },  // Landmark 11
+    { x: 0.6131, y: 0.4319, z: 0.3719, visibility: 0.9986 },  // Landmark 12
+    { x: 0.5521, y: 0.4954, z: -0.6354, visibility: 0.9968 },  // Landmark 13
+    { x: 0.6303, y: 0.5313, z: 0.4231, visibility: 0.0758 },  // Landmark 14
+    { x: 0.3669, y: 0.4871, z: -0.7939, visibility: 0.9906 },  // Landmark 15
+    { x: 0.6039, y: 0.5898, z: 0.1339, visibility: 0.1861 },  // Landmark 16
+    { x: 0.3213, y: 0.4825, z: -0.8957, visibility: 0.983 },  // Landmark 17
+    { x: 0.6019, y: 0.615, z: 0.1115, visibility: 0.2376 },  // Landmark 18
+    { x: 0.3202, y: 0.4729, z: -0.8641, visibility: 0.983 },  // Landmark 19
+    { x: 0.5871, y: 0.6119, z: 0.0406, visibility: 0.239 },  // Landmark 20
+    { x: 0.3391, y: 0.4779, z: -0.7781, visibility: 0.968 },  // Landmark 21
+    { x: 0.5797, y: 0.6053, z: 0.0942, visibility: 0.2373 },  // Landmark 22
+    { x: 0.6899, y: 0.6462, z: -0.2308, visibility: 0.9999 },  // Landmark 23
+    { x: 0.5948, y: 0.6494, z: 0.2305, visibility: 0.9998 },  // Landmark 24
+    { x: 0.6895, y: 0.7972, z: -0.3404, visibility: 0.9871 },  // Landmark 25
+    { x: 0.4887, y: 0.8032, z: 0.0782, visibility: 0.8791 },  // Landmark 26
+    { x: 0.8315, y: 0.9577, z: -0.1947, visibility: 0.9748 },  // Landmark 27
+    { x: 0.5514, y: 0.948, z: 0.2369, visibility: 0.9025 },  // Landmark 28
+    { x: 0.8655, y: 0.9771, z: -0.1958, visibility: 0.8663 },  // Landmark 29
+    { x: 0.5904, y: 0.9692, z: 0.2431, visibility: 0.8674 },  // Landmark 30
+    { x: 0.8271, y: 1.0122, z: -0.4651, visibility: 0.9616 },  // Landmark 31
+    { x: 0.4288, y: 0.9865, z: 0.0538, visibility: 0.8988 },  // Landmark 32
+  ],
+  // RELEASE - Frame 18 (3.60s)
+  [
+    { x: 0.612, y: 0.3348, z: -0.1925, visibility: 0.9997 },  // Landmark 0
+    { x: 0.629, y: 0.3201, z: -0.1869, visibility: 0.9997 },  // Landmark 1
+    { x: 0.6398, y: 0.32, z: -0.1874, visibility: 0.9997 },  // Landmark 2
+    { x: 0.6503, y: 0.3201, z: -0.1875, visibility: 0.9997 },  // Landmark 3
+    { x: 0.6021, y: 0.3202, z: -0.1464, visibility: 0.9996 },  // Landmark 4
+    { x: 0.5957, y: 0.3201, z: -0.1471, visibility: 0.9996 },  // Landmark 5
+    { x: 0.5889, y: 0.3199, z: -0.1476, visibility: 0.9996 },  // Landmark 6
+    { x: 0.6742, y: 0.3247, z: -0.1154, visibility: 0.9999 },  // Landmark 7
+    { x: 0.5997, y: 0.3238, z: 0.0935, visibility: 0.9989 },  // Landmark 8
+    { x: 0.6312, y: 0.3476, z: -0.1449, visibility: 0.9994 },  // Landmark 9
+    { x: 0.6018, y: 0.3488, z: -0.1035, visibility: 0.9988 },  // Landmark 10
+    { x: 0.7285, y: 0.3877, z: -0.1703, visibility: 1.0 },  // Landmark 11
+    { x: 0.579, y: 0.4121, z: 0.2966, visibility: 0.9988 },  // Landmark 12
+    { x: 0.7286, y: 0.4781, z: -0.3006, visibility: 0.9835 },  // Landmark 13
+    { x: 0.5098, y: 0.4968, z: -0.0201, visibility: 0.1221 },  // Landmark 14
+    { x: 0.5367, y: 0.4525, z: -0.3704, visibility: 0.9739 },  // Landmark 15
+    { x: 0.4867, y: 0.4027, z: -0.6217, visibility: 0.2214 },  // Landmark 16
+    { x: 0.4904, y: 0.4458, z: -0.4256, visibility: 0.9656 },  // Landmark 17
+    { x: 0.49, y: 0.39, z: -0.7285, visibility: 0.2805 },  // Landmark 18
+    { x: 0.496, y: 0.4352, z: -0.4128, visibility: 0.9643 },  // Landmark 19
+    { x: 0.512, y: 0.3856, z: -0.7172, visibility: 0.281 },  // Landmark 20
+    { x: 0.5108, y: 0.4386, z: -0.3593, visibility: 0.9334 },  // Landmark 21
+    { x: 0.5074, y: 0.3912, z: -0.6382, visibility: 0.2753 },  // Landmark 22
+    { x: 0.6973, y: 0.6251, z: -0.169, visibility: 0.9999 },  // Landmark 23
+    { x: 0.5794, y: 0.6289, z: 0.1685, visibility: 0.9998 },  // Landmark 24
+    { x: 0.7059, y: 0.7789, z: -0.2177, visibility: 0.974 },  // Landmark 25
+    { x: 0.506, y: 0.7911, z: 0.2182, visibility: 0.818 },  // Landmark 26
+    { x: 0.8221, y: 0.9399, z: -0.1101, visibility: 0.973 },  // Landmark 27
+    { x: 0.5157, y: 0.9205, z: 0.5013, visibility: 0.8992 },  // Landmark 28
+    { x: 0.8414, y: 0.9624, z: -0.1377, visibility: 0.834 },  // Landmark 29
+    { x: 0.5489, y: 0.9402, z: 0.5187, visibility: 0.8486 },  // Landmark 30
+    { x: 0.8063, y: 0.9909, z: -0.4718, visibility: 0.959 },  // Landmark 31
+    { x: 0.4064, y: 0.9721, z: 0.324, visibility: 0.8974 },  // Landmark 32
+  ],
+  // FOLLOW-THROUGH - Frame 27 (3.90s)
+  [
+    { x: 0.5829, y: 0.3258, z: -0.7812, visibility: 0.9998 },  // Landmark 0
+    { x: 0.6019, y: 0.3107, z: -0.7525, visibility: 0.9997 },  // Landmark 1
+    { x: 0.616, y: 0.3109, z: -0.7533, visibility: 0.9997 },  // Landmark 2
+    { x: 0.6293, y: 0.311, z: -0.7531, visibility: 0.9997 },  // Landmark 3
+    { x: 0.5737, y: 0.3107, z: -0.7349, visibility: 0.9996 },  // Landmark 4
+    { x: 0.5647, y: 0.3103, z: -0.7356, visibility: 0.9996 },  // Landmark 5
+    { x: 0.557, y: 0.3097, z: -0.736, visibility: 0.9996 },  // Landmark 6
+    { x: 0.6536, y: 0.3158, z: -0.5015, visibility: 0.9999 },  // Landmark 7
+    { x: 0.5541, y: 0.3113, z: -0.4153, visibility: 0.9991 },  // Landmark 8
+    { x: 0.6031, y: 0.3383, z: -0.6735, visibility: 0.9997 },  // Landmark 9
+    { x: 0.5701, y: 0.3379, z: -0.6541, visibility: 0.9993 },  // Landmark 10
+    { x: 0.7485, y: 0.4022, z: -0.38, visibility: 1.0 },  // Landmark 11
+    { x: 0.4585, y: 0.3848, z: -0.1588, visibility: 0.9993 },  // Landmark 12
+    { x: 0.7965, y: 0.5156, z: -0.712, visibility: 0.9825 },  // Landmark 13
+    { x: 0.2723, y: 0.3645, z: -0.4415, visibility: 0.5879 },  // Landmark 14
+    { x: 0.6717, y: 0.4723, z: -1.256, visibility: 0.9772 },  // Landmark 15
+    { x: 0.256, y: 0.281, z: -0.9593, visibility: 0.6219 },  // Landmark 16
+    { x: 0.6378, y: 0.4619, z: -1.3848, visibility: 0.9713 },  // Landmark 17
+    { x: 0.2497, y: 0.2616, z: -1.0758, visibility: 0.6331 },  // Landmark 18
+    { x: 0.6341, y: 0.4457, z: -1.3904, visibility: 0.9702 },  // Landmark 19
+    { x: 0.2848, y: 0.2584, z: -1.0521, visibility: 0.6252 },  // Landmark 20
+    { x: 0.6379, y: 0.4509, z: -1.2663, visibility: 0.9452 },  // Landmark 21
+    { x: 0.2934, y: 0.2687, z: -0.9677, visibility: 0.6085 },  // Landmark 22
+    { x: 0.631, y: 0.6121, z: -0.0721, visibility: 0.9999 },  // Landmark 23
+    { x: 0.4768, y: 0.6115, z: 0.0716, visibility: 0.9998 },  // Landmark 24
+    { x: 0.6604, y: 0.7555, z: -0.5395, visibility: 0.9773 },  // Landmark 25
+    { x: 0.3795, y: 0.7756, z: 0.0367, visibility: 0.8767 },  // Landmark 26
+    { x: 0.7048, y: 0.921, z: -0.2517, visibility: 0.9849 },  // Landmark 27
+    { x: 0.3995, y: 0.8929, z: 0.6256, visibility: 0.9465 },  // Landmark 28
+    { x: 0.7091, y: 0.9373, z: -0.2404, visibility: 0.8929 },  // Landmark 29
+    { x: 0.4303, y: 0.9076, z: 0.6675, visibility: 0.8962 },  // Landmark 30
+    { x: 0.6796, y: 0.983, z: -0.6463, visibility: 0.9771 },  // Landmark 31
+    { x: 0.3339, y: 0.9649, z: 0.3635, visibility: 0.9408 },  // Landmark 32
+  ],
+];
+
+export function interpolateKeyframes(progress: number): Landmark[] {
+  const numKeyframes = PROFESSIONAL_KEYFRAMES.length;
+  const scaledProgress = progress * (numKeyframes - 1);
+  const keyframeIndex = Math.floor(scaledProgress);
+  const t = scaledProgress - keyframeIndex;
+  
+  if (keyframeIndex >= numKeyframes - 1) {
+    return PROFESSIONAL_KEYFRAMES[numKeyframes - 1];
+  }
+  
+  const keyframe1 = PROFESSIONAL_KEYFRAMES[keyframeIndex];
+  const keyframe2 = PROFESSIONAL_KEYFRAMES[keyframeIndex + 1];
+  
+  return keyframe1.map((lm1, i) => {
+    const lm2 = keyframe2[i];
+    return {
+      x: lm1.x + (lm2.x - lm1.x) * t,
+      y: lm1.y + (lm2.y - lm1.y) * t,
+      z: lm1.z + (lm2.z - lm1.z) * t,
+      visibility: lm1.visibility || 1.0
+    };
+  });
+}
