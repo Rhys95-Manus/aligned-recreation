@@ -1,0 +1,258 @@
+[av1 @ 0x1f3fe00] Your platform doesn't suppport hardware accelerated AV1 decoding.
+[av1 @ 0x1f3fe00] Failed to get pixel format.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+INFO: [av1 @ 0x1f3fe00] Missing Sequence Header.
+Created TensorFlow Lite XNNPACK delegate for CPU.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1f3fe00] Missing Sequence Header.
+[av1 @ 0x1d02dc0] Your platform doesn't suppport hardware accelerated AV1 decoding.
+[av1 @ 0x1d02dc0] Failed to get pixel format.
+[av1 @ 0x1d02dc0] Your platform doesn't suppport hardware accelerated AV1 decoding.
+[av1 @ 0x1d02dc0] Failed to get pixel format.
+[av1 @ 0x1d02dc0] Your platform doesn't suppport hardware accelerated AV1 decoding.
+[av1 @ 0x1d02dc0] Failed to get pixel format.
+[av1 @ 0x1d02dc0] Your platform doesn't suppport hardware accelerated AV1 decoding.
+[av1 @ 0x1d02dc0] Failed to get pixel format.
+[av1 @ 0x1d02dc0] Your platform doesn't suppport hardware accelerated AV1 decoding.
+[av1 @ 0x1d02dc0] Failed to get pixel format.
+[av1 @ 0x1d02dc0] Your platform doesn't suppport hardware accelerated AV1 decoding.
+[av1 @ 0x1d02dc0] Failed to get pixel format.
+[av1 @ 0x1d02dc0] Missing Sequence Header.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+W0000 00:00:1762044906.900413  131513 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1762044907.050162  131515 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+/usr/local/lib/python3.11/dist-packages/google/protobuf/symbol_database.py:55: UserWarning: SymbolDatabase.GetPrototype() is deprecated. Please use message_factory.GetMessageClass() instead. SymbolDatabase.GetPrototype() will be removed soon.
+  warnings.warn('SymbolDatabase.GetPrototype() is deprecated. Please '
+
+================================================================================
+Processing: video1_side_fluid.mp4 (2.0-4.0s, side angle)
+================================================================================
+FPS: 30.0, Total frames: 423, Duration: 14.10s
+Frames processed: 61
+Poses detected: 0 (0.0%)
+Saved to video1_side_fluid_poses.json
+
+================================================================================
+Processing: video2_side.mp4 (15.0-17.0s, side angle)
+================================================================================
+FPS: 29.973, Total frames: 877, Duration: 29.26s
+Frames processed: 61
+Poses detected: 61 (100.0%)
+Saved to video2_side_poses.json
+
+================================================================================
+Processing: video3_side.mp4 (0.0-2.0s, side angle)
+================================================================================
+FPS: 30.0, Total frames: 1450, Duration: 48.33s
+Frames processed: 61
+Poses detected: 61 (100.0%)
+Saved to video3_side_poses.json
+
+================================================================================
+Processing: video4_front_torso.mp4 (63.0-65.0s, front_torso angle)
+================================================================================
+FPS: 23.976, Total frames: 1997, Duration: 83.29s
+Frames processed: 49
+Poses detected: 49 (100.0%)
+Saved to video4_front_torso_poses.json
+
+================================================================================
+Processing: video5_front.mp4 (3.0-4.0s, front angle)
+================================================================================
+FPS: 30.0, Total frames: 965, Duration: 32.17s
+Frames processed: 31
+Poses detected: 31 (100.0%)
+Saved to video5_front_poses.json
+
+================================================================================
+Processing: video6_mixed.mp4 (2.0-4.0s, mixed angle)
+================================================================================
+FPS: 27.0, Total frames: 318, Duration: 11.78s
+Frames processed: 55
+Poses detected: 52 (94.5%)
+Saved to video6_mixed_poses.json
+
+================================================================================
+PROCESSING COMPLETE - SUMMARY
+================================================================================
+video1_side_fluid.mp4:
+  Angle: side
+  Time: 2.0-4.0s
+  Detection: 0.0%
+  Poses: 0
+
+video2_side.mp4:
+  Angle: side
+  Time: 15.0-17.0s
+  Detection: 100.0%
+  Poses: 61
+
+video3_side.mp4:
+  Angle: side
+  Time: 0.0-2.0s
+  Detection: 100.0%
+  Poses: 61
+
+video4_front_torso.mp4:
+  Angle: front_torso
+  Time: 63.0-65.0s
+  Detection: 100.0%
+  Poses: 49
+
+video5_front.mp4:
+  Angle: front
+  Time: 3.0-4.0s
+  Detection: 100.0%
+  Poses: 31
+
+video6_mixed.mp4:
+  Angle: mixed
+  Time: 2.0-4.0s
+  Detection: 94.5%
+  Poses: 52
+

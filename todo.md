@@ -307,3 +307,23 @@
 - [ ] Verify shoulders, hips, feet all have coordinated z-rotation
 - [ ] Replace current flat keyframes with new 3D motion data
 
+
+
+
+## Multi-Angle 3D Hologram System - Current Session
+- [x] Download and process 6 QB videos from different camera angles (5/6 successful):
+  * Video 1 (side, most fluid): FAILED - AV1 codec issue
+  * Video 2 (side): ✓ 61 poses, 100% detection
+  * Video 3 (side): ✓ 61 poses, 100% detection
+  * Video 4 (front torso): ✓ 49 poses, 100% detection
+  * Video 5 (front): ✓ 31 poses, 100% detection
+  * Video 6 (mixed): ✓ 52 poses, 94.5% detection
+- [x] Extract throwing motion keyframes from each video
+- [x] Combine depth data from multiple viewpoints to create composite 3D model
+  * Front views (Videos 4 & 5) provide accurate x/y coordinates
+  * Side views (Videos 2 & 3) provide accurate z coordinates (depth)
+- [x] Implement 3D rotation control UI (slider + preset buttons) for hologram viewing angle
+- [x] Allow users to rotate hologram to match their recording angle (front/side/back)
+- [ ] Test hologram rotation and verify realistic motion from all angles
+- [ ] Save checkpoint with working 3D rotation feature
+
