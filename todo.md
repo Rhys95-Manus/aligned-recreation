@@ -327,3 +327,20 @@
 - [ ] Test hologram rotation and verify realistic motion from all angles
 - [ ] Save checkpoint with working 3D rotation feature
 
+
+
+
+## Hologram Fixes - Current Session (User Feedback)
+- [x] Fix weird starting pose - hologram looks like "on all fours" instead of neutral QB stance
+- [x] Use single front-facing video (Video 5) instead of multi-angle combination
+- [x] Manually enhance z-depth coordinates based on QB throwing biomechanics
+  * Neutral: Minimal rotation (right shoulder +0.05, left -0.05)
+  * Cocking: Maximum rotation (right shoulder +0.30, left -0.15)
+  * Release: Square to target (both shoulders near 0)
+  * Follow-through: Reverse rotation (right -0.20, left +0.10)
+- [x] Fix left-handed mode - now correctly flips x-coordinates when left-handed selected
+- [x] Maintain full-body view throughout entire motion (minimal 95-105% scaling)
+- [x] Fix distorted proportions - reduced scaling range from 0.2-2.0 to 0.95-1.05
+- [x] Implement true 3D Y-axis rotation around body center (hip midpoint)
+- [ ] Test rotation at different angles (0°, 90°, 180°, -90°) to verify 3D effect
+
