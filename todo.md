@@ -361,3 +361,36 @@
 - [x] Verify follow-through phase is included - elbow 172° at end
 - [ ] Test final hologram to confirm all issues resolved
 
+
+
+
+## Hologram Fixes Round 3 - User Testing Feedback
+- [x] Clean landmarks - no more dots everywhere ✓
+- [x] Fluid motion - looks like throwing motion ✓
+- [ ] Fix body proportions - short legs and huge body width (not human-like)
+- [ ] Center hologram in video frame
+- [ ] Fix motion sequence - currently: Dropback → Neutral → Cocking → Release
+  * Should be: Neutral → Wind-up → Cocking → Acceleration → Release → Follow-through
+  * Remove dropback at beginning
+  * Add follow-through at end
+- [ ] Fix arm width at release - goes off-screen (too wide)
+- [ ] Fix right/left toggle - STILL backwards:
+  * Right arm toggle shows LEFT arm throwing
+  * Left arm toggle shows RIGHT arm throwing
+  * 90° rotation didn't fix handedness issue
+
+
+
+
+## New Instagram Video - User Request
+- [x] Download https://www.instagram.com/p/DI2wtvBg3LR/ (first 1-1.5s)
+- [x] Process with MediaPipe, ignore text overlay (100% detection, 0.533-0.587 visibility)
+- [x] Check if front-facing and has complete throwing motion
+- [x] Extract sequence: Neutral (138°) → Wind-up (99°) → Cocking (66°) → Acceleration (155°) → Release (156°) → Follow-through (177°)
+- [x] Fix rotation: Added 180° offset so 0° faces forward
+- [x] Fix arm handedness: Removed mirroring logic, using original coordinates
+- [x] Fix centering: Normalized to 0.2-0.8 range with 60% scaling
+- [x] Fix proportions: Removed variable scaling
+- [x] Make hologram stationary: Set scale = 1.0 (no size changes)
+- [ ] Test and verify all fixes work correctly
+

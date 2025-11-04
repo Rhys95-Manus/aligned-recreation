@@ -144,7 +144,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         const bodyCenterZ = (leftHip.z + rightHip.z) / 2;
         
         // Apply Y-axis rotation around body center (user-controlled viewing angle)
-        const rotationRad = (rotationAngle * Math.PI) / 180;
+        // Add 180° offset so 0° faces forward (not backward)
+        const rotationRad = ((rotationAngle + 180) * Math.PI) / 180;
         const cosTheta = Math.cos(rotationRad);
         const sinTheta = Math.sin(rotationRad);
         
@@ -165,11 +166,30 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           };
         });
         
-        // Mirror for left-handed mode (flip x-coordinates)
-        const mirroredLandmarks = rotatedLandmarks.map((lm: any) => ({
+        // Normalize coordinates to fix proportions and centering
+        // Find bounding box
+        const allX = rotatedLandmarks.map((lm: any) => lm.x);
+        const allY = rotatedLandmarks.map((lm: any) => lm.y);
+        const minX = Math.min(...allX);
+        const maxX = Math.max(...allX);
+        const minY = Math.min(...allY);
+        const maxY = Math.max(...allY);
+        
+        const width = maxX - minX;
+        const height = maxY - minY;
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        
+        // Normalize to 0.2-0.8 range (centered with padding)
+        const normalizedLandmarks = rotatedLandmarks.map((lm: any) => ({
           ...lm,
-          x: isRightHanded ? lm.x : (1 - lm.x)  // Left-handed: flip x
+          x: 0.5 + ((lm.x - centerX) / width) * 0.6,  // Scale to 60% of canvas width
+          y: 0.5 + ((lm.y - centerY) / height) * 0.6  // Scale to 60% of canvas height
         }));
+        
+        // No mirroring needed - MediaPipe coordinates are correct as-is
+        // The rotation control handles viewing angle
+        const mirroredLandmarks = normalizedLandmarks;
         
         // Apply 3D perspective transformation with MINIMAL scaling to maintain proportions
         const transformedLandmarks = mirroredLandmarks.map((lm: any, index: number) => {
@@ -179,9 +199,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           const perspectiveShift = depth * 0.3;
           const projectedX = lm.x + perspectiveShift;
           
-          // MINIMAL scaling to maintain full-body view and proportions
-          // Only scale by 5% max to show depth without distortion
-          const scale = Math.max(0.95, Math.min(1.05, 1.0 - depth * 0.05));
+          // NO scaling - keep hologram stationary
+          const scale = 1.0;
           
           // Opacity based on depth (subtle)
           const opacity = Math.max(0.7, Math.min(1.0, 1.0 - depth * 0.3));
