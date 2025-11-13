@@ -10,6 +10,7 @@ export interface ProfessionalFrame {
   landmarks: any[];
   metrics: {
     hipRotation: number;
+    shoulderRotation: number;
     rightElbowAngle: number;
     leftElbowAngle: number;
     rightKneeFlexion: number;
@@ -28,6 +29,7 @@ export interface MotionPhase {
   endFrame: number;
   metrics: {
     hipRotation: number;
+    shoulderRotation: number;
     rightElbowAngle: number;
     leftElbowAngle: number;
     rightKneeFlexion: number;
@@ -57,6 +59,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       endFrame: Math.floor(totalFrames * 0.15),
       metrics: {
         hipRotation: 5,
+        shoulderRotation: 0,  // Square to target
         rightElbowAngle: 10,
         leftElbowAngle: 10,
         rightKneeFlexion: 5,
@@ -74,6 +77,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       endFrame: Math.floor(totalFrames * 0.35),
       metrics: {
         hipRotation: 45,
+        shoulderRotation: -30,  // Shoulders rotated back
         rightElbowAngle: 40,
         leftElbowAngle: 30,
         rightKneeFlexion: 25,
@@ -91,6 +95,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       endFrame: Math.floor(totalFrames * 0.55),
       metrics: {
         hipRotation: 90,      // Maximum hip rotation
+        shoulderRotation: -60,  // Maximum shoulder rotation back
         rightElbowAngle: 100,  // Maximum elbow flexion (bent back)
         leftElbowAngle: 80,
         rightKneeFlexion: 38,  // Maximum knee bend
@@ -108,6 +113,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       endFrame: Math.floor(totalFrames * 0.75),
       metrics: {
         hipRotation: 50,       // Hip rotation decreasing
+        shoulderRotation: -20,  // Shoulders opening up
         rightElbowAngle: 60,   // Elbow extending
         leftElbowAngle: 50,
         rightKneeFlexion: 20,  // Knee extending
@@ -125,6 +131,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       endFrame: Math.floor(totalFrames * 0.85),
       metrics: {
         hipRotation: 20,       // Hips nearly square
+        shoulderRotation: 0,   // Shoulders square to target
         rightElbowAngle: 15,   // Arm nearly extended
         leftElbowAngle: 30,
         rightKneeFlexion: 10,
@@ -142,6 +149,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       endFrame: totalFrames,
       metrics: {
         hipRotation: 10,
+        shoulderRotation: 5,   // Shoulders slightly forward past square
         rightElbowAngle: 20,
         leftElbowAngle: 25,
         rightKneeFlexion: 15,
@@ -177,6 +185,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
     // Interpolate metrics between current and next phase
     const metrics = {
       hipRotation: lerp(currentPhase.metrics.hipRotation, nextPhase.metrics.hipRotation, phaseProgress),
+      shoulderRotation: lerp(currentPhase.metrics.shoulderRotation, nextPhase.metrics.shoulderRotation, phaseProgress),
       rightElbowAngle: lerp(currentPhase.metrics.rightElbowAngle, nextPhase.metrics.rightElbowAngle, phaseProgress),
       leftElbowAngle: lerp(currentPhase.metrics.leftElbowAngle, nextPhase.metrics.leftElbowAngle, phaseProgress),
       rightKneeFlexion: lerp(currentPhase.metrics.rightKneeFlexion, nextPhase.metrics.rightKneeFlexion, phaseProgress),
