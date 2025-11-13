@@ -433,3 +433,12 @@
 - [ ] Update phase instructions to advance through all 5 phases
 - [ ] Test live metrics show correct values
 - [ ] Test replay shows correct comparison
+
+
+## Fix Live Metrics Accuracy (Current Session)
+- [x] Fix rotation calculation: square to camera = 0°, sideways = 90°
+- [x] Fix spine angle calculation: standing straight = 0°, leaning = deviation from 0°
+- [x] Add visibility checks to prevent showing metrics when body parts not in frame
+- [ ] Test rotation: verify square = 0°, sideways = 90°
+- [ ] Test spine angle: verify standing = 0°, forward lean = positive, back lean = negative
+- [ ] Test visibility: verify metrics don't show when out of frame
