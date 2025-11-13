@@ -104,6 +104,17 @@ export default function Analysis() {
   const [rightKneeFlexion, setRightKneeFlexion] = useState(0);
   const [leftKneeFlexion, setLeftKneeFlexion] = useState(0);
   const [spineAngle, setSpineAngle] = useState(0);
+  
+  // Visibility tracking for metrics
+  const [metricsVisible, setMetricsVisible] = useState({
+    hipRotation: false,
+    shoulderRotation: false,
+    rightElbow: false,
+    leftElbow: false,
+    rightKnee: false,
+    leftKnee: false,
+    spineAngle: false
+  });
   const [balanceScore, setBalanceScore] = useState(0);
   const [rightShoulderAngle, setRightShoulderAngle] = useState(0);
   const [leftShoulderAngle, setLeftShoulderAngle] = useState(0);
@@ -374,6 +385,9 @@ export default function Analysis() {
         const hipRotationResult = calculateRotation(leftHip, rightHip, hipsVisible);
         hipRotationCalc = hipRotationResult.angle;
         setHipRotation(hipRotationCalc);
+        setMetricsVisible(prev => ({ ...prev, hipRotation: hipsVisible }));
+      } else {
+        setMetricsVisible(prev => ({ ...prev, hipRotation: false }));
       }
       
       // 2. Elbow Angles - shoulder, elbow, wrist
@@ -384,47 +398,73 @@ export default function Analysis() {
       let leftElbowCalc = 0;
       
       if (rightShoulder && rightElbow && rightWrist) {
+        const rightElbowVisible = (rightShoulder.visibility ?? 0) > 0.7 && (rightElbow.visibility ?? 0) > 0.7 && (rightWrist.visibility ?? 0) > 0.7;
         // Use raw angle: bent elbow = low numbers (60-90°), straight = high (170-180°)
         rightElbowCalc = calculateAngle(rightShoulder, rightElbow, rightWrist);
         setRightElbowAngle(rightElbowCalc);
+        setMetricsVisible(prev => ({ ...prev, rightElbow: rightElbowVisible }));
+      } else {
+        setMetricsVisible(prev => ({ ...prev, rightElbow: false }));
       }
       
       if (leftShoulder && leftElbow && leftWrist) {
+        const leftElbowVisible = (leftShoulder.visibility ?? 0) > 0.7 && (leftElbow.visibility ?? 0) > 0.7 && (leftWrist.visibility ?? 0) > 0.7;
         // Use raw angle: bent elbow = low numbers (60-90°), straight = high (170-180°)
         leftElbowCalc = calculateAngle(leftShoulder, leftElbow, leftWrist);
         setLeftElbowAngle(leftElbowCalc);
+        setMetricsVisible(prev => ({ ...prev, leftElbow: leftElbowVisible }));
+      } else {
+        setMetricsVisible(prev => ({ ...prev, leftElbow: false }));
       }
       
       // 3. Knee Flexion - hip, knee, ankle
       let rightKneeCalc = 0;
       let leftKneeCalc = 0;
-      
-      if (rightHip && rightKnee && rightAnkle) {
+           if (rightHip && rightKnee && rightAnkle) {
+        const rightKneeVisible = (rightHip.visibility ?? 0) > 0.7 && (rightKnee.visibility ?? 0) > 0.7 && (rightAnkle.visibility ?? 0) > 0.7;
         // Use raw angle: bent knee = low numbers (90-120°), straight = high (170-180°)
         rightKneeCalc = calculateAngle(rightHip, rightKnee, rightAnkle);
         setRightKneeFlexion(rightKneeCalc);
+        setMetricsVisible(prev => ({ ...prev, rightKnee: rightKneeVisible }));
+      } else {
+        setMetricsVisible(prev => ({ ...prev, rightKnee: false }));
       }
       
       if (leftHip && leftKnee && leftAnkle) {
-        // Use raw angle: bent knee = low numbers (90-120°), straight = high (170-180°)
+        const leftKneeVisible = (leftHip.visibility ?? 0) > 0.7 && (leftKnee.visibility ?? 0) > 0.7 && (leftAnkle.visibility ?? 0) > 0.7;
         leftKneeCalc = calculateAngle(leftHip, leftKnee, leftAnkle);
         setLeftKneeFlexion(leftKneeCalc);
+        setMetricsVisible(prev => ({ ...prev, leftKnee: leftKneeVisible }));
+      } else {
+        setMetricsVisible(prev => ({ ...prev, leftKnee: false }));
       }
       
       // 4. Spine Angle - deviation from vertical (0° = upright, negative = back, positive = forward)
       let spineAngleCalc = 0;
       if (leftShoulder && rightShoulder && leftHip && rightHip) {
+        const spineVisible = (leftShoulder.visibility ?? 0) > 0.7 && (rightShoulder.visibility ?? 0) > 0.7 && (leftHip.visibility ?? 0) > 0.7 && (rightHip.visibility ?? 0) > 0.7;
+        
         const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
         const hipMidY = (leftHip.y + rightHip.y) / 2;
         const shoulderMidX = (leftShoulder.x + rightShoulder.x) / 2;
         const hipMidX = (leftHip.x + rightHip.x) / 2;
         
-        // Calculate angle from vertical (90° = horizontal, 0° = vertical)
-        // atan2 gives angle from horizontal, so subtract from 90 to get deviation from vertical
-        const angleFromHorizontal = Math.atan2(shoulderMidY - hipMidY, shoulderMidX - hipMidX) * 180 / Math.PI;
-        // Convert to deviation from vertical: positive = leaning forward, negative = leaning back
-        spineAngleCalc = 90 - angleFromHorizontal;
+        // Calculate spine angle as deviation from vertical
+        // When standing straight: shoulders directly above hips (xDiff ≈ 0), angle = 0°
+        // When leaning forward: shoulders ahead of hips (xDiff > 0), angle = positive
+        // When leaning back: shoulders behind hips (xDiff < 0), angle = negative
+        
+        const xDiff = shoulderMidX - hipMidX;
+        const yDiff = Math.abs(shoulderMidY - hipMidY); // Always positive (shoulders above hips)
+        
+        // Calculate angle from vertical using atan
+        // atan(xDiff / yDiff) gives deviation from vertical
+        spineAngleCalc = Math.atan(xDiff / Math.max(yDiff, 0.01)) * 180 / Math.PI;
+        
         setSpineAngle(spineAngleCalc);
+        setMetricsVisible(prev => ({ ...prev, spineAngle: spineVisible }));
+      } else {
+        setMetricsVisible(prev => ({ ...prev, spineAngle: false }));
       }
       
       // 5. Shoulder Angles - for arm positioning
@@ -464,6 +504,9 @@ export default function Analysis() {
         const shoulderRotationResult = calculateRotation(leftShoulder, rightShoulder, shouldersVisible);
         shoulderRotationCalc = shoulderRotationResult.angle;
         setShoulderRotation(shoulderRotationCalc);
+        setMetricsVisible(prev => ({ ...prev, shoulderRotation: shouldersVisible }));
+      } else {
+        setMetricsVisible(prev => ({ ...prev, shoulderRotation: false }));
       }
       
       // 6c. Hip-Shoulder Separation - key metric for power generation
@@ -1181,31 +1224,45 @@ export default function Analysis() {
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Hip Rotation:</span>
-                      <span className="text-cyan-400 font-semibold">{hipRotation.toFixed(0)}°</span>
+                      <span className="text-cyan-400 font-semibold">
+                        {metricsVisible.hipRotation ? `${hipRotation.toFixed(0)}°` : '---'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Shoulder Rotation:</span>
-                      <span className="text-cyan-400 font-semibold">{shoulderRotation.toFixed(0)}°</span>
+                      <span className="text-cyan-400 font-semibold">
+                        {metricsVisible.shoulderRotation ? `${shoulderRotation.toFixed(0)}°` : '---'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">R Elbow:</span>
-                      <span className="text-pink-400 font-semibold">{rightElbowAngle.toFixed(0)}°</span>
+                      <span className="text-pink-400 font-semibold">
+                        {metricsVisible.rightElbow ? `${rightElbowAngle.toFixed(0)}°` : '---'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">L Elbow:</span>
-                      <span className="text-pink-400 font-semibold">{leftElbowAngle.toFixed(0)}°</span>
+                      <span className="text-pink-400 font-semibold">
+                        {metricsVisible.leftElbow ? `${leftElbowAngle.toFixed(0)}°` : '---'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">R Knee:</span>
-                      <span className="text-purple-400 font-semibold">{rightKneeFlexion.toFixed(0)}°</span>
+                      <span className="text-purple-400 font-semibold">
+                        {metricsVisible.rightKnee ? `${rightKneeFlexion.toFixed(0)}°` : '---'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">L Knee:</span>
-                      <span className="text-purple-400 font-semibold">{leftKneeFlexion.toFixed(0)}°</span>
+                      <span className="text-purple-400 font-semibold">
+                        {metricsVisible.leftKnee ? `${leftKneeFlexion.toFixed(0)}°` : '---'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Spine Angle:</span>
-                      <span className="text-yellow-400 font-semibold">{spineAngle.toFixed(0)}°</span>
+                      <span className="text-yellow-400 font-semibold">
+                        {metricsVisible.spineAngle ? `${spineAngle.toFixed(0)}°` : '---'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Weight:</span>
