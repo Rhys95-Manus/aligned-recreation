@@ -1,55 +1,100 @@
 /**
- * Phase Detection Utility
- * Detects which phase of the throwing motion the user is currently in based on their biomechanical metrics
+ * Phase Detection for QB Throwing Motion
+ * Identifies current phase based on biomechanical metrics using finalized reference values
  */
 
-export type MotionPhase = "Neutral" | "Wind-up" | "Cocking" | "Acceleration" | "Release" | "Follow-through";
+export type ThrowingPhase = 'neutral' | 'early_cocking' | 'late_cocking' | 'release' | 'follow_through';
+export type MotionPhase = "Neutral" | "Early Cocking" | "Late Cocking" | "Release" | "Follow-through";
 
-interface PhaseThresholds {
-  hipRotation: [number, number];  // [min, max]
-  rightElbowAngle: [number, number];
-  weightTransfer: [number, number];
+export interface PhaseInfo {
+  phase: ThrowingPhase;
+  displayName: MotionPhase;
+  instruction: string;
+  confidence: number;
 }
 
 /**
- * Phase detection thresholds based on professional quarterback throwing motion
+ * Detect current throwing phase based on metrics
+ * Uses finalized professional reference values
  */
-const PHASE_THRESHOLDS: Record<MotionPhase, PhaseThresholds> = {
-  "Neutral": {
-    hipRotation: [0, 20],
-    rightElbowAngle: [0, 25],
-    weightTransfer: [40, 60]
-  },
-  "Wind-up": {
-    hipRotation: [20, 60],
-    rightElbowAngle: [25, 70],
-    weightTransfer: [20, 45]
-  },
-  "Cocking": {
-    hipRotation: [60, 100],
-    rightElbowAngle: [70, 120],
-    weightTransfer: [10, 30]
-  },
-  "Acceleration": {
-    hipRotation: [30, 70],
-    rightElbowAngle: [40, 80],
-    weightTransfer: [50, 75]
-  },
-  "Release": {
-    hipRotation: [10, 35],
-    rightElbowAngle: [5, 30],
-    weightTransfer: [75, 95]
-  },
-  "Follow-through": {
-    hipRotation: [0, 20],
-    rightElbowAngle: [10, 35],
-    weightTransfer: [60, 90]
+export function detectThrowingPhase(
+  hipRotation: number,
+  shoulderRotation: number,
+  rightElbow: number,
+  weightTransfer: number
+): PhaseInfo {
+  // Phase detection based on finalized metrics:
+  // Neutral: Hip/Shoulder ~90° back, Elbow 60-80°
+  // Early Cocking: Hip 70° back, Shoulder 90° back, Elbow 75-82°
+  // Late Cocking: Hip 50° back, Shoulder 90° back, Elbow 90-100°
+  // Release: Hip/Shoulder square (0°), Elbow 140-160°
+  // Follow-through: Hip/Shoulder forward, Elbow 165-180°
+
+  let phase: ThrowingPhase = 'neutral';
+  let displayName: MotionPhase = "Neutral";
+  let instruction = "Ball near chest, stand sideways, weight balanced";
+  let confidence = 0.5;
+
+  // Convert to absolute values for comparison (rotation is negative when back)
+  const absHipRot = Math.abs(hipRotation);
+  const absShoulderRot = Math.abs(shoulderRotation);
+
+  // Follow-through detection (most extended position)
+  if (rightElbow > 155) {
+    phase = 'follow_through';
+    displayName = "Follow-through";
+    instruction = "Finish with arm extended across body, slight lean forward";
+    confidence = 0.9;
   }
-};
+  // Release detection (elbow extending, hips square)
+  else if (rightElbow > 130 && absHipRot < 20) {
+    phase = 'release';
+    displayName = "Release";
+    instruction = "Drive hips square leading the shoulders, extend arm through target";
+    confidence = 0.85;
+  }
+  // Late cocking detection (elbow at 90°, hip-shoulder separation)
+  else if (rightElbow > 85 && rightElbow < 110 && absHipRot < absShoulderRot - 10) {
+    phase = 'late_cocking';
+    displayName = "Late Cocking";
+    instruction = "Begin shifting weight forward, hips rotate forward, shoulders stay closed, arm makes L shape behind head";
+    confidence = 0.8;
+  }
+  // Early cocking detection (elbow in backstroke, weight on back foot)
+  else if (rightElbow > 70 && rightElbow < 90 && absHipRot > 60) {
+    phase = 'early_cocking';
+    displayName = "Early Cocking";
+    instruction = "Weight shifts slightly to back foot, throwing arm in backstroke position, pivot front foot";
+    confidence = 0.75;
+  }
+  // Default to neutral
+  else {
+    phase = 'neutral';
+    displayName = "Neutral";
+    instruction = "Ball near chest, stand sideways, weight balanced";
+    confidence = 0.6;
+  }
+
+  return { phase, displayName, instruction, confidence };
+}
 
 /**
- * Detect the current phase based on user's biomechanical metrics
- * Uses a scoring system to find the best matching phase
+ * Get phase instruction without detection (for static display)
+ */
+export function getPhaseInstruction(phase: ThrowingPhase): string {
+  const instructions: Record<ThrowingPhase, string> = {
+    neutral: "Ball near chest, stand sideways, weight balanced",
+    early_cocking: "Weight shifts slightly to back foot, throwing arm in backstroke position, pivot front foot",
+    late_cocking: "Begin shifting weight forward, hips rotate forward, shoulders stay closed, arm makes L shape behind head",
+    release: "Drive hips square leading the shoulders, extend arm through target",
+    follow_through: "Finish with arm extended across body, slight lean forward"
+  };
+  
+  return instructions[phase];
+}
+
+/**
+ * Legacy function for backward compatibility
  */
 export function detectPhase(metrics: {
   hipRotation: number;
@@ -57,55 +102,13 @@ export function detectPhase(metrics: {
   leftElbowAngle: number;
   weightTransfer: number;
 }): MotionPhase {
-  let bestPhase: MotionPhase = "Neutral";
-  let bestScore = -Infinity;
-
-  // Score each phase based on how well the metrics match
-  (Object.keys(PHASE_THRESHOLDS) as MotionPhase[]).forEach(phase => {
-    const thresholds = PHASE_THRESHOLDS[phase];
-    let score = 0;
-
-    // Hip rotation score
-    if (metrics.hipRotation >= thresholds.hipRotation[0] && metrics.hipRotation <= thresholds.hipRotation[1]) {
-      score += 10; // Perfect match
-    } else {
-      // Penalty based on distance from range
-      const distance = Math.min(
-        Math.abs(metrics.hipRotation - thresholds.hipRotation[0]),
-        Math.abs(metrics.hipRotation - thresholds.hipRotation[1])
-      );
-      score -= distance * 0.5;
-    }
-
-    // Elbow angle score
-    if (metrics.rightElbowAngle >= thresholds.rightElbowAngle[0] && metrics.rightElbowAngle <= thresholds.rightElbowAngle[1]) {
-      score += 10;
-    } else {
-      const distance = Math.min(
-        Math.abs(metrics.rightElbowAngle - thresholds.rightElbowAngle[0]),
-        Math.abs(metrics.rightElbowAngle - thresholds.rightElbowAngle[1])
-      );
-      score -= distance * 0.5;
-    }
-
-    // Weight transfer score
-    if (metrics.weightTransfer >= thresholds.weightTransfer[0] && metrics.weightTransfer <= thresholds.weightTransfer[1]) {
-      score += 10;
-    } else {
-      const distance = Math.min(
-        Math.abs(metrics.weightTransfer - thresholds.weightTransfer[0]),
-        Math.abs(metrics.weightTransfer - thresholds.weightTransfer[1])
-      );
-      score -= distance * 0.5;
-    }
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestPhase = phase;
-    }
-  });
-
-  return bestPhase;
+  const phaseInfo = detectThrowingPhase(
+    metrics.hipRotation,
+    0, // shoulder rotation not provided in legacy call
+    metrics.rightElbowAngle,
+    metrics.weightTransfer
+  );
+  return phaseInfo.displayName;
 }
 
 /**
@@ -113,12 +116,11 @@ export function detectPhase(metrics: {
  */
 export function getPhaseFrameRange(phase: MotionPhase, totalFrames: number): [number, number] {
   const phaseRanges: Record<MotionPhase, [number, number]> = {
-    "Neutral": [0, Math.floor(totalFrames * 0.15)],
-    "Wind-up": [Math.floor(totalFrames * 0.15), Math.floor(totalFrames * 0.35)],
-    "Cocking": [Math.floor(totalFrames * 0.35), Math.floor(totalFrames * 0.55)],
-    "Acceleration": [Math.floor(totalFrames * 0.55), Math.floor(totalFrames * 0.75)],
-    "Release": [Math.floor(totalFrames * 0.75), Math.floor(totalFrames * 0.85)],
-    "Follow-through": [Math.floor(totalFrames * 0.85), totalFrames - 1]
+    "Neutral": [0, Math.floor(totalFrames * 0.10)],
+    "Early Cocking": [Math.floor(totalFrames * 0.10), Math.floor(totalFrames * 0.35)],
+    "Late Cocking": [Math.floor(totalFrames * 0.35), Math.floor(totalFrames * 0.60)],
+    "Release": [Math.floor(totalFrames * 0.60), Math.floor(totalFrames * 0.80)],
+    "Follow-through": [Math.floor(totalFrames * 0.80), totalFrames - 1]
   };
 
   return phaseRanges[phase];
@@ -131,4 +133,3 @@ export function getPhaseMiddleFrame(phase: MotionPhase, totalFrames: number): nu
   const [start, end] = getPhaseFrameRange(phase, totalFrames);
   return Math.floor((start + end) / 2);
 }
-
