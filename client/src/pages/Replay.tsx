@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 import { POSE_CONNECTIONS } from "@mediapipe/pose";
-import { generateProfessionalMotion, ProfessionalFrame } from "../utils/professionalMotionGenerator";
-import { detectPhase, detectThrowingPhase, getPhaseMiddleFrame, type MotionPhase } from "../utils/phaseDetection";
+import { generateProfessionalMotion, getPhaseForFrame, ProfessionalFrame } from "../utils/professionalMotionGenerator";
+import { detectThrowingPhase, getPhaseMiddleFrame, type MotionPhase } from "../utils/phaseDetection";
 import { calculateRotation, formatWeightDistribution, formatSpineAngle, formatRotationAngle } from "../utils/rotationCalculations";
 
 interface ReplayProps {
@@ -90,13 +90,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     const currentFrame = recordedFrames[currentFrameIndex];
     
     // Detect which phase the user is currently in
-    const phaseInfo = detectThrowingPhase(
-      currentFrame.metrics.hipRotation,
-      0, // shoulder rotation not in recorded metrics yet
-      currentFrame.metrics.rightElbowAngle,
-      currentFrame.metrics.weightTransfer
-    );
-    setCurrentPhase(phaseInfo.displayName);
+    const phaseInfo = getPhaseForFrame(currentFrameIndex, recordedFrames.length);
+    setCurrentPhase(phaseInfo.name as MotionPhase);
     setPhaseInstruction(phaseInfo.instruction);
   }, [currentFrameIndex, recordedFrames]);
   
