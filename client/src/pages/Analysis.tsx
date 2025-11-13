@@ -1174,6 +1174,47 @@ export default function Analysis() {
                 </div>
               </div>
 
+              {/* Live Biomechanical Metrics */}
+              {sessionState === 'capturing' && (
+                <div className="bg-[#1a1f2e] rounded-lg p-4">
+                  <h3 className="font-semibold mb-3">Live Metrics</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Hip Rotation:</span>
+                      <span className="text-cyan-400 font-semibold">{hipRotation.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Shoulder Rotation:</span>
+                      <span className="text-cyan-400 font-semibold">{shoulderRotation.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">R Elbow:</span>
+                      <span className="text-pink-400 font-semibold">{rightElbowAngle.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">L Elbow:</span>
+                      <span className="text-pink-400 font-semibold">{leftElbowAngle.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">R Knee:</span>
+                      <span className="text-purple-400 font-semibold">{rightKneeFlexion.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">L Knee:</span>
+                      <span className="text-purple-400 font-semibold">{leftKneeFlexion.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Spine Angle:</span>
+                      <span className="text-yellow-400 font-semibold">{spineAngle.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Weight:</span>
+                      <span className="text-green-400 font-semibold">{weightTransfer.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Pro Tips Section */}
               <div className="bg-[#1a1f2e] rounded-lg p-4">
                 <h3 className="font-semibold mb-3">Pro Tips · {motionName}</h3>
