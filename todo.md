@@ -422,3 +422,14 @@
 - [x] Applied directional indicators to Spine Angle ("10.5° (Back)", "2.1° (Upright)", "8.3° (Forward)")
 - [x] All rotation metrics now display with positive numbers + direction labels (never negative)
 - [x] TypeScript compilation successful with no errors
+
+
+## Fix Angle Calculations and Reference Data
+- [ ] Remove 180° conversion from elbow angles (use raw angle: bent=low, straight=high)
+- [ ] Remove 180° conversion from knee angles (use raw angle: bent=low, straight=high)
+- [ ] Fix spine angle calculation
+- [ ] Fix rotation calculations (hip and shoulder)
+- [ ] Update professional motion generator with 5-phase reference data (Neutral, Early Cocking, Late Cocking, Release, Follow-through)
+- [ ] Update phase instructions to advance through all 5 phases
+- [ ] Test live metrics show correct values
+- [ ] Test replay shows correct comparison

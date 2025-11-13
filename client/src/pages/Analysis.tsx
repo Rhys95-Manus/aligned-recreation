@@ -384,16 +384,14 @@ export default function Analysis() {
       let leftElbowCalc = 0;
       
       if (rightShoulder && rightElbow && rightWrist) {
-        const rawAngle = calculateAngle(rightShoulder, rightElbow, rightWrist);
-        // Convert to flexion angle: 180° - raw angle (so 0° = straight, 90° = right angle bend)
-        rightElbowCalc = 180 - rawAngle;
+        // Use raw angle: bent elbow = low numbers (60-90°), straight = high (170-180°)
+        rightElbowCalc = calculateAngle(rightShoulder, rightElbow, rightWrist);
         setRightElbowAngle(rightElbowCalc);
       }
       
       if (leftShoulder && leftElbow && leftWrist) {
-        const rawAngle = calculateAngle(leftShoulder, leftElbow, leftWrist);
-        // Convert to flexion angle: 180° - raw angle
-        leftElbowCalc = 180 - rawAngle;
+        // Use raw angle: bent elbow = low numbers (60-90°), straight = high (170-180°)
+        leftElbowCalc = calculateAngle(leftShoulder, leftElbow, leftWrist);
         setLeftElbowAngle(leftElbowCalc);
       }
       
@@ -402,20 +400,18 @@ export default function Analysis() {
       let leftKneeCalc = 0;
       
       if (rightHip && rightKnee && rightAnkle) {
-        const rawAngle = calculateAngle(rightHip, rightKnee, rightAnkle);
-        // Convert to flexion angle: 180° - raw angle (so 0° = straight leg, 90° = right angle bend)
-        rightKneeCalc = 180 - rawAngle;
+        // Use raw angle: bent knee = low numbers (90-120°), straight = high (170-180°)
+        rightKneeCalc = calculateAngle(rightHip, rightKnee, rightAnkle);
         setRightKneeFlexion(rightKneeCalc);
       }
       
       if (leftHip && leftKnee && leftAnkle) {
-        const rawAngle = calculateAngle(leftHip, leftKnee, leftAnkle);
-        // Convert to flexion angle: 180° - raw angle
-        leftKneeCalc = 180 - rawAngle;
+        // Use raw angle: bent knee = low numbers (90-120°), straight = high (170-180°)
+        leftKneeCalc = calculateAngle(leftHip, leftKnee, leftAnkle);
         setLeftKneeFlexion(leftKneeCalc);
       }
       
-      // 4. Spine Angle - shoulder midpoint to hip midpoint
+      // 4. Spine Angle - deviation from vertical (0° = upright, negative = back, positive = forward)
       let spineAngleCalc = 0;
       if (leftShoulder && rightShoulder && leftHip && rightHip) {
         const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
@@ -423,7 +419,11 @@ export default function Analysis() {
         const shoulderMidX = (leftShoulder.x + rightShoulder.x) / 2;
         const hipMidX = (leftHip.x + rightHip.x) / 2;
         
-        spineAngleCalc = Math.abs(Math.atan2(hipMidY - shoulderMidY, hipMidX - shoulderMidX) * 180 / Math.PI);
+        // Calculate angle from vertical (90° = horizontal, 0° = vertical)
+        // atan2 gives angle from horizontal, so subtract from 90 to get deviation from vertical
+        const angleFromHorizontal = Math.atan2(shoulderMidY - hipMidY, shoulderMidX - hipMidX) * 180 / Math.PI;
+        // Convert to deviation from vertical: positive = leaning forward, negative = leaning back
+        spineAngleCalc = 90 - angleFromHorizontal;
         setSpineAngle(spineAngleCalc);
       }
       
