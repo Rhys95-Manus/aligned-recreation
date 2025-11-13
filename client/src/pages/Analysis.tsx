@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Pose, Results } from "@mediapipe/pose";
 import { getProfessionalReference, calculateMetricScore, getComparisonText } from "@/data/professionalReferences";
+import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribution, formatSpineAngle } from "@/utils/rotationCalculations";
 import Replay from "./Replay";
 
 // Detailed analysis data structure
@@ -50,11 +51,12 @@ interface DetailedAnalysisData {
     phaseDurations: string;
     recommendation: string;
   };
-  recordedFrames?: Array<{
+   recordedFrames: Array<{
     timestamp: number;
     landmarks: any[];
     metrics: {
       hipRotation: number;
+      shoulderRotation: number;
       rightElbowAngle: number;
       leftElbowAngle: number;
       rightKneeFlexion: number;
@@ -105,6 +107,8 @@ export default function Analysis() {
   const [balanceScore, setBalanceScore] = useState(0);
   const [rightShoulderAngle, setRightShoulderAngle] = useState(0);
   const [leftShoulderAngle, setLeftShoulderAngle] = useState(0);
+  const [shoulderRotation, setShoulderRotation] = useState(0);
+  const [hipShoulderSeparation, setHipShoulderSeparation] = useState(0);
   
   // Footwork metrics
   const [footPositioning, setFootPositioning] = useState(0);
@@ -122,6 +126,8 @@ export default function Analysis() {
   const peakLeftShoulderAngle = useRef(0);
   const peakFootPositioning = useRef(0);
   const peakWeightTransfer = useRef(0);
+  const peakShoulderRotation = useRef(0);
+  const peakHipShoulderSeparation = useRef(0);
   
   // Session state
   const [sessionState, setSessionState] = useState<'idle' | 'ready' | 'countdown' | 'capturing' | 'complete'>('idle');
@@ -129,11 +135,12 @@ export default function Analysis() {
   const [countdown, setCountdown] = useState(5); // Countdown from 5 to 0
   
   // Frame recording for replay
-  const recordedFramesRef = useRef<Array<{
+  const [recordedFrames, setRecordedFrames] = useState<Array<{
     timestamp: number;
     landmarks: any[];
     metrics: {
       hipRotation: number;
+      shoulderRotation: number;
       rightElbowAngle: number;
       leftElbowAngle: number;
       rightKneeFlexion: number;
@@ -145,6 +152,7 @@ export default function Analysis() {
       weightTransfer: number;
     };
   }>>([]);
+  const recordedFramesRef = useRef<typeof recordedFrames>([]);
   const captureStartTimeRef = useRef<number>(0);
   const [detailedAnalysis, setDetailedAnalysis] = useState<DetailedAnalysisData | null>(null);
   const [totalPoints, setTotalPoints] = useState(0);
@@ -357,17 +365,14 @@ export default function Analysis() {
       
       // Advanced biomechanical calculations
       
-      // 1. Hip Rotation - measure deviation from level hips (rotation amount)
+      // 1. Hip Rotation - measure 3D rotation with directional indicator
       const leftHip = landmarks[23];
       const rightHip = landmarks[24];
       let hipRotationCalc = 0;
       if (leftHip && rightHip) {
-        // Calculate hip line angle (0° = horizontal right, 90° = vertical up)
-        const hipLineAngle = Math.abs(Math.atan2(rightHip.y - leftHip.y, rightHip.x - leftHip.x) * 180 / Math.PI);
-        // Rotation = deviation from 90° (level hips)
-        // If hips are level (90°), rotation = 0°
-        // If hips are rotated, rotation increases
-        hipRotationCalc = Math.abs(90 - hipLineAngle);
+        const hipsVisible = (leftHip.visibility ?? 0) > 0.7 && (rightHip.visibility ?? 0) > 0.7;
+        const hipRotationResult = calculateRotation(leftHip, rightHip, hipsVisible);
+        hipRotationCalc = hipRotationResult.angle;
         setHipRotation(hipRotationCalc);
       }
       
@@ -451,6 +456,24 @@ export default function Analysis() {
         setBalanceScore(Math.round(balanceCalc));
       }
       
+      // 6b. Shoulder Rotation - measure 3D rotation with directional indicator
+      // leftShoulder and rightShoulder already declared earlier
+      let shoulderRotationCalc = 0;
+      if (leftShoulder && rightShoulder) {
+        const shouldersVisible = (leftShoulder.visibility ?? 0) > 0.7 && (rightShoulder.visibility ?? 0) > 0.7;
+        const shoulderRotationResult = calculateRotation(leftShoulder, rightShoulder, shouldersVisible);
+        shoulderRotationCalc = shoulderRotationResult.angle;
+        setShoulderRotation(shoulderRotationCalc);
+      }
+      
+      // 6c. Hip-Shoulder Separation - key metric for power generation
+      let hipShoulderSeparationCalc = 0;
+      if (hipRotationCalc !== 0 && shoulderRotationCalc !== 0) {
+        const separationResult = calculateHipShoulderSeparation(hipRotationCalc, shoulderRotationCalc);
+        hipShoulderSeparationCalc = separationResult.angle;
+        setHipShoulderSeparation(hipShoulderSeparationCalc);
+      }
+      
       // 7. Footwork Metrics
       let footPositioningCalc = 0;
       let strideLengthCalc = 0;
@@ -495,6 +518,8 @@ export default function Analysis() {
         if (leftShoulderCalc > peakLeftShoulderAngle.current) peakLeftShoulderAngle.current = leftShoulderCalc;
         if (footPositioningCalc > peakFootPositioning.current) peakFootPositioning.current = footPositioningCalc;
         if (weightTransferCalc > peakWeightTransfer.current) peakWeightTransfer.current = weightTransferCalc;
+        if (Math.abs(shoulderRotationCalc) > Math.abs(peakShoulderRotation.current)) peakShoulderRotation.current = shoulderRotationCalc;
+        if (Math.abs(hipShoulderSeparationCalc) > Math.abs(peakHipShoulderSeparation.current)) peakHipShoulderSeparation.current = hipShoulderSeparationCalc;
         
         // Record this frame for replay
         const timestamp = Date.now() - captureStartTimeRef.current;
@@ -503,6 +528,7 @@ export default function Analysis() {
           landmarks: JSON.parse(JSON.stringify(landmarks)), // Deep copy
           metrics: {
             hipRotation: hipRotationCalc,
+            shoulderRotation: shoulderRotationCalc,
             rightElbowAngle: rightElbowCalc,
             leftElbowAngle: leftElbowCalc,
             rightKneeFlexion: rightKneeCalc,
@@ -1147,6 +1173,47 @@ export default function Analysis() {
                   </div>
                 </div>
               </div>
+
+              {/* Live Biomechanical Metrics */}
+              {sessionState === 'capturing' && (
+                <div className="bg-[#1a1f2e] rounded-lg p-4">
+                  <h3 className="font-semibold mb-3">Live Metrics</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Hip Rotation:</span>
+                      <span className="text-cyan-400 font-semibold">{hipRotation.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Shoulder Rotation:</span>
+                      <span className="text-cyan-400 font-semibold">{shoulderRotation.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">R Elbow:</span>
+                      <span className="text-pink-400 font-semibold">{rightElbowAngle.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">L Elbow:</span>
+                      <span className="text-pink-400 font-semibold">{leftElbowAngle.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">R Knee:</span>
+                      <span className="text-purple-400 font-semibold">{rightKneeFlexion.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">L Knee:</span>
+                      <span className="text-purple-400 font-semibold">{leftKneeFlexion.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Spine Angle:</span>
+                      <span className="text-yellow-400 font-semibold">{spineAngle.toFixed(0)}°</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Weight:</span>
+                      <span className="text-green-400 font-semibold">{weightTransfer.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Pro Tips Section */}
               <div className="bg-[#1a1f2e] rounded-lg p-4">
