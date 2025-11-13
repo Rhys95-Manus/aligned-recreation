@@ -1175,7 +1175,7 @@ export default function Analysis() {
               </div>
 
               {/* Live Biomechanical Metrics */}
-              {sessionState === 'capturing' && (
+              {(sessionState === 'ready' || sessionState === 'capturing') && (
                 <div className="bg-[#1a1f2e] rounded-lg p-4">
                   <h3 className="font-semibold mb-3">Live Metrics</h3>
                   <div className="space-y-2 text-xs">
