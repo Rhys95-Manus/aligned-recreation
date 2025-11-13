@@ -4,8 +4,7 @@ import { Link } from "wouter";
 import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 import { POSE_CONNECTIONS } from "@mediapipe/pose";
 import { generateProfessionalMotion, ProfessionalFrame } from "../utils/professionalMotionGenerator";
-import { detectPhase, detectThrowingPhase, getPhaseMiddleFrame, type MotionPhase } from "../utils/phaseDetection";
-import { calculateRotation, formatWeightDistribution, formatSpineAngle, formatRotationAngle } from "../utils/rotationCalculations";
+import { detectPhase, getPhaseMiddleFrame, type MotionPhase } from "../utils/phaseDetection";
 
 interface ReplayProps {
   recordedFrames: Array<{
@@ -13,7 +12,6 @@ interface ReplayProps {
     landmarks: any[];
     metrics: {
       hipRotation: number;
-      shoulderRotation: number;
       rightElbowAngle: number;
       leftElbowAngle: number;
       rightKneeFlexion: number;
@@ -39,7 +37,6 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isRightHanded, setIsRightHanded] = useState(true); // Toggle for left/right handed
   const [currentPhase, setCurrentPhase] = useState<MotionPhase>("Neutral");
-  const [phaseInstruction, setPhaseInstruction] = useState("Ball near chest, stand sideways, weight balanced");
   const [rotationAngle, setRotationAngle] = useState(0); // 3D rotation angle in degrees (-180 to 180)
   
   // Generate professional motion sequence (same length as user motion)
@@ -90,14 +87,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     const currentFrame = recordedFrames[currentFrameIndex];
     
     // Detect which phase the user is currently in
-    const phaseInfo = detectThrowingPhase(
-      currentFrame.metrics.hipRotation,
-      0, // shoulder rotation not in recorded metrics yet
-      currentFrame.metrics.rightElbowAngle,
-      currentFrame.metrics.weightTransfer
-    );
-    setCurrentPhase(phaseInfo.displayName);
-    setPhaseInstruction(phaseInfo.instruction);
+    const detectedPhase = detectPhase(currentFrame.metrics);
+    setCurrentPhase(detectedPhase);
   }, [currentFrameIndex, recordedFrames]);
   
   // Render current frame
@@ -421,8 +412,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           <div className="bg-[#1a1f2e] rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">Real-Time Metrics (Frame {currentFrameIndex + 1}/{recordedFrames.length})</h2>
-              <div className="bg-purple-900/50 px-4 py-2 rounded-lg border border-purple-500 max-w-2xl">
-                <span className="text-purple-300 font-semibold">{phaseInstruction}</span>
+              <div className="bg-purple-900/50 px-4 py-2 rounded-lg border border-purple-500">
+                <span className="text-purple-300 font-semibold">Phase: {currentPhase}</span>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -431,16 +422,6 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 yours={currentMetrics.hipRotation}
                 pro={professionalFrames[currentFrameIndex].metrics.hipRotation}
                 unit="°"
-                yoursFormatted={formatRotationAngle(currentMetrics.hipRotation)}
-                proFormatted={formatRotationAngle(professionalFrames[currentFrameIndex].metrics.hipRotation)}
-              />
-              <MetricCard
-                title="Shoulder Rotation"
-                yours={currentMetrics.shoulderRotation}
-                pro={professionalFrames[currentFrameIndex].metrics.shoulderRotation}
-                unit="°"
-                yoursFormatted={formatRotationAngle(currentMetrics.shoulderRotation)}
-                proFormatted={formatRotationAngle(professionalFrames[currentFrameIndex].metrics.shoulderRotation)}
               />
               <MetricCard
                 title="Throwing Arm Elbow"
@@ -471,8 +452,6 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 yours={currentMetrics.spineAngle}
                 pro={professionalFrames[currentFrameIndex].metrics.spineAngle}
                 unit="°"
-                yoursFormatted={formatSpineAngle(currentMetrics.spineAngle)}
-                proFormatted={formatSpineAngle(professionalFrames[currentFrameIndex].metrics.spineAngle)}
               />
               <MetricCard
                 title="Foot Positioning"
@@ -481,12 +460,10 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 unit="°"
               />
               <MetricCard
-                title="Weight Distribution"
+                title="Weight Transfer"
                 yours={currentMetrics.weightTransfer}
                 pro={professionalFrames[currentFrameIndex].metrics.weightTransfer}
                 unit="%"
-                yoursFormatted={formatWeightDistribution(currentMetrics.weightTransfer)}
-                proFormatted={formatWeightDistribution(professionalFrames[currentFrameIndex].metrics.weightTransfer)}
               />
             </div>
           </div>
@@ -573,27 +550,20 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   );
 }
 
-function MetricCard({ title, yours, pro, unit, yoursFormatted, proFormatted }: { 
-  title: string; 
-  yours: number; 
-  pro: number; 
-  unit: string;
-  yoursFormatted?: string;
-  proFormatted?: string;
-}) {
+function MetricCard({ title, yours, pro, unit }: { title: string; yours: number; pro: number; unit: string }) {
   const difference = Math.abs(yours - pro);
-  const isGood = difference < Math.abs(pro) * 0.2; // Within 20% is good
+  const isGood = difference < pro * 0.2; // Within 20% is good
   
   return (
     <div className="bg-gray-800 rounded-lg p-4">
       <h3 className="text-sm font-semibold mb-2 text-gray-400">{title}</h3>
       <div className="flex items-baseline gap-2">
         <span className={`text-2xl font-bold ${isGood ? 'text-green-400' : 'text-yellow-400'}`}>
-          {yoursFormatted || `${yours.toFixed(1)}${unit}`}
+          {yours.toFixed(1)}{unit}
         </span>
         <span className="text-sm text-gray-500">vs</span>
         <span className="text-lg text-pink-400">
-          {proFormatted || `${pro.toFixed(1)}${unit}`}
+          {pro.toFixed(1)}{unit}
         </span>
       </div>
       <div className="mt-2 text-xs text-gray-500">
