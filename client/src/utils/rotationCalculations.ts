@@ -166,3 +166,40 @@ export function formatRotationAngle(angle: number): string {
     return `${Math.round(absAngle)}° Forward`;
   }
 }
+
+/**
+ * Format rotation angle with side indicator (e.g., "90° Right Hip Back")
+ * @param angle Rotation angle (positive = back, negative = forward)
+ * @param bodyPart "Hip" or "Shoulder"
+ * @param isRightHanded Whether the user is right-handed
+ */
+export function formatRotationWithSide(angle: number, bodyPart: "Hip" | "Shoulder", isRightHanded: boolean): string {
+  const absAngle = Math.abs(angle);
+  
+  if (absAngle < 10) {
+    return "Square";
+  }
+  
+  // Determine which side is back/forward
+  // For right-handed: positive angle = right side back, negative = left side back
+  // For left-handed: positive angle = left side back, negative = right side back
+  
+  let sideBack: string;
+  let sideForward: string;
+  
+  if (isRightHanded) {
+    sideBack = angle > 0 ? "Right" : "Left";
+    sideForward = angle > 0 ? "Left" : "Right";
+  } else {
+    sideBack = angle > 0 ? "Left" : "Right";
+    sideForward = angle > 0 ? "Right" : "Left";
+  }
+  
+  if (angle > 0) {
+    // Back rotation
+    return `${Math.round(absAngle)}° ${sideBack} ${bodyPart} Back`;
+  } else {
+    // Forward rotation (past square)
+    return `${Math.round(absAngle)}° ${sideForward} ${bodyPart} Forward`;
+  }
+}

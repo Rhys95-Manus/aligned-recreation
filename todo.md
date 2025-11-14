@@ -442,3 +442,11 @@
 - [ ] Test rotation: verify square = 0°, sideways = 90°
 - [ ] Test spine angle: verify standing = 0°, forward lean = positive, back lean = negative
 - [ ] Test visibility: verify metrics don't show when out of frame
+
+
+## Metrics Display Improvements (Current Session)
+- [x] Adjust spine angle in professional reference: Early Cocking -8° to -10°, Late Cocking -3° to -5°
+- [x] Add directional labels to live metrics (show "90° Back" instead of "-90°")
+- [x] Add shoulder/hip side indicators (e.g., "Right Hip Back", "Left Shoulder Forward")
+- [x] Update replay to show side indicators based on right/left handed toggle
+- [ ] Test all improvements

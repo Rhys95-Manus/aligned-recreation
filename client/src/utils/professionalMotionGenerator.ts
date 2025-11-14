@@ -92,7 +92,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
         leftElbowAngle: 75,
         rightKneeFlexion: 135,
         leftKneeFlexion: 140,
-        spineAngle: -6,          // More back lean
+        spineAngle: -9,          // More back lean (-8° to -10° range)
         rightShoulderAngle: 70,
         leftShoulderAngle: 65,
         footPositioning: 165,
@@ -111,7 +111,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
         leftElbowAngle: 70,
         rightKneeFlexion: 125,   // More bent
         leftKneeFlexion: 135,
-        spineAngle: -8,          // Maximum back lean
+        spineAngle: -4,          // Less back lean as weight shifts forward (-3° to -5° range)
         rightShoulderAngle: 85,
         leftShoulderAngle: 70,
         footPositioning: 160,

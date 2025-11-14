@@ -5,7 +5,7 @@ import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 import { POSE_CONNECTIONS } from "@mediapipe/pose";
 import { generateProfessionalMotion, getPhaseForFrame, ProfessionalFrame } from "../utils/professionalMotionGenerator";
 import { detectThrowingPhase, getPhaseMiddleFrame, type MotionPhase } from "../utils/phaseDetection";
-import { calculateRotation, formatWeightDistribution, formatSpineAngle, formatRotationAngle } from "../utils/rotationCalculations";
+import { calculateRotation, formatWeightDistribution, formatSpineAngle, formatRotationAngle, formatRotationWithSide } from "../utils/rotationCalculations";
 
 interface ReplayProps {
   recordedFrames: Array<{
@@ -426,16 +426,16 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 yours={currentMetrics.hipRotation}
                 pro={professionalFrames[currentFrameIndex].metrics.hipRotation}
                 unit="°"
-                yoursFormatted={formatRotationAngle(currentMetrics.hipRotation)}
-                proFormatted={formatRotationAngle(professionalFrames[currentFrameIndex].metrics.hipRotation)}
+                yoursFormatted={formatRotationWithSide(currentMetrics.hipRotation, "Hip", isRightHanded)}
+                proFormatted={formatRotationWithSide(professionalFrames[currentFrameIndex].metrics.hipRotation, "Hip", isRightHanded)}
               />
               <MetricCard
                 title="Shoulder Rotation"
                 yours={currentMetrics.shoulderRotation}
                 pro={professionalFrames[currentFrameIndex].metrics.shoulderRotation}
                 unit="°"
-                yoursFormatted={formatRotationAngle(currentMetrics.shoulderRotation)}
-                proFormatted={formatRotationAngle(professionalFrames[currentFrameIndex].metrics.shoulderRotation)}
+                yoursFormatted={formatRotationWithSide(currentMetrics.shoulderRotation, "Shoulder", isRightHanded)}
+                proFormatted={formatRotationWithSide(professionalFrames[currentFrameIndex].metrics.shoulderRotation, "Shoulder", isRightHanded)}
               />
               <MetricCard
                 title="Throwing Arm Elbow"
