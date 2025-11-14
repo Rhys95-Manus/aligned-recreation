@@ -155,6 +155,7 @@ export function formatSpineAngle(angle: number): string {
 
 /**
  * Format rotation angle (hip or shoulder) with directional indicator
+ * Positive angle = back rotation, negative = forward rotation
  */
 export function formatRotationAngle(angle: number): string {
   const absAngle = Math.abs(angle);
@@ -181,25 +182,20 @@ export function formatRotationWithSide(angle: number, bodyPart: "Hip" | "Shoulde
   }
   
   // Determine which side is back/forward
-  // For right-handed: positive angle = right side back, negative = left side back
-  // For left-handed: positive angle = left side back, negative = right side back
+  // Positive angle = back rotation, negative = forward rotation
+  // For right-handed QB: right side rotates back (throwing arm side)
+  // For left-handed QB: left side rotates back (throwing arm side)
   
-  let sideBack: string;
-  let sideForward: string;
+  const isBackRotation = angle > 0;
+  let sideName: string;
   
-  if (isRightHanded) {
-    sideBack = angle > 0 ? "Right" : "Left";
-    sideForward = angle > 0 ? "Left" : "Right";
+  if (isBackRotation) {
+    // Back rotation: throwing arm side goes back
+    sideName = isRightHanded ? "Right" : "Left";
+    return `${Math.round(absAngle)}° ${sideName} ${bodyPart} Back`;
   } else {
-    sideBack = angle > 0 ? "Left" : "Right";
-    sideForward = angle > 0 ? "Right" : "Left";
-  }
-  
-  if (angle > 0) {
-    // Back rotation
-    return `${Math.round(absAngle)}° ${sideBack} ${bodyPart} Back`;
-  } else {
-    // Forward rotation (past square)
-    return `${Math.round(absAngle)}° ${sideForward} ${bodyPart} Forward`;
+    // Forward rotation: throwing arm side comes forward (past square)
+    sideName = isRightHanded ? "Right" : "Left";
+    return `${Math.round(absAngle)}° ${sideName} ${bodyPart} Forward`;
   }
 }

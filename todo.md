@@ -450,3 +450,11 @@
 - [x] Add shoulder/hip side indicators (e.g., "Right Hip Back", "Left Shoulder Forward")
 - [x] Update replay to show side indicators based on right/left handed toggle
 - [ ] Test all improvements
+
+
+## CRITICAL BUG FIX - Professional Reference Corrupted
+- [x] Check professional motion generator - all values wrong
+- [x] Restore correct metric values from user's 5-phase specification
+- [x] Fix directional label logic - showing "Right Hip Forward 90°" when should be "Right Hip Back 90°"
+- [x] Fix Follow-through rotation to be negative (forward = negative)
+- [ ] Verify all phases match user's specification exactly
