@@ -113,7 +113,8 @@ export default function Analysis() {
     leftElbow: false,
     rightKnee: false,
     leftKnee: false,
-    spineAngle: false
+    spineAngle: false,
+    weightTransfer: false
   });
   const [balanceScore, setBalanceScore] = useState(0);
   const [rightShoulderAngle, setRightShoulderAngle] = useState(0);
@@ -161,6 +162,16 @@ export default function Analysis() {
       leftShoulderAngle: number;
       footPositioning: number;
       weightTransfer: number;
+    };
+    visibility?: {
+      hipRotation: boolean;
+      shoulderRotation: boolean;
+      rightElbow: boolean;
+      leftElbow: boolean;
+      rightKnee: boolean;
+      leftKnee: boolean;
+      spineAngle: boolean;
+      weightTransfer: boolean;
     };
   }>>([]);
   const recordedFramesRef = useRef<typeof recordedFrames>([]);
@@ -595,6 +606,16 @@ export default function Analysis() {
             leftShoulderAngle: leftShoulderCalc,
             footPositioning: footPositioningCalc,
             weightTransfer: weightTransferCalc
+          },
+          visibility: {
+            hipRotation: metricsVisible.hipRotation,
+            shoulderRotation: metricsVisible.shoulderRotation,
+            rightElbow: metricsVisible.rightElbow,
+            leftElbow: metricsVisible.leftElbow,
+            rightKnee: metricsVisible.rightKnee,
+            leftKnee: metricsVisible.leftKnee,
+            spineAngle: metricsVisible.spineAngle,
+            weightTransfer: metricsVisible.weightTransfer
           }
         });
       }
