@@ -432,88 +432,63 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(currentVisibility?.hipRotation !== false) && (
-                <MetricCard
-                  title="Hip Rotation"
-                  yours={currentMetrics.hipRotation}
-                  pro={professionalFrames[currentFrameIndex].metrics.hipRotation}
-                  unit="°"
-                  yoursFormatted={currentVisibility?.hipRotation ? formatRotationWithSide(currentMetrics.hipRotation, "Hip", isRightHanded) : "---"}
-                  proFormatted={formatRotationWithSide(professionalFrames[currentFrameIndex].metrics.hipRotation, "Hip", isRightHanded)}
-                />
-              )}
-              {(currentVisibility?.shoulderRotation !== false) && (
-                <MetricCard
-                  title="Shoulder Rotation"
-                  yours={currentMetrics.shoulderRotation}
-                  pro={professionalFrames[currentFrameIndex].metrics.shoulderRotation}
-                  unit="°"
-                  yoursFormatted={currentVisibility?.shoulderRotation ? formatRotationWithSide(currentMetrics.shoulderRotation, "Shoulder", isRightHanded) : "---"}
-                  proFormatted={formatRotationWithSide(professionalFrames[currentFrameIndex].metrics.shoulderRotation, "Shoulder", isRightHanded)}
-                />
-              )}
-              {(isRightHanded ? currentVisibility?.rightElbow : currentVisibility?.leftElbow) !== false && (
-                <MetricCard
-                  title="Throwing Arm Elbow"
-                  yours={isRightHanded ? currentMetrics.rightElbowAngle : currentMetrics.leftElbowAngle}
-                  pro={professionalFrames[currentFrameIndex].metrics.rightElbowAngle}
-                  unit="°"
-                  yoursFormatted={(isRightHanded ? currentVisibility?.rightElbow : currentVisibility?.leftElbow) ? undefined : "---"}
-                />
-              )}
-              {(isRightHanded ? currentVisibility?.leftElbow : currentVisibility?.rightElbow) !== false && (
-                <MetricCard
-                  title="Non-Throwing Arm Elbow"
-                  yours={isRightHanded ? currentMetrics.leftElbowAngle : currentMetrics.rightElbowAngle}
-                  pro={professionalFrames[currentFrameIndex].metrics.leftElbowAngle}
-                  unit="°"
-                  yoursFormatted={(isRightHanded ? currentVisibility?.leftElbow : currentVisibility?.rightElbow) ? undefined : "---"}
-                />
-              )}
-              {(isRightHanded ? currentVisibility?.leftKnee : currentVisibility?.rightKnee) !== false && (
-                <MetricCard
-                  title="Lead Leg Knee"
-                  yours={isRightHanded ? currentMetrics.leftKneeFlexion : currentMetrics.rightKneeFlexion}
-                  pro={professionalFrames[currentFrameIndex].metrics.leftKneeFlexion}
-                  unit="°"
-                  yoursFormatted={(isRightHanded ? currentVisibility?.leftKnee : currentVisibility?.rightKnee) ? undefined : "---"}
-                />
-              )}
-              {(isRightHanded ? currentVisibility?.rightKnee : currentVisibility?.leftKnee) !== false && (
-                <MetricCard
-                  title="Back Leg Knee"
-                  yours={isRightHanded ? currentMetrics.rightKneeFlexion : currentMetrics.leftKneeFlexion}
-                  pro={professionalFrames[currentFrameIndex].metrics.rightKneeFlexion}
-                  unit="°"
-                  yoursFormatted={(isRightHanded ? currentVisibility?.rightKnee : currentVisibility?.leftKnee) ? undefined : "---"}
-                />
-              )}
-              {(currentVisibility?.spineAngle !== false) && (
-                <MetricCard
-                  title="Spine Angle"
-                  yours={currentMetrics.spineAngle}
-                  pro={professionalFrames[currentFrameIndex].metrics.spineAngle}
-                  unit="°"
-                  yoursFormatted={currentVisibility?.spineAngle ? formatSpineAngle(currentMetrics.spineAngle) : "---"}
-                  proFormatted={formatSpineAngle(professionalFrames[currentFrameIndex].metrics.spineAngle)}
-                />
-              )}
               <MetricCard
-                title="Foot Positioning"
-                yours={currentMetrics.footPositioning}
-                pro={professionalFrames[currentFrameIndex].metrics.footPositioning}
+                title="Hip Rotation"
+                yours={currentMetrics.hipRotation}
+                pro={professionalFrames[currentFrameIndex].metrics.hipRotation}
+                unit="°"
+                yoursFormatted={formatRotationWithSide(currentMetrics.hipRotation, "Hip", isRightHanded)}
+                proFormatted={formatRotationWithSide(professionalFrames[currentFrameIndex].metrics.hipRotation, "Hip", isRightHanded)}
+              />
+              <MetricCard
+                title="Shoulder Rotation"
+                yours={currentMetrics.shoulderRotation}
+                pro={professionalFrames[currentFrameIndex].metrics.shoulderRotation}
+                unit="°"
+                yoursFormatted={formatRotationWithSide(currentMetrics.shoulderRotation, "Shoulder", isRightHanded)}
+                proFormatted={formatRotationWithSide(professionalFrames[currentFrameIndex].metrics.shoulderRotation, "Shoulder", isRightHanded)}
+              />
+              <MetricCard
+                title="Throwing Arm Elbow"
+                yours={isRightHanded ? currentMetrics.rightElbowAngle : currentMetrics.leftElbowAngle}
+                pro={professionalFrames[currentFrameIndex].metrics.rightElbowAngle}
                 unit="°"
               />
-              {(currentVisibility?.weightTransfer !== false) && (
-                <MetricCard
-                  title="Weight Distribution"
-                  yours={currentMetrics.weightTransfer}
-                  pro={professionalFrames[currentFrameIndex].metrics.weightTransfer}
-                  unit="%"
-                  yoursFormatted={currentVisibility?.weightTransfer ? formatWeightDistribution(currentMetrics.weightTransfer) : "---"}
-                  proFormatted={formatWeightDistribution(professionalFrames[currentFrameIndex].metrics.weightTransfer)}
-                />
-              )}
+              <MetricCard
+                title="Non-Throwing Arm Elbow"
+                yours={isRightHanded ? currentMetrics.leftElbowAngle : currentMetrics.rightElbowAngle}
+                pro={professionalFrames[currentFrameIndex].metrics.leftElbowAngle}
+                unit="°"
+              />
+              <MetricCard
+                title="Lead Leg Knee"
+                yours={isRightHanded ? currentMetrics.leftKneeFlexion : currentMetrics.rightKneeFlexion}
+                pro={professionalFrames[currentFrameIndex].metrics.leftKneeFlexion}
+                unit="°"
+              />
+              <MetricCard
+                title="Back Leg Knee"
+                yours={isRightHanded ? currentMetrics.rightKneeFlexion : currentMetrics.leftKneeFlexion}
+                pro={professionalFrames[currentFrameIndex].metrics.rightKneeFlexion}
+                unit="°"
+              />
+              <MetricCard
+                title="Spine Angle"
+                yours={currentMetrics.spineAngle}
+                pro={professionalFrames[currentFrameIndex].metrics.spineAngle}
+                unit="°"
+                yoursFormatted={formatSpineAngle(currentMetrics.spineAngle)}
+                proFormatted={formatSpineAngle(professionalFrames[currentFrameIndex].metrics.spineAngle)}
+              />
+
+              <MetricCard
+                title="Weight Distribution"
+                yours={currentMetrics.weightTransfer}
+                pro={professionalFrames[currentFrameIndex].metrics.weightTransfer}
+                unit="%"
+                yoursFormatted={formatWeightDistribution(currentMetrics.weightTransfer)}
+                proFormatted={formatWeightDistribution(professionalFrames[currentFrameIndex].metrics.weightTransfer)}
+              />
             </div>
           </div>
         )}

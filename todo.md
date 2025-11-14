@@ -500,7 +500,14 @@
 
 
 ## Fix Replay Display - Hide Metrics When Landmarks Not Visible
-- [ ] Store landmark visibility in recorded frames during capture
-- [ ] Update Replay component to check visibility for each metric
-- [ ] Hide/show "---" for metrics when landmarks weren't visible in that frame
+- [x] Store landmark visibility in recorded frames during capture
+- [x] Update Replay component to check visibility for each metric
+- [x] Hide/show "---" for metrics when landmarks weren't visible in that frame
 - [ ] Test: record with body parts going out of frame, verify replay hides those metrics
+
+
+## CRITICAL: Remove Visibility Checks Breaking Display
+- [ ] Remove ALL visibility conditional checks from Replay metric cards
+- [ ] Restore metric cards to display normally without visibility checks
+- [ ] Remove foot positioning metric card
+- [ ] Test that all metrics display correctly
