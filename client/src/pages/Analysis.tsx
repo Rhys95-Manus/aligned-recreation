@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Pose, Results } from "@mediapipe/pose";
 import { getProfessionalReference, calculateMetricScore, getComparisonText } from "@/data/professionalReferences";
-import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribution, formatSpineAngle } from "@/utils/rotationCalculations";
+import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribution, formatSpineAngle, formatRotationAngle } from "@/utils/rotationCalculations";
 import Replay from "./Replay";
 
 // Detailed analysis data structure
@@ -1225,13 +1225,13 @@ export default function Analysis() {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Hip Rotation:</span>
                       <span className="text-cyan-400 font-semibold">
-                        {metricsVisible.hipRotation ? `${hipRotation.toFixed(0)}°` : '---'}
+                        {metricsVisible.hipRotation ? formatRotationAngle(hipRotation) : '---'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Shoulder Rotation:</span>
                       <span className="text-cyan-400 font-semibold">
-                        {metricsVisible.shoulderRotation ? `${shoulderRotation.toFixed(0)}°` : '---'}
+                        {metricsVisible.shoulderRotation ? formatRotationAngle(shoulderRotation) : '---'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
