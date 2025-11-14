@@ -507,7 +507,14 @@
 
 
 ## CRITICAL: Remove Visibility Checks Breaking Display
-- [ ] Remove ALL visibility conditional checks from Replay metric cards
-- [ ] Restore metric cards to display normally without visibility checks
-- [ ] Remove foot positioning metric card
+- [x] Remove ALL visibility conditional checks from Replay metric cards
+- [x] Restore metric cards to display normally without visibility checks
+- [x] Remove foot positioning metric card
 - [ ] Test that all metrics display correctly
+
+
+## PROPER FIX: Hide User Metrics When Landmarks Not Visible
+- [ ] Revert visibility threshold to 0.7 in Analysis.tsx
+- [ ] Re-implement visibility checks in Replay - show "---" for USER metrics when not visible
+- [ ] Keep showing PRO metrics always (they're always valid)
+- [ ] Test: record with knees out of frame, verify replay shows "---" for user knee metrics
