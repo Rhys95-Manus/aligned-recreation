@@ -578,18 +578,9 @@ export default function Analysis() {
         if (Math.abs(shoulderRotationCalc) > Math.abs(peakShoulderRotation.current)) peakShoulderRotation.current = shoulderRotationCalc;
         if (Math.abs(hipShoulderSeparationCalc) > Math.abs(peakHipShoulderSeparation.current)) peakHipShoulderSeparation.current = hipShoulderSeparationCalc;
         
-        // Record this frame for replay - ONLY if all key landmarks are visible
-        const allKeyLandmarksVisible = 
-          metricsVisible.hipRotation && 
-          metricsVisible.shoulderRotation && 
-          metricsVisible.rightElbow && 
-          metricsVisible.leftElbow && 
-          metricsVisible.rightKnee && 
-          metricsVisible.leftKnee;
-        
-        if (allKeyLandmarksVisible) {
-          const timestamp = Date.now() - captureStartTimeRef.current;
-          recordedFramesRef.current.push({
+        // Record this frame for replay
+        const timestamp = Date.now() - captureStartTimeRef.current;
+        recordedFramesRef.current.push({
           timestamp,
           landmarks: JSON.parse(JSON.stringify(landmarks)), // Deep copy
           metrics: {
@@ -606,7 +597,6 @@ export default function Analysis() {
             weightTransfer: weightTransferCalc
           }
         });
-        }
       }
       
       // Log biomechanical metrics (use calculated values, not state)
