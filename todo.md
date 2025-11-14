@@ -497,3 +497,10 @@
 - [ ] Remove visibility check from frame recording (revert bad change)
 - [ ] Check Replay component - why is display broken?
 - [ ] Fix the actual display issue in Replay component
+
+
+## Fix Replay Display - Hide Metrics When Landmarks Not Visible
+- [ ] Store landmark visibility in recorded frames during capture
+- [ ] Update Replay component to check visibility for each metric
+- [ ] Hide/show "---" for metrics when landmarks weren't visible in that frame
+- [ ] Test: record with body parts going out of frame, verify replay hides those metrics
