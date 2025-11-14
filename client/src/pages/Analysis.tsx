@@ -392,7 +392,7 @@ export default function Analysis() {
       const rightHip = landmarks[24];
       let hipRotationCalc = 0;
       if (leftHip && rightHip) {
-        const hipsVisible = (leftHip.visibility ?? 0) > 0.8 && (rightHip.visibility ?? 0) > 0.8;
+        const hipsVisible = (leftHip.visibility ?? 0) > 0.7 && (rightHip.visibility ?? 0) > 0.7;
         const hipRotationResult = calculateRotation(leftHip, rightHip, hipsVisible);
         hipRotationCalc = hipRotationResult.angle;
         setHipRotation(hipRotationCalc);
@@ -410,7 +410,7 @@ export default function Analysis() {
       let leftElbowCalc = 0;
       
       if (rightShoulder && rightElbow && rightWrist) {
-        const rightElbowVisible = (rightShoulder.visibility ?? 0) > 0.8 && (rightElbow.visibility ?? 0) > 0.8 && (rightWrist.visibility ?? 0) > 0.8;
+        const rightElbowVisible = (rightShoulder.visibility ?? 0) > 0.7 && (rightElbow.visibility ?? 0) > 0.7 && (rightWrist.visibility ?? 0) > 0.7;
         // Use raw angle: bent elbow = low numbers (60-90°), straight = high (170-180°)
         rightElbowCalc = calculateAngle(rightShoulder, rightElbow, rightWrist);
         setRightElbowAngle(rightElbowCalc);
@@ -421,7 +421,7 @@ export default function Analysis() {
       }
       
       if (leftShoulder && leftElbow && leftWrist) {
-        const leftElbowVisible = (leftShoulder.visibility ?? 0) > 0.8 && (leftElbow.visibility ?? 0) > 0.8 && (leftWrist.visibility ?? 0) > 0.8;
+        const leftElbowVisible = (leftShoulder.visibility ?? 0) > 0.7 && (leftElbow.visibility ?? 0) > 0.7 && (leftWrist.visibility ?? 0) > 0.7;
         // Use raw angle: bent elbow = low numbers (60-90°), straight = high (170-180°)
         leftElbowCalc = calculateAngle(leftShoulder, leftElbow, leftWrist);
         setLeftElbowAngle(leftElbowCalc);
@@ -435,7 +435,7 @@ export default function Analysis() {
       let rightKneeCalc = 0;
       let leftKneeCalc = 0;
            if (rightHip && rightKnee && rightAnkle) {
-        const rightKneeVisible = (rightHip.visibility ?? 0) > 0.8 && (rightKnee.visibility ?? 0) > 0.8 && (rightAnkle.visibility ?? 0) > 0.8;
+        const rightKneeVisible = (rightHip.visibility ?? 0) > 0.7 && (rightKnee.visibility ?? 0) > 0.7 && (rightAnkle.visibility ?? 0) > 0.7;
         // Use raw angle: bent knee = low numbers (90-120°), straight = high (170-180°)
         rightKneeCalc = calculateAngle(rightHip, rightKnee, rightAnkle);
         setRightKneeFlexion(rightKneeCalc);
@@ -446,7 +446,7 @@ export default function Analysis() {
       }
       
       if (leftHip && leftKnee && leftAnkle) {
-        const leftKneeVisible = (leftHip.visibility ?? 0) > 0.8 && (leftKnee.visibility ?? 0) > 0.8 && (leftAnkle.visibility ?? 0) > 0.8;
+        const leftKneeVisible = (leftHip.visibility ?? 0) > 0.7 && (leftKnee.visibility ?? 0) > 0.7 && (leftAnkle.visibility ?? 0) > 0.7;
         leftKneeCalc = calculateAngle(leftHip, leftKnee, leftAnkle);
         setLeftKneeFlexion(leftKneeCalc);
         setMetricsVisible(prev => ({ ...prev, leftKnee: leftKneeVisible }));
@@ -458,7 +458,7 @@ export default function Analysis() {
       // 4. Spine Angle - deviation from vertical (0° = upright, negative = back, positive = forward)
       let spineAngleCalc = 0;
       if (leftShoulder && rightShoulder && leftHip && rightHip) {
-        const spineVisible = (leftShoulder.visibility ?? 0) > 0.8 && (rightShoulder.visibility ?? 0) > 0.8 && (leftHip.visibility ?? 0) > 0.8 && (rightHip.visibility ?? 0) > 0.8;
+        const spineVisible = (leftShoulder.visibility ?? 0) > 0.7 && (rightShoulder.visibility ?? 0) > 0.7 && (leftHip.visibility ?? 0) > 0.7 && (rightHip.visibility ?? 0) > 0.7;
         
         const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
         const hipMidY = (leftHip.y + rightHip.y) / 2;
@@ -517,7 +517,7 @@ export default function Analysis() {
       // leftShoulder and rightShoulder already declared earlier
       let shoulderRotationCalc = 0;
       if (leftShoulder && rightShoulder) {
-        const shouldersVisible = (leftShoulder.visibility ?? 0) > 0.8 && (rightShoulder.visibility ?? 0) > 0.8;
+        const shouldersVisible = (leftShoulder.visibility ?? 0) > 0.7 && (rightShoulder.visibility ?? 0) > 0.7;
         const shoulderRotationResult = calculateRotation(leftShoulder, rightShoulder, shouldersVisible);
         shoulderRotationCalc = shoulderRotationResult.angle;
         setShoulderRotation(shoulderRotationCalc);
@@ -541,8 +541,8 @@ export default function Analysis() {
       let weightTransferCalc = 0;
       
       // Check visibility for footwork metrics
-      const anklesVisible = (leftAnkle?.visibility ?? 0) > 0.8 && (rightAnkle?.visibility ?? 0) > 0.8;
-      const hipsVisible2 = (leftHip?.visibility ?? 0) > 0.8 && (rightHip?.visibility ?? 0) > 0.8;
+      const anklesVisible = (leftAnkle?.visibility ?? 0) > 0.7 && (rightAnkle?.visibility ?? 0) > 0.7;
+      const hipsVisible2 = (leftHip?.visibility ?? 0) > 0.7 && (rightHip?.visibility ?? 0) > 0.7;
       
       if (leftAnkle && rightAnkle && leftHip && rightHip && anklesVisible && hipsVisible2) {
         // Foot Positioning - angle of front foot relative to body center line

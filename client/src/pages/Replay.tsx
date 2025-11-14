@@ -437,7 +437,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 yours={currentMetrics.hipRotation}
                 pro={professionalFrames[currentFrameIndex].metrics.hipRotation}
                 unit="°"
-                yoursFormatted={formatRotationWithSide(currentMetrics.hipRotation, "Hip", isRightHanded)}
+                yoursFormatted={currentVisibility?.hipRotation === false ? "Not Visible" : formatRotationWithSide(currentMetrics.hipRotation, "Hip", isRightHanded)}
                 proFormatted={formatRotationWithSide(professionalFrames[currentFrameIndex].metrics.hipRotation, "Hip", isRightHanded)}
               />
               <MetricCard
@@ -445,7 +445,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 yours={currentMetrics.shoulderRotation}
                 pro={professionalFrames[currentFrameIndex].metrics.shoulderRotation}
                 unit="°"
-                yoursFormatted={formatRotationWithSide(currentMetrics.shoulderRotation, "Shoulder", isRightHanded)}
+                yoursFormatted={currentVisibility?.shoulderRotation === false ? "Not Visible" : formatRotationWithSide(currentMetrics.shoulderRotation, "Shoulder", isRightHanded)}
                 proFormatted={formatRotationWithSide(professionalFrames[currentFrameIndex].metrics.shoulderRotation, "Shoulder", isRightHanded)}
               />
               <MetricCard
@@ -453,31 +453,35 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 yours={isRightHanded ? currentMetrics.rightElbowAngle : currentMetrics.leftElbowAngle}
                 pro={professionalFrames[currentFrameIndex].metrics.rightElbowAngle}
                 unit="°"
+                yoursFormatted={(isRightHanded ? currentVisibility?.rightElbow : currentVisibility?.leftElbow) === false ? "Not Visible" : undefined}
               />
               <MetricCard
                 title="Non-Throwing Arm Elbow"
                 yours={isRightHanded ? currentMetrics.leftElbowAngle : currentMetrics.rightElbowAngle}
                 pro={professionalFrames[currentFrameIndex].metrics.leftElbowAngle}
                 unit="°"
+                yoursFormatted={(isRightHanded ? currentVisibility?.leftElbow : currentVisibility?.rightElbow) === false ? "Not Visible" : undefined}
               />
               <MetricCard
                 title="Lead Leg Knee"
                 yours={isRightHanded ? currentMetrics.leftKneeFlexion : currentMetrics.rightKneeFlexion}
                 pro={professionalFrames[currentFrameIndex].metrics.leftKneeFlexion}
                 unit="°"
+                yoursFormatted={(isRightHanded ? currentVisibility?.leftKnee : currentVisibility?.rightKnee) === false ? "Not Visible" : undefined}
               />
               <MetricCard
                 title="Back Leg Knee"
                 yours={isRightHanded ? currentMetrics.rightKneeFlexion : currentMetrics.leftKneeFlexion}
                 pro={professionalFrames[currentFrameIndex].metrics.rightKneeFlexion}
                 unit="°"
+                yoursFormatted={(isRightHanded ? currentVisibility?.rightKnee : currentVisibility?.leftKnee) === false ? "Not Visible" : undefined}
               />
               <MetricCard
                 title="Spine Angle"
                 yours={currentMetrics.spineAngle}
                 pro={professionalFrames[currentFrameIndex].metrics.spineAngle}
                 unit="°"
-                yoursFormatted={formatSpineAngle(currentMetrics.spineAngle)}
+                yoursFormatted={currentVisibility?.spineAngle === false ? "Not Visible" : formatSpineAngle(currentMetrics.spineAngle)}
                 proFormatted={formatSpineAngle(professionalFrames[currentFrameIndex].metrics.spineAngle)}
               />
 
@@ -486,7 +490,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 yours={currentMetrics.weightTransfer}
                 pro={professionalFrames[currentFrameIndex].metrics.weightTransfer}
                 unit="%"
-                yoursFormatted={formatWeightDistribution(currentMetrics.weightTransfer)}
+                yoursFormatted={currentVisibility?.weightTransfer === false ? "Not Visible" : formatWeightDistribution(currentMetrics.weightTransfer)}
                 proFormatted={formatWeightDistribution(professionalFrames[currentFrameIndex].metrics.weightTransfer)}
               />
             </div>
