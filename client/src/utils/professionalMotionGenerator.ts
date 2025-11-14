@@ -67,8 +67,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: 0,
       endFrame: Math.floor(totalFrames * 0.2),
       metrics: {
-        hipRotation: -90,        // 90° Back
-        shoulderRotation: -90,   // 90° Back
+        hipRotation: 90,         // 90° Back
+        shoulderRotation: 90,    // 90° Back
         rightElbowAngle: 70,     // Bent (low number)
         leftElbowAngle: 80,
         rightKneeFlexion: 145,   // Slightly bent (high number = straighter)
@@ -86,8 +86,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: Math.floor(totalFrames * 0.2),
       endFrame: Math.floor(totalFrames * 0.4),
       metrics: {
-        hipRotation: -70,        // 70° Back
-        shoulderRotation: -90,   // 90° Back (shoulders stay closed)
+        hipRotation: 70,         // 70° Back
+        shoulderRotation: 90,    // 90° Back (shoulders stay closed)
         rightElbowAngle: 78,
         leftElbowAngle: 75,
         rightKneeFlexion: 135,
@@ -105,8 +105,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: Math.floor(totalFrames * 0.4),
       endFrame: Math.floor(totalFrames * 0.6),
       metrics: {
-        hipRotation: -50,        // 50° Back (hips opening)
-        shoulderRotation: -90,   // 90° Back (shoulders still closed - max separation)
+        hipRotation: 50,         // 50° Back (hips opening)
+        shoulderRotation: 90,    // 90° Back (shoulders still closed - max separation)
         rightElbowAngle: 95,     // L-shape behind head
         leftElbowAngle: 70,
         rightKneeFlexion: 125,   // More bent
@@ -124,8 +124,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: Math.floor(totalFrames * 0.6),
       endFrame: Math.floor(totalFrames * 0.8),
       metrics: {
-        hipRotation: -2,         // Nearly square (2° Back)
-        shoulderRotation: -2,    // Nearly square
+        hipRotation: 2,          // Nearly square (2° Back)
+        shoulderRotation: 2,     // Nearly square
         rightElbowAngle: 150,    // Extending (high number)
         leftElbowAngle: 65,
         rightKneeFlexion: 165,   // Nearly straight
@@ -143,8 +143,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: Math.floor(totalFrames * 0.8),
       endFrame: totalFrames,
       metrics: {
-        hipRotation: 5,          // 5° Forward (past square)
-        shoulderRotation: 5,     // 5° Forward
+        hipRotation: -5,         // 5° Forward (past square, negative = forward)
+        shoulderRotation: -5,    // 5° Forward
         rightElbowAngle: 173,    // Fully extended
         leftElbowAngle: 60,
         rightKneeFlexion: 140,   // Bent again
