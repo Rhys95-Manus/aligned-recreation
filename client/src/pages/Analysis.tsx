@@ -381,12 +381,13 @@ export default function Analysis() {
       const rightHip = landmarks[24];
       let hipRotationCalc = 0;
       if (leftHip && rightHip) {
-        const hipsVisible = (leftHip.visibility ?? 0) > 0.7 && (rightHip.visibility ?? 0) > 0.7;
+        const hipsVisible = (leftHip.visibility ?? 0) > 0.8 && (rightHip.visibility ?? 0) > 0.8;
         const hipRotationResult = calculateRotation(leftHip, rightHip, hipsVisible);
         hipRotationCalc = hipRotationResult.angle;
         setHipRotation(hipRotationCalc);
         setMetricsVisible(prev => ({ ...prev, hipRotation: hipsVisible }));
       } else {
+        setHipRotation(0);
         setMetricsVisible(prev => ({ ...prev, hipRotation: false }));
       }
       
@@ -398,22 +399,24 @@ export default function Analysis() {
       let leftElbowCalc = 0;
       
       if (rightShoulder && rightElbow && rightWrist) {
-        const rightElbowVisible = (rightShoulder.visibility ?? 0) > 0.7 && (rightElbow.visibility ?? 0) > 0.7 && (rightWrist.visibility ?? 0) > 0.7;
+        const rightElbowVisible = (rightShoulder.visibility ?? 0) > 0.8 && (rightElbow.visibility ?? 0) > 0.8 && (rightWrist.visibility ?? 0) > 0.8;
         // Use raw angle: bent elbow = low numbers (60-90°), straight = high (170-180°)
         rightElbowCalc = calculateAngle(rightShoulder, rightElbow, rightWrist);
         setRightElbowAngle(rightElbowCalc);
         setMetricsVisible(prev => ({ ...prev, rightElbow: rightElbowVisible }));
       } else {
+        setRightElbowAngle(0);
         setMetricsVisible(prev => ({ ...prev, rightElbow: false }));
       }
       
       if (leftShoulder && leftElbow && leftWrist) {
-        const leftElbowVisible = (leftShoulder.visibility ?? 0) > 0.7 && (leftElbow.visibility ?? 0) > 0.7 && (leftWrist.visibility ?? 0) > 0.7;
+        const leftElbowVisible = (leftShoulder.visibility ?? 0) > 0.8 && (leftElbow.visibility ?? 0) > 0.8 && (leftWrist.visibility ?? 0) > 0.8;
         // Use raw angle: bent elbow = low numbers (60-90°), straight = high (170-180°)
         leftElbowCalc = calculateAngle(leftShoulder, leftElbow, leftWrist);
         setLeftElbowAngle(leftElbowCalc);
         setMetricsVisible(prev => ({ ...prev, leftElbow: leftElbowVisible }));
       } else {
+        setLeftElbowAngle(0);
         setMetricsVisible(prev => ({ ...prev, leftElbow: false }));
       }
       
@@ -421,28 +424,30 @@ export default function Analysis() {
       let rightKneeCalc = 0;
       let leftKneeCalc = 0;
            if (rightHip && rightKnee && rightAnkle) {
-        const rightKneeVisible = (rightHip.visibility ?? 0) > 0.7 && (rightKnee.visibility ?? 0) > 0.7 && (rightAnkle.visibility ?? 0) > 0.7;
+        const rightKneeVisible = (rightHip.visibility ?? 0) > 0.8 && (rightKnee.visibility ?? 0) > 0.8 && (rightAnkle.visibility ?? 0) > 0.8;
         // Use raw angle: bent knee = low numbers (90-120°), straight = high (170-180°)
         rightKneeCalc = calculateAngle(rightHip, rightKnee, rightAnkle);
         setRightKneeFlexion(rightKneeCalc);
         setMetricsVisible(prev => ({ ...prev, rightKnee: rightKneeVisible }));
       } else {
+        setRightKneeFlexion(0);
         setMetricsVisible(prev => ({ ...prev, rightKnee: false }));
       }
       
       if (leftHip && leftKnee && leftAnkle) {
-        const leftKneeVisible = (leftHip.visibility ?? 0) > 0.7 && (leftKnee.visibility ?? 0) > 0.7 && (leftAnkle.visibility ?? 0) > 0.7;
+        const leftKneeVisible = (leftHip.visibility ?? 0) > 0.8 && (leftKnee.visibility ?? 0) > 0.8 && (leftAnkle.visibility ?? 0) > 0.8;
         leftKneeCalc = calculateAngle(leftHip, leftKnee, leftAnkle);
         setLeftKneeFlexion(leftKneeCalc);
         setMetricsVisible(prev => ({ ...prev, leftKnee: leftKneeVisible }));
       } else {
+        setLeftKneeFlexion(0);
         setMetricsVisible(prev => ({ ...prev, leftKnee: false }));
       }
       
       // 4. Spine Angle - deviation from vertical (0° = upright, negative = back, positive = forward)
       let spineAngleCalc = 0;
       if (leftShoulder && rightShoulder && leftHip && rightHip) {
-        const spineVisible = (leftShoulder.visibility ?? 0) > 0.7 && (rightShoulder.visibility ?? 0) > 0.7 && (leftHip.visibility ?? 0) > 0.7 && (rightHip.visibility ?? 0) > 0.7;
+        const spineVisible = (leftShoulder.visibility ?? 0) > 0.8 && (rightShoulder.visibility ?? 0) > 0.8 && (leftHip.visibility ?? 0) > 0.8 && (rightHip.visibility ?? 0) > 0.8;
         
         const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
         const hipMidY = (leftHip.y + rightHip.y) / 2;
@@ -464,6 +469,7 @@ export default function Analysis() {
         setSpineAngle(spineAngleCalc);
         setMetricsVisible(prev => ({ ...prev, spineAngle: spineVisible }));
       } else {
+        setSpineAngle(0);
         setMetricsVisible(prev => ({ ...prev, spineAngle: false }));
       }
       
@@ -500,12 +506,13 @@ export default function Analysis() {
       // leftShoulder and rightShoulder already declared earlier
       let shoulderRotationCalc = 0;
       if (leftShoulder && rightShoulder) {
-        const shouldersVisible = (leftShoulder.visibility ?? 0) > 0.7 && (rightShoulder.visibility ?? 0) > 0.7;
+        const shouldersVisible = (leftShoulder.visibility ?? 0) > 0.8 && (rightShoulder.visibility ?? 0) > 0.8;
         const shoulderRotationResult = calculateRotation(leftShoulder, rightShoulder, shouldersVisible);
         shoulderRotationCalc = shoulderRotationResult.angle;
         setShoulderRotation(shoulderRotationCalc);
         setMetricsVisible(prev => ({ ...prev, shoulderRotation: shouldersVisible }));
       } else {
+        setShoulderRotation(0);
         setMetricsVisible(prev => ({ ...prev, shoulderRotation: false }));
       }
       
@@ -522,30 +529,37 @@ export default function Analysis() {
       let strideLengthCalc = 0;
       let weightTransferCalc = 0;
       
-      if (leftAnkle && rightAnkle && leftHip && rightHip) {
+      // Check visibility for footwork metrics
+      const anklesVisible = (leftAnkle?.visibility ?? 0) > 0.8 && (rightAnkle?.visibility ?? 0) > 0.8;
+      const hipsVisible2 = (leftHip?.visibility ?? 0) > 0.8 && (rightHip?.visibility ?? 0) > 0.8;
+      
+      if (leftAnkle && rightAnkle && leftHip && rightHip && anklesVisible && hipsVisible2) {
         // Foot Positioning - angle of front foot relative to body center line
         footPositioningCalc = Math.abs(Math.atan2(rightAnkle.y - leftAnkle.y, rightAnkle.x - leftAnkle.x) * 180 / Math.PI);
         setFootPositioning(footPositioningCalc);
         
         // Stride Length - distance between feet
-        strideLengthCalc = Math.sqrt(
-          Math.pow(rightAnkle.x - leftAnkle.x, 2) + 
-          Math.pow(rightAnkle.y - leftAnkle.y, 2)
-        );
+        const strideX = Math.abs(rightAnkle.x - leftAnkle.x);
+        const strideY = Math.abs(rightAnkle.y - leftAnkle.y);
+        strideLengthCalc = Math.sqrt(strideX * strideX + strideY * strideY);
         setStrideLength(strideLengthCalc);
         
-        // Weight Transfer - based on hip position relative to feet
+        // Weight Transfer - estimate based on hip position relative to feet
         const hipCenter = (leftHip.y + rightHip.y) / 2;
         const frontFootY = Math.min(leftAnkle.y, rightAnkle.y);
         const backFootY = Math.max(leftAnkle.y, rightAnkle.y);
         const totalDistance = Math.abs(frontFootY - backFootY);
         const hipToFrontDistance = Math.abs(hipCenter - frontFootY);
         
-        if (totalDistance > 0) {
+        if (totalDistance > 0.01) { // Require meaningful stride
           weightTransferCalc = (hipToFrontDistance / totalDistance) * 100;
           weightTransferCalc = Math.min(100, Math.max(0, weightTransferCalc));
           setWeightTransfer(weightTransferCalc);
         }
+      } else {
+        // Reset values when not visible
+        setWeightTransfer(0);
+        setFootPositioning(0);
       }
       
       // Track peak values during capture session (use ref to avoid closure issues)
@@ -564,9 +578,18 @@ export default function Analysis() {
         if (Math.abs(shoulderRotationCalc) > Math.abs(peakShoulderRotation.current)) peakShoulderRotation.current = shoulderRotationCalc;
         if (Math.abs(hipShoulderSeparationCalc) > Math.abs(peakHipShoulderSeparation.current)) peakHipShoulderSeparation.current = hipShoulderSeparationCalc;
         
-        // Record this frame for replay
-        const timestamp = Date.now() - captureStartTimeRef.current;
-        recordedFramesRef.current.push({
+        // Record this frame for replay - ONLY if all key landmarks are visible
+        const allKeyLandmarksVisible = 
+          metricsVisible.hipRotation && 
+          metricsVisible.shoulderRotation && 
+          metricsVisible.rightElbow && 
+          metricsVisible.leftElbow && 
+          metricsVisible.rightKnee && 
+          metricsVisible.leftKnee;
+        
+        if (allKeyLandmarksVisible) {
+          const timestamp = Date.now() - captureStartTimeRef.current;
+          recordedFramesRef.current.push({
           timestamp,
           landmarks: JSON.parse(JSON.stringify(landmarks)), // Deep copy
           metrics: {
@@ -583,6 +606,7 @@ export default function Analysis() {
             weightTransfer: weightTransferCalc
           }
         });
+        }
       }
       
       // Log biomechanical metrics (use calculated values, not state)
@@ -1266,7 +1290,9 @@ export default function Analysis() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Weight:</span>
-                      <span className="text-green-400 font-semibold">{weightTransfer.toFixed(0)}%</span>
+                      <span className="text-green-400 font-semibold">
+                        {weightTransfer > 0 ? `${weightTransfer.toFixed(0)}%` : '---'}
+                      </span>
                     </div>
                   </div>
                 </div>

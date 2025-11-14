@@ -458,3 +458,29 @@
 - [x] Fix directional label logic - showing "Right Hip Forward 90°" when should be "Right Hip Back 90°"
 - [x] Fix Follow-through rotation to be negative (forward = negative)
 - [ ] Verify all phases match user's specification exactly
+
+
+## Update Metrics to User's Final Specification
+- [ ] Update Release phase: Right Elbow 140° (was 150°), Left Elbow 30° (was 65°)
+- [ ] Update Follow-through: Right Elbow 163° (was 173°), Left Elbow 30° (was 60°), Hip/Shoulder Rotation 10° Forward (was 5°)
+- [ ] Update Early Cocking: Spine Angle -9° (was -9°, but range is -10° to -9°)
+- [ ] Update Late Cocking: Spine Angle -6° (was -4°, range is -8° to -4°)
+- [ ] Fix weight distribution calculation - showing false metrics when user not in frame
+- [ ] Fix visibility checks - metrics appearing when user not in frame
+- [ ] Review foot positioning metric - determine if needed or should be removed
+
+
+## CRITICAL: Fix Visibility Checks Comprehensively
+- [ ] Add visibility state for knee angles (currently missing)
+- [ ] Ensure all metric state updates include visibility tracking
+- [ ] Update live metrics display to check visibility for EVERY metric
+- [ ] Remove foot positioning from recorded frames interface
+- [ ] Remove foot positioning from professional reference
+- [ ] Test: verify NO metrics show when user steps out of frame
+
+
+## CRITICAL: Fix Replay Showing Metrics When User Out of Frame
+- [x] Find where frames are recorded during capture (recordedFrames)
+- [x] Add visibility check before recording each frame
+- [x] Only record frames when ALL key landmarks are visible (hips, shoulders, elbows, knees)
+- [ ] Test: capture with body parts out of frame, verify replay doesn't show those metrics
