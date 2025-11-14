@@ -484,3 +484,16 @@
 - [x] Add visibility check before recording each frame
 - [x] Only record frames when ALL key landmarks are visible (hips, shoulders, elbows, knees)
 - [ ] Test: capture with body parts out of frame, verify replay doesn't show those metrics
+
+
+## CRITICAL: Replay Completely Broken - No Frames Recording
+- [x] Loosen visibility check - require 4 out of 6 key landmarks instead of ALL
+- [ ] Test that frames are being recorded during capture
+- [ ] Test that replay displays hologram and user motion
+- [ ] Test that metrics are shown during replay
+
+
+## Fix Replay Display Issue (NOT recording issue)
+- [ ] Remove visibility check from frame recording (revert bad change)
+- [ ] Check Replay component - why is display broken?
+- [ ] Fix the actual display issue in Replay component
