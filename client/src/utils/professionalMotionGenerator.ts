@@ -111,7 +111,7 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
         leftElbowAngle: 70,
         rightKneeFlexion: 125,   // More bent
         leftKneeFlexion: 135,
-        spineAngle: -4,          // Less back lean as weight shifts forward (-3° to -5° range)
+        spineAngle: -6,          // Less back lean as weight shifts forward (-8° to -4° range)
         rightShoulderAngle: 85,
         leftShoulderAngle: 70,
         footPositioning: 160,
@@ -126,8 +126,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       metrics: {
         hipRotation: 2,          // Nearly square (2° Back)
         shoulderRotation: 2,     // Nearly square
-        rightElbowAngle: 150,    // Extending (high number)
-        leftElbowAngle: 65,
+        rightElbowAngle: 140,    // Extending (was 150°)
+        leftElbowAngle: 30,      // Bent forward (was 65°)
         rightKneeFlexion: 165,   // Nearly straight
         leftKneeFlexion: 150,
         spineAngle: 3,           // Forward lean
@@ -143,10 +143,10 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: Math.floor(totalFrames * 0.8),
       endFrame: totalFrames,
       metrics: {
-        hipRotation: -5,         // 5° Forward (past square, negative = forward)
-        shoulderRotation: -5,    // 5° Forward
-        rightElbowAngle: 173,    // Fully extended
-        leftElbowAngle: 60,
+        hipRotation: -10,        // 10° Forward (was -5°)
+        shoulderRotation: -10,   // 10° Forward (was -5°)
+        rightElbowAngle: 163,    // Extended (was 173°)
+        leftElbowAngle: 30,      // Bent forward (was 60°)
         rightKneeFlexion: 140,   // Bent again
         leftKneeFlexion: 160,    // Straighter
         spineAngle: 10,          // Forward lean
