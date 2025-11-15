@@ -524,3 +524,9 @@
 - [ ] Debug: Check what visibility data is actually stored in recorded frames
 - [ ] Fix visibility check logic - change from `=== false` to `!== true` or check for undefined
 - [ ] Test that metrics display when landmarks were visible
+
+
+## Fix Visibility Data Not Saving Correctly
+- [ ] Check frame recording code - see what visibility data is actually being saved
+- [ ] Fix to save actual metricsVisible state values
+- [ ] Test that visibility data persists correctly in recorded frames

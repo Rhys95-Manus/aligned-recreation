@@ -517,7 +517,10 @@ export default function Analysis() {
       // leftShoulder and rightShoulder already declared earlier
       let shoulderRotationCalc = 0;
       if (leftShoulder && rightShoulder) {
-        const shouldersVisible = (leftShoulder.visibility ?? 0) > 0.7 && (rightShoulder.visibility ?? 0) > 0.7;
+        const leftShoulderVis = leftShoulder.visibility ?? 0;
+        const rightShoulderVis = rightShoulder.visibility ?? 0;
+        const shouldersVisible = leftShoulderVis > 0.7 && rightShoulderVis > 0.7;
+        console.log('Shoulder visibility:', { leftShoulderVis: leftShoulderVis.toFixed(2), rightShoulderVis: rightShoulderVis.toFixed(2), shouldersVisible });
         const shoulderRotationResult = calculateRotation(leftShoulder, rightShoulder, shouldersVisible);
         shoulderRotationCalc = shoulderRotationResult.angle;
         setShoulderRotation(shoulderRotationCalc);
