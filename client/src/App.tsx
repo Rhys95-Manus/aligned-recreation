@@ -10,6 +10,7 @@ import Subcategories from "./pages/Subcategories";
 import Motions from "./pages/Motions";
 import Analysis from "./pages/Analysis";
 import Pricing from "./pages/Pricing";
+import SessionHistory from "./pages/SessionHistory";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path={"/motions/:categoryId/:subcategoryId"} component={Motions} />
       <Route path={"/analysis/:categoryId/:subcategoryId/:motionId"} component={Analysis} />
       <Route path={"/pricing"} component={Pricing} />
+      <Route path={"/history"} component={SessionHistory} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

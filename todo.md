@@ -560,3 +560,29 @@
 - [x] All visibility checks now use fresh calculated values (hipRotationVisible, shoulderRotationVisible, etc.)
 - [ ] Test that shoulders show metrics when square and in frame
 - [ ] Test that right elbow shows metrics when raised and in frame
+
+
+## ADD PLAYBACK SPEED CONTROL
+- [x] Add playback speed state variable (default 1x)
+- [x] Create speed control slider UI below replay videos
+- [x] Implement speed options: 0.25x, 0.5x, 0.75x, 1x
+- [x] Adjust frame advancement rate based on selected speed
+- [x] Display current speed in UI
+
+## ADD COLOR-CODED METRIC INDICATORS
+- [x] Create function to determine metric color based on professional range
+- [x] Define acceptable ranges for each metric (green = within 10°, yellow = within 20°, red = beyond 20°)
+- [x] Add colored border or background to metric cards during replay
+- [x] Update MetricCard component to show status text (Within Pro Range, Close, Needs Improvement)
+- [x] Apply colors to all user metrics (gray for Not Visible, green/yellow/red based on difference)
+
+## ADD SAVE SESSION FEATURE
+- [x] Add "Save Session" button in replay header
+- [x] Create session data structure with id, timestamp, motion name, recorded frames, detailed analysis, duration
+- [x] Implement localStorage save function
+- [x] Create session history page/modal to view saved sessions
+- [x] Add comparison view to see multiple sessions side-by-side (first 2 selected)
+- [x] Add delete session functionality
+- [x] Implement localStorage load function to retrieve sessions
+- [x] Add History button to Home page navigation
+- [x] Add route for /history in App.tsx

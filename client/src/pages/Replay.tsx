@@ -51,6 +51,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const [currentPhase, setCurrentPhase] = useState<MotionPhase>("Neutral");
   const [phaseInstruction, setPhaseInstruction] = useState("Ball near chest, stand sideways, weight balanced");
   const [rotationAngle, setRotationAngle] = useState(0); // 3D rotation angle in degrees (-180 to 180)
+  const [playbackSpeed, setPlaybackSpeed] = useState(1); // Playback speed multiplier (0.25x, 0.5x, 0.75x, 1x)
   
   // Generate professional motion sequence (same length as user motion)
   const professionalFrames = useRef<ProfessionalFrame[]>(
@@ -65,7 +66,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     if (!isPlaying) return;
     
     const frameRate = 30; // 30 FPS playback
-    const frameDuration = 1000 / frameRate;
+    const frameDuration = (1000 / frameRate) / playbackSpeed; // Adjust duration based on speed
     
     const playFrame = (timestamp: number) => {
       if (timestamp - lastFrameTimeRef.current >= frameDuration) {
@@ -91,7 +92,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isPlaying, recordedFrames.length]);
+  }, [isPlaying, recordedFrames.length, playbackSpeed]);
   
   // Detect current phase for display (but don't lock hologram to it)
   useEffect(() => {
@@ -314,6 +315,31 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     setIsPlaying(false);
   };
   
+  const handleSaveSession = () => {
+    // Create session data structure
+    const sessionData = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      motionName,
+      recordedFrames,
+      detailedAnalysis,
+      duration: (recordedFrames.length / 30).toFixed(1), // Duration in seconds
+      frameCount: recordedFrames.length
+    };
+    
+    // Get existing sessions from localStorage
+    const existingSessions = JSON.parse(localStorage.getItem('alignedSessions') || '[]');
+    
+    // Add new session
+    existingSessions.push(sessionData);
+    
+    // Save back to localStorage
+    localStorage.setItem('alignedSessions', JSON.stringify(existingSessions));
+    
+    // Show success message
+    alert(`Session saved! You now have ${existingSessions.length} saved session(s).\n\nView your saved sessions by clicking the "📊 History" button in the top navigation.`);
+  };
+  
   const currentMetrics = recordedFrames[currentFrameIndex]?.metrics;
   const currentVisibility = recordedFrames[currentFrameIndex]?.visibility;
   const progress = (currentFrameIndex / (recordedFrames.length - 1)) * 100;
@@ -323,9 +349,14 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <Button onClick={onBack} variant="outline">
-            ← Back to Analysis
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={onBack} variant="outline">
+              ← Back to Analysis
+            </Button>
+            <Button onClick={handleSaveSession} className="bg-green-600 hover:bg-green-700">
+              💾 Save Session
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold">Motion Replay: {motionName}</h1>
           <div className="w-32"></div>
         </div>
@@ -405,7 +436,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           </div>
           
           {/* Scrubber */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-4">
             <span className="text-sm">{(currentFrameIndex / 30).toFixed(1)}s</span>
             <input
               type="range"
@@ -419,6 +450,41 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
               }}
             />
             <span className="text-sm">{(recordedFrames.length / 30).toFixed(1)}s</span>
+          </div>
+          
+          {/* Playback Speed Control */}
+          <div className="flex items-center justify-center gap-4">
+            <span className="text-sm text-gray-400">Speed:</span>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setPlaybackSpeed(0.25)} 
+                variant={playbackSpeed === 0.25 ? "default" : "outline"} 
+                size="sm"
+              >
+                0.25x
+              </Button>
+              <Button 
+                onClick={() => setPlaybackSpeed(0.5)} 
+                variant={playbackSpeed === 0.5 ? "default" : "outline"} 
+                size="sm"
+              >
+                0.5x
+              </Button>
+              <Button 
+                onClick={() => setPlaybackSpeed(0.75)} 
+                variant={playbackSpeed === 0.75 ? "default" : "outline"} 
+                size="sm"
+              >
+                0.75x
+              </Button>
+              <Button 
+                onClick={() => setPlaybackSpeed(1)} 
+                variant={playbackSpeed === 1 ? "default" : "outline"} 
+                size="sm"
+              >
+                1x
+              </Button>
+            </div>
           </div>
         </div>
         
@@ -587,13 +653,39 @@ function MetricCard({ title, yours, pro, unit, yoursFormatted, proFormatted }: {
   proFormatted?: string;
 }) {
   const difference = Math.abs(yours - pro);
-  const isGood = difference < Math.abs(pro) * 0.2; // Within 20% is good
+  
+  // Determine color based on difference from professional range
+  // Green: within 10° or 10%, Yellow: within 20° or 20%, Red: beyond 20° or 20%
+  let colorClass = 'text-red-400';
+  let borderColorClass = 'border-red-500';
+  let bgColorClass = 'bg-red-900/20';
+  let statusText = 'Needs Improvement';
+  
+  if (yoursFormatted === "Not Visible") {
+    // Not visible - use gray
+    colorClass = 'text-gray-400';
+    borderColorClass = 'border-gray-600';
+    bgColorClass = 'bg-gray-800';
+    statusText = 'Not Visible';
+  } else if (difference <= 10) {
+    // Within 10° or 10% - green (within pro range)
+    colorClass = 'text-green-400';
+    borderColorClass = 'border-green-500';
+    bgColorClass = 'bg-green-900/20';
+    statusText = 'Within Pro Range';
+  } else if (difference <= 20) {
+    // Within 20° or 20% - yellow (close)
+    colorClass = 'text-yellow-400';
+    borderColorClass = 'border-yellow-500';
+    bgColorClass = 'bg-yellow-900/20';
+    statusText = 'Close';
+  }
   
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
+    <div className={`rounded-lg p-4 border-2 ${borderColorClass} ${bgColorClass}`}>
       <h3 className="text-sm font-semibold mb-2 text-gray-400">{title}</h3>
       <div className="flex items-baseline gap-2">
-        <span className={`text-2xl font-bold ${isGood ? 'text-green-400' : 'text-yellow-400'}`}>
+        <span className={`text-2xl font-bold ${colorClass}`}>
           {yoursFormatted || `${yours.toFixed(1)}${unit}`}
         </span>
         <span className="text-sm text-gray-500">vs</span>
@@ -601,8 +693,13 @@ function MetricCard({ title, yours, pro, unit, yoursFormatted, proFormatted }: {
           {proFormatted || `${pro.toFixed(1)}${unit}`}
         </span>
       </div>
-      <div className="mt-2 text-xs text-gray-500">
-        Difference: {difference.toFixed(1)}{unit}
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-xs text-gray-500">
+          Diff: {difference.toFixed(1)}{unit}
+        </span>
+        <span className={`text-xs font-semibold ${colorClass}`}>
+          {statusText}
+        </span>
       </div>
     </div>
   );
