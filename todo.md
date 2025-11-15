@@ -537,3 +537,10 @@
 - [ ] Check if currentVisibility is undefined or has wrong structure
 - [ ] Fix how visibility data is accessed from recorded frames
 - [ ] Test that metrics display when visibility is true
+
+
+## REMOVE ALL VISIBILITY CHECKS FROM REPLAY DISPLAY
+- [x] Remove all `yoursFormatted={currentVisibility?.... === true ? ... : "Not Visible"}` checks
+- [x] Restore metric cards to display normally without visibility conditions
+- [x] Remove debug console logging
+- [ ] Test that all metrics display correctly
