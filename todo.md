@@ -530,3 +530,10 @@
 - [ ] Check frame recording code - see what visibility data is actually being saved
 - [ ] Fix to save actual metricsVisible state values
 - [ ] Test that visibility data persists correctly in recorded frames
+
+
+## Fix Replay Display - Visibility Data Not Being Accessed Correctly
+- [ ] Add console logging in Replay to see currentVisibility values
+- [ ] Check if currentVisibility is undefined or has wrong structure
+- [ ] Fix how visibility data is accessed from recorded frames
+- [ ] Test that metrics display when visibility is true

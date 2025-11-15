@@ -316,6 +316,15 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   
   const currentMetrics = recordedFrames[currentFrameIndex]?.metrics;
   const currentVisibility = recordedFrames[currentFrameIndex]?.visibility;
+  
+  // Debug logging
+  if (currentFrameIndex === 0 || currentFrameIndex % 30 === 0) {
+    console.log('Replay frame', currentFrameIndex, ':', {
+      hasVisibility: !!currentVisibility,
+      visibility: currentVisibility,
+      shoulderRotationVisible: currentVisibility?.shoulderRotation
+    });
+  }
   const progress = (currentFrameIndex / (recordedFrames.length - 1)) * 100;
   
   return (
