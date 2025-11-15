@@ -602,3 +602,18 @@
 - [x] Include share text template with hashtags (#Aligned #FormAnalysis #SportsTech)
 - [x] Add copy share text functionality for easy sharing
 - [x] Create modal UI for sharing options with session preview
+
+
+## FIX MOBILE NAVIGATION
+- [x] Remove High Contrast button from Home page
+- [x] Ensure Community, History, and Pricing buttons are visible on mobile (added flex-wrap and responsive padding)
+- [x] Add responsive text sizing for mobile (text-sm md:text-base)
+- [x] Remove High Contrast button from Header component (used by Categories, Subcategories, Motions pages)
+- [x] Add History button to Header component
+- [x] Make Header component mobile responsive with flex-wrap
+- [x] Add History button to Categories page (via Header component)
+- [x] Add History button to Subcategories page (via Header component)
+- [x] Add History button to Motions page (via Header component)
+- [x] Add History button to Analysis page (via Header component)
+- [x] Add History button to Replay page header with mobile responsive layout
+- [x] Make Replay page header mobile responsive (flex-col on mobile, flex-row on desktop)
