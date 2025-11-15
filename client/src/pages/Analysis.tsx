@@ -956,12 +956,17 @@ export default function Analysis() {
           const comparisonText = getComparisonText(userMetric.value, refMetric);
           
           let recommendation = "";
-          if (userMetric.value < refMetric.optimalRange.min) {
-            recommendation = `Increase ${userMetric.name.toLowerCase()} to ${refMetric.professionalAverage}° (professional average) for optimal performance`;
-          } else if (userMetric.value > refMetric.optimalRange.max) {
-            recommendation = `Decrease ${userMetric.name.toLowerCase()} to ${refMetric.professionalAverage}° (professional average) for optimal performance`;
+          const distanceFromOptimal = Math.abs(userMetric.value - refMetric.professionalAverage);
+          
+          if (userMetric.value >= refMetric.optimalRange.min && userMetric.value <= refMetric.optimalRange.max) {
+            if (distanceFromOptimal < 2) {
+              recommendation = `Perfect alignment! Your ${userMetric.name.toLowerCase()} matches professional mechanics`;
+            } else {
+              recommendation = `Great alignment - ${userMetric.name.toLowerCase()} within professional range (${refMetric.optimalRange.min}-${refMetric.optimalRange.max}°)`;
+            }
           } else {
-            recommendation = `Excellent ${userMetric.name.toLowerCase()} - within professional range (${refMetric.optimalRange.min}-${refMetric.optimalRange.max}°)`;
+            const direction = userMetric.value < refMetric.professionalAverage ? "Increase" : "Reduce";
+            recommendation = `${direction} ${userMetric.name.toLowerCase()} to align with professional average (${refMetric.professionalAverage}°) for optimal performance`;
           }
           
           const unit = userMetric.name === "Weight Transfer" ? "%" : "°";

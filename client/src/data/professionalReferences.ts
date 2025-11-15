@@ -126,48 +126,61 @@ export function getProfessionalReference(
   return professionalReferences[key] || null;
 }
 
-// Helper function to calculate score based on user metric vs professional reference
+// Helper function to calculate alignment score based on distance from optimal
+// This measures how close the user is to professional mechanics, treating
+// over-rotation and under-rotation equally (e.g., 45° and 77° both score the same if pro is 61°)
 export function calculateMetricScore(
   userValue: number,
   metric: BiomechanicalMetric
 ): number {
   const { professionalAverage, optimalRange } = metric;
   
-  // If within optimal range, score 90-100
+  // Calculate absolute distance from professional average
+  const distanceFromOptimal = Math.abs(userValue - professionalAverage);
+  
+  // If within optimal range, score 90-100 based on closeness to average
   if (userValue >= optimalRange.min && userValue <= optimalRange.max) {
-    // Score based on how close to professional average
-    const distanceFromAverage = Math.abs(userValue - professionalAverage);
     const rangeSize = (optimalRange.max - optimalRange.min) / 2;
-    const score = 100 - (distanceFromAverage / rangeSize) * 10;
+    // Perfect alignment (at professional average) = 100
+    // At edge of optimal range = 90
+    const score = 100 - (distanceFromOptimal / rangeSize) * 10;
     return Math.max(90, Math.min(100, score));
   }
   
-  // If outside optimal range, score decreases with distance
+  // If outside optimal range, calculate alignment score (0-90)
+  // Distance from the nearest edge of optimal range
   const distanceFromRange = userValue < optimalRange.min 
     ? optimalRange.min - userValue 
     : userValue - optimalRange.max;
   
-  // Score decreases by 5 points per 5 degrees outside range
+  // Total distance from optimal (distance from average to edge + distance beyond edge)
+  const totalDistance = distanceFromOptimal;
+  
+  // Alignment score: 90 at edge of range, decreasing by 5 points per 5° away
+  // This ensures symmetry: being 20° under or 20° over scores the same
   const penaltyPoints = (distanceFromRange / 5) * 5;
   const score = 90 - penaltyPoints;
   
   return Math.max(0, Math.min(90, score));
 }
 
-// Helper function to get comparison text
+// Helper function to get comparison text based on alignment
 export function getComparisonText(
   userValue: number,
   metric: BiomechanicalMetric
 ): string {
   const { professionalAverage, optimalRange } = metric;
-  const difference = userValue - professionalAverage;
+  const distanceFromOptimal = Math.abs(userValue - professionalAverage);
   
   if (userValue >= optimalRange.min && userValue <= optimalRange.max) {
+    if (distanceFromOptimal < 2) {
+      return "Perfect alignment with professional average";
+    }
     return "Within professional range";
-  } else if (userValue < optimalRange.min) {
-    return `${Math.abs(difference).toFixed(1)}° below professional average`;
-  } else {
-    return `${difference.toFixed(1)}° above professional average`;
   }
+  
+  // Show absolute distance from optimal, not directional difference
+  const direction = userValue < professionalAverage ? "below" : "above";
+  return `${distanceFromOptimal.toFixed(1)}° ${direction} professional average`;
 }
 
