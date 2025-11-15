@@ -552,3 +552,11 @@
 - [x] Show "Not Visible" when landmarks weren't detected during that specific frame
 - [x] Ready for user testing - sitting down with legs out of frame should show "Not Visible" for knee metrics
 - [x] Ready for user testing - lowering arm out of frame should show "Not Visible" for elbow metrics
+
+
+## DEBUG VISIBILITY DATA - SHOWING "NOT VISIBLE" WHEN LANDMARKS ARE DETECTED
+- [x] Identified root cause: React state updates are async, so metricsVisible state was stale when recording frames
+- [x] Fixed by using local visibility variables instead of state when recording frames
+- [x] All visibility checks now use fresh calculated values (hipRotationVisible, shoulderRotationVisible, etc.)
+- [ ] Test that shoulders show metrics when square and in frame
+- [ ] Test that right elbow shows metrics when raised and in frame
