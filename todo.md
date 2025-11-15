@@ -544,3 +544,11 @@
 - [x] Restore metric cards to display normally without visibility conditions
 - [x] Remove debug console logging
 - [ ] Test that all metrics display correctly
+
+
+## FIX FALSE METRIC DISPLAY - ONLY SHOW METRICS WHEN LANDMARKS DETECTED
+- [x] Update frame recording in Analysis.tsx to save visibility status for each metric (hipRotation, shoulderRotation, rightElbow, leftElbow, rightKnee, leftKnee, spineAngle, weightTransfer)
+- [x] Modify Replay.tsx to check visibility for each metric before displaying
+- [x] Show "Not Visible" when landmarks weren't detected during that specific frame
+- [x] Ready for user testing - sitting down with legs out of frame should show "Not Visible" for knee metrics
+- [x] Ready for user testing - lowering arm out of frame should show "Not Visible" for elbow metrics
