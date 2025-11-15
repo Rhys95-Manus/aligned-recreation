@@ -356,17 +356,19 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex gap-3">
-            <Button onClick={onBack} variant="outline">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+          <div className="flex gap-2 md:gap-3 flex-wrap">
+            <Button onClick={onBack} variant="outline" className="text-sm md:text-base">
               ← Back to Analysis
             </Button>
-            <Button onClick={handleSaveSession} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleSaveSession} className="bg-green-600 hover:bg-green-700 text-sm md:text-base">
               💾 Save Session
             </Button>
+            <Button onClick={() => window.location.href = '/history'} variant="outline" className="!border-2 !border-purple-400 !text-purple-400 hover:bg-purple-400/10 text-sm md:text-base">
+              📊 History
+            </Button>
           </div>
-          <h1 className="text-3xl font-bold">Motion Replay: {motionName}</h1>
-          <div className="w-32"></div>
+          <h1 className="text-2xl md:text-3xl font-bold">Motion Replay: {motionName}</h1>
         </div>
         
         {/* Save Confirmation Modal */}
