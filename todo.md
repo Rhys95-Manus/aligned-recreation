@@ -617,3 +617,19 @@
 - [x] Add History button to Analysis page (via Header component)
 - [x] Add History button to Replay page header with mobile responsive layout
 - [x] Make Replay page header mobile responsive (flex-col on mobile, flex-row on desktop)
+
+
+## EXPAND SOCIAL MEDIA SHARING
+- [x] Add Reddit share button to share modal (orange with Reddit branding)
+- [x] Add TikTok share button to share modal (black with cyan border, copies caption)
+- [x] Add Instagram share button to share modal (gradient with copy caption functionality)
+- [x] Update share text templates for each platform with relevant hashtags
+- [x] TikTok and Instagram use copy-to-clipboard approach (can't direct share to apps)
+- [x] Reddit opens submit page with pre-filled title and URL
+
+## ANALYSIS ACCURACY VERIFICATION
+- [x] Confirmed zero values are expected when no motion is performed (not a bug)
+- [x] System correctly reports lack of movement instead of generating fake data
+- [ ] Test with actual throwing motion to verify accurate feedback when movement is detected
+- [ ] Validate that recommendations match user's actual performance during real motion
+- [ ] Verify peak metric tracking captures proper values during full throwing motion

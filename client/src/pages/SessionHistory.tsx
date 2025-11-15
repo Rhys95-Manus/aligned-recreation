@@ -67,6 +67,30 @@ export default function SessionHistory() {
     window.open(url, '_blank');
   };
 
+  const shareToReddit = () => {
+    if (!sessionToShare) return;
+    const score = sessionToShare.detailedAnalysis?.overallScore || 'N/A';
+    const title = `Just analyzed my ${sessionToShare.motionName} - Score: ${score}/100`;
+    const url = `https://www.reddit.com/submit?title=${encodeURIComponent(title)}&url=${encodeURIComponent(window.location.href)}`;
+    window.open(url, '_blank');
+  };
+
+  const shareToTikTok = () => {
+    if (!sessionToShare) return;
+    const score = sessionToShare.detailedAnalysis?.overallScore || 'N/A';
+    const text = `Just analyzed my ${sessionToShare.motionName} with Aligned! \ud83c\udfc8\n\nScore: ${score}/100\nDuration: ${sessionToShare.duration}s\n\n#Aligned #FormAnalysis #SportsTech #FitnessCheck`;
+    navigator.clipboard.writeText(text);
+    alert('TikTok caption copied! Open TikTok app to create a video with this caption.');
+  };
+
+  const shareToInstagram = () => {
+    if (!sessionToShare) return;
+    const score = sessionToShare.detailedAnalysis?.overallScore || 'N/A';
+    const text = `Just analyzed my ${sessionToShare.motionName} with Aligned! \ud83c\udfc8\n\nScore: ${score}/100 \ud83d\udcca\nDuration: ${sessionToShare.duration}s \u23f1\ufe0f\n\n#Aligned #FormAnalysis #SportsTech #FitnessMotivation #AthleteLife`;
+    navigator.clipboard.writeText(text);
+    alert('Instagram caption copied! Open Instagram app to create a post with this caption.');
+  };
+
   const copyShareLink = () => {
     if (!sessionToShare) return;
     const score = sessionToShare.detailedAnalysis?.overallScore || 'N/A';
@@ -123,6 +147,24 @@ export default function SessionHistory() {
                   className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white"
                 >
                   👥 Share on Facebook
+                </Button>
+                <Button 
+                  onClick={shareToReddit}
+                  className="w-full bg-[#FF4500] hover:bg-[#e63e00] text-white"
+                >
+                  🟠 Share on Reddit
+                </Button>
+                <Button 
+                  onClick={shareToTikTok}
+                  className="w-full bg-[#000000] hover:bg-[#1a1a1a] text-white border-2 border-[#00f2ea]"
+                >
+                  🎵 Copy for TikTok
+                </Button>
+                <Button 
+                  onClick={shareToInstagram}
+                  className="w-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] hover:opacity-90 text-white"
+                >
+                  📸 Copy for Instagram
                 </Button>
                 <Button 
                   onClick={copyShareLink}
