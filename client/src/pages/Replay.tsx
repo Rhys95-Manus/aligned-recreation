@@ -52,6 +52,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const [phaseInstruction, setPhaseInstruction] = useState("Ball near chest, stand sideways, weight balanced");
   const [rotationAngle, setRotationAngle] = useState(0); // 3D rotation angle in degrees (-180 to 180)
   const [playbackSpeed, setPlaybackSpeed] = useState(1); // Playback speed multiplier (0.25x, 0.5x, 0.75x, 1x)
+  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+  const [savedSessionCount, setSavedSessionCount] = useState(0);
   
   // Generate professional motion sequence (same length as user motion)
   const professionalFrames = useRef<ProfessionalFrame[]>(
@@ -336,8 +338,14 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     // Save back to localStorage
     localStorage.setItem('alignedSessions', JSON.stringify(existingSessions));
     
-    // Show success message
-    alert(`Session saved! You now have ${existingSessions.length} saved session(s).\n\nView your saved sessions by clicking the "📊 History" button in the top navigation.`);
+    // Show success confirmation
+    setSavedSessionCount(existingSessions.length);
+    setShowSaveConfirmation(true);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      setShowSaveConfirmation(false);
+    }, 5000);
   };
   
   const currentMetrics = recordedFrames[currentFrameIndex]?.metrics;
@@ -360,6 +368,42 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           <h1 className="text-3xl font-bold">Motion Replay: {motionName}</h1>
           <div className="w-32"></div>
         </div>
+        
+        {/* Save Confirmation Modal */}
+        {showSaveConfirmation && (
+          <div className="fixed top-20 right-6 bg-green-600 text-white rounded-lg shadow-2xl p-6 max-w-md z-50 animate-in slide-in-from-right">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl">✅</div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-2">Session Saved!</h3>
+                <p className="text-green-100 mb-4">
+                  You now have {savedSessionCount} saved session{savedSessionCount !== 1 ? 's' : ''}.
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => window.location.href = '/history'} 
+                    className="bg-white text-green-600 hover:bg-green-50"
+                  >
+                    📊 View in History
+                  </Button>
+                  <Button 
+                    onClick={() => setShowSaveConfirmation(false)} 
+                    variant="outline"
+                    className="border-white text-white hover:bg-green-700"
+                  >
+                    Continue Watching
+                  </Button>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowSaveConfirmation(false)}
+                className="text-white hover:text-green-200 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
         
         
         {/* Side-by-Side Replay */}

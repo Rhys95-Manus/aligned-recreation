@@ -14,6 +14,8 @@ interface SavedSession {
 export default function SessionHistory() {
   const [sessions, setSessions] = useState<SavedSession[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [sessionToShare, setSessionToShare] = useState<SavedSession | null>(null);
 
   useEffect(() => {
     // Load sessions from localStorage
@@ -46,6 +48,33 @@ export default function SessionHistory() {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
   };
 
+  const handleShare = (session: SavedSession) => {
+    setSessionToShare(session);
+    setShareModalOpen(true);
+  };
+
+  const shareToTwitter = () => {
+    if (!sessionToShare) return;
+    const score = sessionToShare.detailedAnalysis?.overallScore || 'N/A';
+    const text = `Just analyzed my ${sessionToShare.motionName} with Aligned! \ud83c\udfc8\n\nScore: ${score}/100\nDuration: ${sessionToShare.duration}s\n\n#Aligned #FormAnalysis #SportsTech`;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
+  const shareToFacebook = () => {
+    if (!sessionToShare) return;
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+    window.open(url, '_blank');
+  };
+
+  const copyShareLink = () => {
+    if (!sessionToShare) return;
+    const score = sessionToShare.detailedAnalysis?.overallScore || 'N/A';
+    const text = `Check out my ${sessionToShare.motionName} analysis on Aligned!\nScore: ${score}/100 | Duration: ${sessionToShare.duration}s\n${window.location.origin}`;
+    navigator.clipboard.writeText(text);
+    alert('Share text copied to clipboard!');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-7xl mx-auto">
@@ -59,6 +88,53 @@ export default function SessionHistory() {
           <h1 className="text-3xl font-bold">Session History</h1>
           <div className="w-32"></div>
         </div>
+
+        {/* Share Modal */}
+        {shareModalOpen && sessionToShare && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShareModalOpen(false)}>
+            <div className="bg-[#1a1f2e] rounded-lg p-8 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Share Your Progress</h2>
+                <button 
+                  onClick={() => setShareModalOpen(false)}
+                  className="text-gray-400 hover:text-white text-3xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="bg-gray-800 rounded-lg p-4 mb-6">
+                <h3 className="font-bold text-lg mb-2">{sessionToShare.motionName}</h3>
+                <div className="flex gap-4 text-sm text-gray-400">
+                  <span>Score: {sessionToShare.detailedAnalysis?.overallScore || 'N/A'}/100</span>
+                  <span>Duration: {sessionToShare.duration}s</span>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <Button 
+                  onClick={shareToTwitter}
+                  className="w-full bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white"
+                >
+                  🐦 Share on Twitter
+                </Button>
+                <Button 
+                  onClick={shareToFacebook}
+                  className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white"
+                >
+                  👥 Share on Facebook
+                </Button>
+                <Button 
+                  onClick={copyShareLink}
+                  variant="outline"
+                  className="w-full"
+                >
+                  🔗 Copy Share Text
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Summary */}
         <div className="bg-[#1a1f2e] rounded-lg p-6 mb-6">
@@ -165,6 +241,14 @@ export default function SessionHistory() {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <Button 
+                      onClick={() => handleShare(session)} 
+                      variant="outline" 
+                      size="sm"
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      👥 Share
+                    </Button>
                     <Button 
                       onClick={() => handleDelete(session.id)} 
                       variant="outline" 
