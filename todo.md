@@ -518,3 +518,9 @@
 - [ ] Re-implement visibility checks in Replay - show "---" for USER metrics when not visible
 - [ ] Keep showing PRO metrics always (they're always valid)
 - [ ] Test: record with knees out of frame, verify replay shows "---" for user knee metrics
+
+
+## Fix Visibility Check Logic - All Metrics Showing Not Visible
+- [ ] Debug: Check what visibility data is actually stored in recorded frames
+- [ ] Fix visibility check logic - change from `=== false` to `!== true` or check for undefined
+- [ ] Test that metrics display when landmarks were visible
