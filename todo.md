@@ -633,3 +633,15 @@
 - [ ] Test with actual throwing motion to verify accurate feedback when movement is detected
 - [ ] Validate that recommendations match user's actual performance during real motion
 - [ ] Verify peak metric tracking captures proper values during full throwing motion
+
+
+## IMPLEMENT ALIGNMENT-BASED SCORING SYSTEM
+- [x] Update calculateMetricScore function to measure distance from optimal (not raw difference)
+- [x] Ensure symmetry: being X° under scores same as being X° over professional average
+- [x] Alignment scoring: 100 at professional average, 90 at edge of optimal range, decreasing by 5 per 5°
+- [x] Update getComparisonText to show absolute distance from optimal
+- [x] Add "Perfect alignment" message when within 2° of professional average
+- [x] Keep existing color-coding (green within 10°, yellow within 20°, red beyond 20°)
+- [x] Update recommendations to use "align with" language instead of just "increase/decrease"
+- [x] Show "Perfect alignment!" message when user matches professional mechanics
+- [ ] Test with real throwing motion to verify scoring accuracy
