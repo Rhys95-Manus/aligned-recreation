@@ -11,6 +11,7 @@ import Motions from "./pages/Motions";
 import Analysis from "./pages/Analysis";
 import Pricing from "./pages/Pricing";
 import SessionHistory from "./pages/SessionHistory";
+import Community from "./pages/Community";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path={"/analysis/:categoryId/:subcategoryId/:motionId"} component={Analysis} />
       <Route path={"/pricing"} component={Pricing} />
       <Route path={"/history"} component={SessionHistory} />
+      <Route path={"/community"} component={Community} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
