@@ -21,6 +21,7 @@ export default function Header() {
         </Button>
         <Button 
           variant="outline" 
+          onClick={() => setLocation("/community")} 
           className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-3 md:px-5 text-sm md:text-base"
         >
           Community

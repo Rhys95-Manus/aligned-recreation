@@ -645,3 +645,16 @@
 - [x] Update recommendations to use "align with" language instead of just "increase/decrease"
 - [x] Show "Perfect alignment!" message when user matches professional mechanics
 - [ ] Test with real throwing motion to verify scoring accuracy
+
+
+## BUILD COMMUNITY LEADERBOARD PAGE
+- [x] Create Community.tsx page component
+- [x] Display all motions (Throw, Swing, Serve, Pitch, Shot, Draw) in grid layout
+- [x] Create top 10 leaderboard table for each motion (Rank, Username, Score, Date)
+- [x] Generate mock leaderboard data with realistic usernames and scores (70-98 range)
+- [x] Add route for /community in App.tsx
+- [x] Make Community button functional in Header component
+- [x] Make Community button functional in Home page
+- [x] Style with consistent dark theme matching rest of app
+- [x] Add medal emojis for top 3 positions (🥇🥈🥉)
+- [x] Color-code scores (green 95+, yellow 85+, default for lower)
