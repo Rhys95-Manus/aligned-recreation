@@ -39,9 +39,10 @@ interface ReplayProps {
   motionName: string;
   onBack: () => void;
   detailedAnalysis?: any; // Optional detailed analysis data
+  selectedReps?: number; // Number of reps user selected for workout mode
 }
 
-export default function Replay({ recordedFrames, professionalReference, motionName, onBack, detailedAnalysis }: ReplayProps) {
+export default function Replay({ recordedFrames, professionalReference, motionName, onBack, detailedAnalysis, selectedReps = 1 }: ReplayProps) {
   const userCanvasRef = useRef<HTMLCanvasElement>(null);
   const proCanvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -55,6 +56,34 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [savedSessionCount, setSavedSessionCount] = useState(0);
   
+  // Rep tracking state
+  const [currentRep, setCurrentRep] = useState(1); // Current rep number (1-indexed)
+  const [repScores, setRepScores] = useState<Array<{
+    repNumber: number;
+    score: number;
+    peakMetrics: {
+      hipRotation: number;
+      shoulderRotation: number;
+      rightElbowAngle: number;
+      leftElbowAngle: number;
+      rightKneeFlexion: number;
+      leftKneeFlexion: number;
+      spineAngle: number;
+      weightTransfer: number;
+    };
+  }>>([]); // Scores for each completed rep
+  const [showRepSummary, setShowRepSummary] = useState(false); // Show summary at end of all reps
+  const currentRepPeaks = useRef({
+    hipRotation: 0,
+    shoulderRotation: 0,
+    rightElbowAngle: 0,
+    leftElbowAngle: 0,
+    rightKneeFlexion: 0,
+    leftKneeFlexion: 0,
+    spineAngle: 0,
+    weightTransfer: 0
+  }); // Peak values for current rep
+  
   // Generate professional motion sequence (same length as user motion)
   const professionalFrames = useRef<ProfessionalFrame[]>(
     generateProfessionalMotion(recordedFrames.length, "football-throw")
@@ -63,7 +92,64 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const animationFrameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
   
-  // Playback loop
+  // Calculate score for a rep based on peak metrics
+  const calculateRepScore = (peaks: typeof currentRepPeaks.current) => {
+    // Simple scoring: average of how close each metric is to professional reference
+    const proRef = professionalReference || {};
+    let totalScore = 0;
+    let metricCount = 0;
+    
+    // Score each metric based on distance from professional average
+    const scoreMetric = (userValue: number, proValue: number, tolerance: number = 20) => {
+      const diff = Math.abs(userValue - proValue);
+      if (diff <= 10) return 100; // Perfect alignment
+      if (diff <= tolerance) return 90 - ((diff - 10) * 2); // Close
+      return Math.max(0, 70 - ((diff - tolerance) * 1.5)); // Needs improvement
+    };
+    
+    if (peaks.hipRotation > 0) {
+      totalScore += scoreMetric(peaks.hipRotation, proRef.hipRotation || 61, 20);
+      metricCount++;
+    }
+    if (peaks.rightElbowAngle > 0) {
+      totalScore += scoreMetric(peaks.rightElbowAngle, proRef.elbowAngle || 100, 15);
+      metricCount++;
+    }
+    if (peaks.spineAngle > 0) {
+      totalScore += scoreMetric(peaks.spineAngle, proRef.spineAngle || 23, 10);
+      metricCount++;
+    }
+    if (peaks.weightTransfer > 0) {
+      totalScore += scoreMetric(peaks.weightTransfer, proRef.weightTransfer || 70, 15);
+      metricCount++;
+    }
+    
+    return metricCount > 0 ? Math.round(totalScore / metricCount) : 0;
+  };
+  
+  // Save current rep score and reset peaks for next rep
+  const finishCurrentRep = () => {
+    const score = calculateRepScore(currentRepPeaks.current);
+    setRepScores(prev => [...prev, {
+      repNumber: currentRep,
+      score,
+      peakMetrics: { ...currentRepPeaks.current }
+    }]);
+    
+    // Reset peaks for next rep
+    currentRepPeaks.current = {
+      hipRotation: 0,
+      shoulderRotation: 0,
+      rightElbowAngle: 0,
+      leftElbowAngle: 0,
+      rightKneeFlexion: 0,
+      leftKneeFlexion: 0,
+      spineAngle: 0,
+      weightTransfer: 0
+    };
+  };
+  
+  // Playback loop with rep cycling
   useEffect(() => {
     if (!isPlaying) return;
     
@@ -74,8 +160,19 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       if (timestamp - lastFrameTimeRef.current >= frameDuration) {
         setCurrentFrameIndex(prev => {
           if (prev >= recordedFrames.length - 1) {
-            setIsPlaying(false);
-            return prev;
+            // End of one rep cycle
+            if (currentRep < selectedReps) {
+              // More reps to do - save score, reset, and continue
+              finishCurrentRep();
+              setCurrentRep(r => r + 1);
+              return 0; // Reset to beginning for next rep
+            } else {
+              // All reps complete
+              finishCurrentRep();
+              setIsPlaying(false);
+              setShowRepSummary(true);
+              return prev;
+            }
           }
           return prev + 1;
         });
@@ -94,7 +191,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isPlaying, recordedFrames.length, playbackSpeed]);
+  }, [isPlaying, recordedFrames.length, playbackSpeed, currentRep, selectedReps]);
   
   // Detect current phase for display (but don't lock hologram to it)
   useEffect(() => {
@@ -352,6 +449,37 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const currentVisibility = recordedFrames[currentFrameIndex]?.visibility;
   const progress = (currentFrameIndex / (recordedFrames.length - 1)) * 100;
   
+  // Track peak metrics for current rep
+  useEffect(() => {
+    if (!currentMetrics) return;
+    
+    // Update peaks if current values are higher (only for visible metrics)
+    if (currentVisibility?.hipRotation && Math.abs(currentMetrics.hipRotation) > Math.abs(currentRepPeaks.current.hipRotation)) {
+      currentRepPeaks.current.hipRotation = currentMetrics.hipRotation;
+    }
+    if (currentVisibility?.shoulderRotation && Math.abs(currentMetrics.shoulderRotation) > Math.abs(currentRepPeaks.current.shoulderRotation)) {
+      currentRepPeaks.current.shoulderRotation = currentMetrics.shoulderRotation;
+    }
+    if (currentVisibility?.rightElbow && currentMetrics.rightElbowAngle > currentRepPeaks.current.rightElbowAngle) {
+      currentRepPeaks.current.rightElbowAngle = currentMetrics.rightElbowAngle;
+    }
+    if (currentVisibility?.leftElbow && currentMetrics.leftElbowAngle > currentRepPeaks.current.leftElbowAngle) {
+      currentRepPeaks.current.leftElbowAngle = currentMetrics.leftElbowAngle;
+    }
+    if (currentVisibility?.rightKnee && currentMetrics.rightKneeFlexion > currentRepPeaks.current.rightKneeFlexion) {
+      currentRepPeaks.current.rightKneeFlexion = currentMetrics.rightKneeFlexion;
+    }
+    if (currentVisibility?.leftKnee && currentMetrics.leftKneeFlexion > currentRepPeaks.current.leftKneeFlexion) {
+      currentRepPeaks.current.leftKneeFlexion = currentMetrics.leftKneeFlexion;
+    }
+    if (currentVisibility?.spineAngle && Math.abs(currentMetrics.spineAngle) > Math.abs(currentRepPeaks.current.spineAngle)) {
+      currentRepPeaks.current.spineAngle = currentMetrics.spineAngle;
+    }
+    if (currentVisibility?.weightTransfer && currentMetrics.weightTransfer > currentRepPeaks.current.weightTransfer) {
+      currentRepPeaks.current.weightTransfer = currentMetrics.weightTransfer;
+    }
+  }, [currentMetrics, currentVisibility]);
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-7xl mx-auto">
@@ -368,7 +496,30 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
               📊 History
             </Button>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold">Motion Replay: {motionName}</h1>
+          <div className="text-right">
+            <h1 className="text-2xl md:text-3xl font-bold">Motion Replay: {motionName}</h1>
+            {selectedReps > 1 && (
+              <div className="mt-2 flex items-center justify-end gap-3">
+                <span className="text-lg font-semibold text-blue-400">
+                  Rep {currentRep} of {selectedReps}
+                </span>
+                <div className="flex gap-1">
+                  {Array.from({ length: selectedReps }, (_, i) => (
+                    <div
+                      key={i}
+                      className={`w-3 h-3 rounded-full transition-all ${
+                        i + 1 < currentRep
+                          ? 'bg-green-500' // Completed
+                          : i + 1 === currentRep
+                          ? 'bg-blue-500 animate-pulse' // Current
+                          : 'bg-gray-600' // Upcoming
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Save Confirmation Modal */}
@@ -681,6 +832,125 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 <p className="text-gray-300">Kinetic Chain: {detailedAnalysis.movementTiming.sequenceOrder}</p>
                 <p className="text-gray-300">Phase Data: {detailedAnalysis.movementTiming.phaseDurations}</p>
                 <p className="text-purple-200 mt-3">{detailedAnalysis.movementTiming.recommendation}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Rep Summary Modal */}
+        {showRepSummary && selectedReps > 1 && repScores.length > 0 && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#1a1f2e] rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <h2 className="text-3xl font-bold text-center mb-6">Session Complete! 🎉</h2>
+              
+              {/* Overall Stats */}
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <div className="bg-blue-900/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-blue-400">
+                    {Math.round(repScores.reduce((sum, r) => sum + r.score, 0) / repScores.length)}
+                  </div>
+                  <div className="text-sm text-gray-400">Average Score</div>
+                </div>
+                <div className="bg-green-900/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-green-400">
+                    {Math.max(...repScores.map(r => r.score))}
+                  </div>
+                  <div className="text-sm text-gray-400">Best Rep</div>
+                </div>
+                <div className="bg-purple-900/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-purple-400">
+                    {repScores.length}
+                  </div>
+                  <div className="text-sm text-gray-400">Reps Completed</div>
+                </div>
+              </div>
+              
+              {/* Individual Rep Scores */}
+              <h3 className="text-xl font-semibold mb-4">Rep Breakdown</h3>
+              <div className="space-y-3 mb-8">
+                {repScores.map((rep, idx) => {
+                  const isBest = rep.score === Math.max(...repScores.map(r => r.score));
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`flex items-center justify-between p-4 rounded-lg ${
+                        isBest ? 'bg-green-900/30 border border-green-500' : 'bg-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg font-semibold">Rep {rep.repNumber}</span>
+                        {isBest && <span className="text-yellow-400">⭐ Best</span>}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right text-sm text-gray-400">
+                          <div>Hip: {Math.round(rep.peakMetrics.hipRotation)}°</div>
+                          <div>Elbow: {Math.round(rep.peakMetrics.rightElbowAngle)}°</div>
+                        </div>
+                        <div className={`text-2xl font-bold ${
+                          rep.score >= 80 ? 'text-green-400' :
+                          rep.score >= 60 ? 'text-yellow-400' : 'text-red-400'
+                        }`}>
+                          {rep.score}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Trend Indicator */}
+              {repScores.length >= 2 && (
+                <div className="bg-slate-800 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Trend:</span>
+                    {repScores[repScores.length - 1].score > repScores[0].score ? (
+                      <span className="text-green-400 font-semibold">↗ Improving (+{repScores[repScores.length - 1].score - repScores[0].score} from first rep)</span>
+                    ) : repScores[repScores.length - 1].score < repScores[0].score ? (
+                      <span className="text-red-400 font-semibold">↘ Declining ({repScores[repScores.length - 1].score - repScores[0].score} from first rep)</span>
+                    ) : (
+                      <span className="text-gray-400 font-semibold">→ Consistent</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <Button 
+                  onClick={() => {
+                    setShowRepSummary(false);
+                    setCurrentRep(1);
+                    setRepScores([]);
+                    setCurrentFrameIndex(0);
+                    setIsPlaying(true);
+                    currentRepPeaks.current = {
+                      hipRotation: 0,
+                      shoulderRotation: 0,
+                      rightElbowAngle: 0,
+                      leftElbowAngle: 0,
+                      rightKneeFlexion: 0,
+                      leftKneeFlexion: 0,
+                      spineAngle: 0,
+                      weightTransfer: 0
+                    };
+                  }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  🔄 Replay Session
+                </Button>
+                <Button 
+                  onClick={handleSaveSession}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  💾 Save Session
+                </Button>
+                <Button 
+                  onClick={onBack}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  ← Back
+                </Button>
               </div>
             </div>
           </div>

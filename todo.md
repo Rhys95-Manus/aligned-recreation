@@ -658,3 +658,19 @@
 - [x] Style with consistent dark theme matching rest of app
 - [x] Add medal emojis for top 3 positions (🥇🥈🥉)
 - [x] Color-code scores (green 95+, yellow 85+, default for lower)
+
+
+## REP SETTER FEATURE
+- [x] Add rep selector UI to Analysis page (1, 3, 5, 10, custom options)
+- [x] Store selected rep count in session state (selectedReps, customReps)
+- [x] Pass rep count to Replay page via props
+- [x] Update Replay to loop professional reference animation for X reps
+- [x] Reset metrics/peaks at start of each rep
+- [x] Track peak values for each individual rep separately (currentRepPeaks)
+- [x] Calculate score for each rep against professional reference (calculateRepScore)
+- [x] Show current rep indicator ("Rep 2 of 5") with dot progress
+- [x] Create session summary modal at end of all reps
+- [x] Display individual rep scores with metrics breakdown (hip, elbow)
+- [x] Calculate and show overall average score
+- [x] Highlight best rep with star indicator
+- [x] Show improvement trend (improving/declining/consistent)

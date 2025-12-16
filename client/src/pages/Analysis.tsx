@@ -146,6 +146,10 @@ export default function Analysis() {
   const isCapturingRef = useRef(false); // Ref to avoid closure issues in onResults
   const [countdown, setCountdown] = useState(5); // Countdown from 5 to 0
   
+  // Rep counter for workout mode
+  const [selectedReps, setSelectedReps] = useState(1); // Number of reps user wants to do
+  const [customReps, setCustomReps] = useState('');
+  
   // Frame recording for replay
   const [recordedFrames, setRecordedFrames] = useState<Array<{
     timestamp: number;
@@ -1139,6 +1143,7 @@ export default function Analysis() {
           motionName={motionName}
           onBack={() => setShowDetailedAnalysis(false)}
           detailedAnalysis={detailedAnalysis}
+          selectedReps={selectedReps}
         />
       </>
     );
@@ -1197,6 +1202,53 @@ export default function Analysis() {
                   </div>
                 )}
               </div>
+
+              {/* Rep Selector - Only show when camera is active and ready to capture */}
+              {cameraActive && poseInitialized && (sessionState === 'idle' || sessionState === 'ready') && (
+                <div className="bg-[#1a1f2e] rounded-lg p-4 mt-4">
+                  <h3 className="font-semibold mb-3 text-center">Rep Counter</h3>
+                  <p className="text-xs text-gray-400 text-center mb-3">Select how many reps you want to do</p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {[1, 3, 5, 10].map((rep) => (
+                      <button
+                        key={rep}
+                        onClick={() => {
+                          setSelectedReps(rep);
+                          setCustomReps('');
+                        }}
+                        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                          selectedReps === rep && !customReps
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        {rep}
+                      </button>
+                    ))}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="50"
+                        placeholder="Custom"
+                        value={customReps}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomReps(val);
+                          if (val && parseInt(val) > 0) {
+                            setSelectedReps(parseInt(val));
+                          }
+                        }}
+                        className="w-20 px-3 py-2 rounded-lg bg-slate-700 text-white text-center border border-slate-600 focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="text-center mt-3">
+                    <span className="text-lg font-bold text-blue-400">{selectedReps} Rep{selectedReps > 1 ? 's' : ''}</span>
+                    <span className="text-gray-400 text-sm ml-2">selected</span>
+                  </div>
+                </div>
+              )}
 
               {/* Control Button */}
               <Button
