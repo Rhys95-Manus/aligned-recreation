@@ -84,10 +84,33 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     weightTransfer: 0
   }); // Peak values for current rep
   
-  // Generate professional motion sequence (same length as user motion)
-  const professionalFrames = useRef<ProfessionalFrame[]>(
-    generateProfessionalMotion(recordedFrames.length, "football-throw")
-  ).current;
+  // Get rep boundaries from detailed analysis (if multiple reps detected)
+  const repBoundaries = detailedAnalysis?.repBoundaries || [];
+  
+  // Calculate current rep's frame range
+  const getCurrentRepFrames = () => {
+    if (repBoundaries.length === 0 || selectedReps === 1) {
+      return recordedFrames; // Single rep or no boundaries - use all frames
+    }
+    
+    const boundary = repBoundaries.find((b: any) => b.repNumber === currentRep);
+    if (!boundary) return recordedFrames;
+    
+    return recordedFrames.slice(boundary.startFrame, boundary.endFrame + 1);
+  };
+  
+  const currentRepFrames = getCurrentRepFrames();
+  
+  // Generate professional motion sequence (same length as current rep)
+  // Regenerate when currentRep changes to match new rep segment length
+  const [professionalFrames, setProfessionalFrames] = useState<ProfessionalFrame[]>(
+    generateProfessionalMotion(currentRepFrames.length, "football-throw")
+  );
+  
+  // Regenerate professional frames when rep changes
+  useEffect(() => {
+    setProfessionalFrames(generateProfessionalMotion(currentRepFrames.length, "football-throw"));
+  }, [currentRep, currentRepFrames.length]);
   
   const animationFrameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
@@ -159,7 +182,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     const playFrame = (timestamp: number) => {
       if (timestamp - lastFrameTimeRef.current >= frameDuration) {
         setCurrentFrameIndex(prev => {
-          if (prev >= recordedFrames.length - 1) {
+          if (prev >= currentRepFrames.length - 1) {
             // End of one rep cycle
             if (currentRep < selectedReps) {
               // More reps to do - save score, reset, and continue
@@ -191,25 +214,25 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isPlaying, recordedFrames.length, playbackSpeed, currentRep, selectedReps]);
+  }, [isPlaying, currentRepFrames.length, playbackSpeed, currentRep, selectedReps]);
   
   // Detect current phase for display (but don't lock hologram to it)
   useEffect(() => {
-    if (!recordedFrames[currentFrameIndex]) return;
+    if (!currentRepFrames[currentFrameIndex]) return;
     
-    const currentFrame = recordedFrames[currentFrameIndex];
+    const currentFrame = currentRepFrames[currentFrameIndex];
     
     // Detect which phase the user is currently in
-    const phaseInfo = getPhaseForFrame(currentFrameIndex, recordedFrames.length);
+    const phaseInfo = getPhaseForFrame(currentFrameIndex, currentRepFrames.length);
     setCurrentPhase(phaseInfo.name as MotionPhase);
     setPhaseInstruction(phaseInfo.instruction);
-  }, [currentFrameIndex, recordedFrames]);
+  }, [currentFrameIndex, currentRepFrames]);
   
   // Render current frame
   useEffect(() => {
-    if (!recordedFrames[currentFrameIndex]) return;
+    if (!currentRepFrames[currentFrameIndex]) return;
     
-    const currentFrame = recordedFrames[currentFrameIndex];
+    const currentFrame = currentRepFrames[currentFrameIndex];
     
     // Render user motion
     if (userCanvasRef.current) {
@@ -445,9 +468,9 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     }, 5000);
   };
   
-  const currentMetrics = recordedFrames[currentFrameIndex]?.metrics;
-  const currentVisibility = recordedFrames[currentFrameIndex]?.visibility;
-  const progress = (currentFrameIndex / (recordedFrames.length - 1)) * 100;
+  const currentMetrics = currentRepFrames[currentFrameIndex]?.metrics;
+  const currentVisibility = currentRepFrames[currentFrameIndex]?.visibility;
+  const progress = (currentFrameIndex / (currentRepFrames.length - 1)) * 100;
   
   // Track peak metrics for current rep
   useEffect(() => {

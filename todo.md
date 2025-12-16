@@ -674,3 +674,16 @@
 - [x] Calculate and show overall average score
 - [x] Highlight best rep with star indicator
 - [x] Show improvement trend (improving/declining/consistent)
+
+
+## AUTOMATIC REP DETECTION
+- [x] Create motion phase detection algorithm (neutral, execution, follow-through, return to neutral)
+- [x] Define thresholds for each phase based on key metrics (hip rotation, elbow angle, movement velocity)
+- [x] Implement detectMotionState function with baseline comparison
+- [x] Detect rep boundaries (start = neutral→execution, end = follow-through→neutral)
+- [x] Store rep boundary markers in detailedAnalysis.repBoundaries
+- [x] Split recorded frames using slice() based on boundaries in Replay
+- [x] Update Replay to access only currentRepFrames (current rep's segment)
+- [x] Handle edge cases with splitEvenly fallback if detection fails
+- [x] Regenerate professional frames to match current rep segment length
+- [ ] Test with 3-rep throwing motion to verify proper segmentation
