@@ -5,6 +5,7 @@ import { Link, useLocation } from "wouter";
 import { Pose, Results } from "@mediapipe/pose";
 import { getProfessionalReference, calculateMetricScore, getComparisonText } from "@/data/professionalReferences";
 import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribution, formatSpineAngle, formatRotationAngle } from "@/utils/rotationCalculations";
+import { detectRepBoundaries } from "@/utils/repDetection";
 import Replay from "./Replay";
 
 // Detailed analysis data structure
@@ -67,6 +68,21 @@ interface DetailedAnalysisData {
       footPositioning: number;
       weightTransfer: number;
     };
+    visibility?: {
+      hipRotation: boolean;
+      shoulderRotation: boolean;
+      rightElbow: boolean;
+      leftElbow: boolean;
+      rightKnee: boolean;
+      leftKnee: boolean;
+      spineAngle: boolean;
+      weightTransfer: boolean;
+    };
+  }>;
+  repBoundaries?: Array<{
+    repNumber: number;
+    startFrame: number;
+    endFrame: number;
   }>;
 }
 
@@ -1072,6 +1088,16 @@ export default function Analysis() {
       },
       recordedFrames: recordedFramesRef.current // Include recorded frames for replay
     };
+    
+    // Detect rep boundaries if multiple reps were selected
+    if (selectedReps > 1) {
+      const boundaries = detectRepBoundaries(
+        recordedFramesRef.current.map(f => ({ metrics: f.metrics })),
+        selectedReps
+      );
+      analysis.repBoundaries = boundaries;
+      console.log(`🎯 Detected ${boundaries.length} reps:`, boundaries);
+    }
     
     console.log(`🎬 Recorded ${recordedFramesRef.current.length} frames for replay`);
     setDetailedAnalysis(analysis);
