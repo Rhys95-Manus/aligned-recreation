@@ -87,19 +87,28 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   // Get rep boundaries from detailed analysis (if multiple reps detected)
   const repBoundaries = detailedAnalysis?.repBoundaries || [];
   
-  // Calculate current rep's frame range
-  const getCurrentRepFrames = () => {
-    if (repBoundaries.length === 0 || selectedReps === 1) {
-      return recordedFrames; // Single rep or no boundaries - use all frames
-    }
-    
-    const boundary = repBoundaries.find((b: any) => b.repNumber === currentRep);
-    if (!boundary) return recordedFrames;
-    
-    return recordedFrames.slice(boundary.startFrame, boundary.endFrame + 1);
-  };
-  
-  const currentRepFrames = getCurrentRepFrames();
+	  // Calculate current rep's frame range
+	  const getCurrentRepFrames = () => {
+	    // If we have explicit boundaries, ALWAYS use them, even for single rep
+	    // This ensures we only play the detected motion, not the setup/cooldown
+	    if (repBoundaries.length > 0) {
+	      const boundary = repBoundaries.find((b: any) => b.repNumber === currentRep);
+	      if (boundary) {
+	        // Ensure indices are within bounds
+	        const start = Math.max(0, boundary.startFrame);
+	        const end = Math.min(recordedFrames.length - 1, boundary.endFrame);
+	        
+	        if (start <= end) {
+	          return recordedFrames.slice(start, end + 1);
+	        }
+	      }
+	    }
+	    
+	    // Fallback: if no boundaries found (legacy recordings), use all frames
+	    return recordedFrames;
+	  };
+	  
+	  const currentRepFrames = getCurrentRepFrames();
   
   // Generate professional motion sequence (same length as current rep)
   // Regenerate when currentRep changes to match new rep segment length
@@ -180,27 +189,32 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     const frameDuration = (1000 / frameRate) / playbackSpeed; // Adjust duration based on speed
     
     const playFrame = (timestamp: number) => {
-      if (timestamp - lastFrameTimeRef.current >= frameDuration) {
-        setCurrentFrameIndex(prev => {
-          if (prev >= currentRepFrames.length - 1) {
-            // End of one rep cycle
-            if (currentRep < selectedReps) {
-              // More reps to do - save score, reset, and continue
-              finishCurrentRep();
-              setCurrentRep(r => r + 1);
-              return 0; // Reset to beginning for next rep
-            } else {
-              // All reps complete
-              finishCurrentRep();
-              setIsPlaying(false);
-              setShowRepSummary(true);
-              return prev;
-            }
-          }
-          return prev + 1;
-        });
-        lastFrameTimeRef.current = timestamp;
-      }
+	      if (timestamp - lastFrameTimeRef.current >= frameDuration) {
+	        setCurrentFrameIndex(prev => {
+	          // Check if we reached the end of the current rep segment
+	          if (prev >= currentRepFrames.length - 1) {
+	            // End of one rep cycle
+	            
+	            // If we have multiple reps selected, move to next one
+	            if (currentRep < selectedReps) {
+	              // More reps to do - save score, reset, and continue
+	              finishCurrentRep();
+	              setCurrentRep(r => r + 1);
+	              return 0; // Reset to beginning for next rep
+	            } else {
+	              // All reps complete - loop the LAST rep or stop?
+	              // User requirement: "Replay for each rep was just looping the whole session"
+	              // Fix: Stop at end, show summary. User can manually click reps to replay them.
+	              finishCurrentRep();
+	              setIsPlaying(false);
+	              setShowRepSummary(true);
+	              return 0; // Reset to start of this rep (paused)
+	            }
+	          }
+	          return prev + 1;
+	        });
+	        lastFrameTimeRef.current = timestamp;
+	      }
       
       if (isPlaying) {
         animationFrameRef.current = requestAnimationFrame(playFrame);
