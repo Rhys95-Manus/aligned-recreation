@@ -164,6 +164,7 @@ export default function Analysis() {
   
   // Rep counter for workout mode
   const [selectedReps, setSelectedReps] = useState(1); // Number of reps user wants to do
+  const selectedRepsRef = useRef(1); // Ref to keep track of selected reps inside closure
   const [customReps, setCustomReps] = useState('');
   const [currentCaptureRep, setCurrentCaptureRep] = useState(1); // Current rep being captured (live)
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
@@ -751,8 +752,9 @@ export default function Analysis() {
               setCompletedReps(prev => [...prev, currentCaptureRep]);
               
               // Check if this was the final rep
-              if (currentCaptureRep >= selectedReps) {
-                console.log(`🏁 All ${selectedReps} reps completed! Auto-stopping...`);
+              // Use ref here to ensure we have the latest value inside the closure
+              if (currentCaptureRep >= selectedRepsRef.current) {
+                console.log(`🏁 All ${selectedRepsRef.current} reps completed! Auto-stopping...`);
                 setTimeout(() => {
                   stopAndScore();
                 }, 1000); // Wait 1 second after final rep before auto-stopping
@@ -1397,6 +1399,7 @@ export default function Analysis() {
                         key={rep}
                         onClick={() => {
                           setSelectedReps(rep);
+                          selectedRepsRef.current = rep;
                           setCustomReps('');
                         }}
                         className={`px-4 py-2 rounded-lg font-semibold transition-all ${
@@ -1419,7 +1422,9 @@ export default function Analysis() {
                           const val = e.target.value;
                           setCustomReps(val);
                           if (val && parseInt(val) > 0) {
-                            setSelectedReps(parseInt(val));
+                            const num = parseInt(val);
+                            setSelectedReps(num);
+                            selectedRepsRef.current = num;
                           }
                         }}
                         className="w-20 px-3 py-2 rounded-lg bg-slate-700 text-white text-center border border-slate-600 focus:border-blue-500 focus:outline-none"
