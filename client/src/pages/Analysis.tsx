@@ -169,6 +169,7 @@ export default function Analysis() {
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
   const captureMotionState = useRef<'neutral' | 'execution' | 'follow_through'>('neutral');
   const captureRepStartFrame = useRef(0);
+  const capturedRepBoundaries = useRef<{start: number, end: number}[]>([]);
   const captureBaselineMetrics = useRef<any>(null);
   
   // Frame recording for replay
@@ -713,6 +714,13 @@ export default function Analysis() {
                 currentFrameCount - captureRepStartFrame.current > 30) { // Minimum 30 frames (~1s) to count as rep
               
               console.log(`✅ Rep ${currentCaptureRep} completed at frame ${currentFrameCount}`);
+              
+              // Save boundary for this rep
+              capturedRepBoundaries.current.push({
+                start: captureRepStartFrame.current,
+                end: currentFrameCount
+              });
+              
               setCompletedReps(prev => [...prev, currentCaptureRep]);
               
               // Check if this was the final rep
@@ -1178,14 +1186,25 @@ export default function Analysis() {
       recordedFrames: recordedFramesRef.current // Include recorded frames for replay
     };
     
-    // Detect rep boundaries if multiple reps were selected
+    // Use captured rep boundaries if available, otherwise fallback to detection
     if (selectedReps > 1) {
-      const boundaries = detectRepBoundaries(
-        recordedFramesRef.current.map(f => ({ metrics: f.metrics })),
-        selectedReps
-      );
-      analysis.repBoundaries = boundaries;
-      console.log(`🎯 Detected ${boundaries.length} reps:`, boundaries);
+      if (capturedRepBoundaries.current.length > 0) {
+        // Use the boundaries we captured in real-time
+        analysis.repBoundaries = capturedRepBoundaries.current.map((b, i) => ({
+          repNumber: i + 1,
+          startFrame: b.start,
+          endFrame: b.end
+        }));
+        console.log(`🎯 Using captured boundaries for ${capturedRepBoundaries.current.length} reps:`, capturedRepBoundaries.current);
+      } else {
+        // Fallback to post-processing detection if something went wrong
+        const boundaries = detectRepBoundaries(
+          recordedFramesRef.current.map(f => ({ metrics: f.metrics })),
+          selectedReps
+        );
+        analysis.repBoundaries = boundaries;
+        console.log(`🎯 Fallback detection found ${boundaries.length} reps:`, boundaries);
+      }
     }
     
     console.log(`🎬 Recorded ${recordedFramesRef.current.length} frames for replay`);

@@ -726,3 +726,11 @@
 - [x] Simplified capture UI: removed text, kept only elegant progress dots
 - [x] Made dots smaller (w-2 h-2) and added subtle animations (scale-125 for current)
 - [x] Auto-stop logic now respects the cool-down period, ensuring distinct reps
+
+
+## FIX REP BOUNDARIES & DETECTION
+- [x] Captured exact frame boundaries during recording (capturedRepBoundaries ref)
+- [x] Updated stopAndScore to use captured boundaries instead of post-processing detection
+- [x] Fixed TypeScript error by mapping boundary format correctly
+- [x] Replay component will now use these precise boundaries to split video segments
+- [x] Cool-down logic (added earlier) prevents "Return to Neutral" from triggering new reps
