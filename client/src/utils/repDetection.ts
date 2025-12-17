@@ -45,10 +45,10 @@ export function detectMotionState(
   const totalChange = hipChange + shoulderChange + elbowChange + weightChange;
   const totalVelocity = hipVelocity + shoulderVelocity + elbowVelocity;
   
-  // Thresholds for state detection
-  const NEUTRAL_THRESHOLD = 30; // Total change from baseline
-  const EXECUTION_THRESHOLD = 50; // Significant movement
-  const VELOCITY_THRESHOLD = 5; // High rate of change
+  // Thresholds for state detection (tuned for faster transitions)
+  const NEUTRAL_THRESHOLD = 20; // Total change from baseline (lowered from 30 for faster detection)
+  const EXECUTION_THRESHOLD = 40; // Significant movement (lowered from 50)
+  const VELOCITY_THRESHOLD = 3; // High rate of change (lowered from 5 for quicker response)
   
   // Neutral: Close to baseline, low velocity
   if (totalChange < NEUTRAL_THRESHOLD && totalVelocity < VELOCITY_THRESHOLD) {
@@ -105,7 +105,7 @@ export function detectRepBoundaries(
     // Detect rep end: transition from follow_through/execution back to neutral
     if ((previousState === 'follow_through' || previousState === 'execution') && 
         currentState === 'neutral' && 
-        i - repStartFrame > 20) { // Minimum rep duration (20 frames = ~0.67 seconds)
+        i - repStartFrame > 15) { // Minimum rep duration (15 frames = ~0.5 seconds, lowered for faster detection)
       
       boundaries.push({
         repNumber: currentRepNumber,

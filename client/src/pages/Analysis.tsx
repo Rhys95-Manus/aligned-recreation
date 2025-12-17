@@ -165,6 +165,11 @@ export default function Analysis() {
   // Rep counter for workout mode
   const [selectedReps, setSelectedReps] = useState(1); // Number of reps user wants to do
   const [customReps, setCustomReps] = useState('');
+  const [currentCaptureRep, setCurrentCaptureRep] = useState(1); // Current rep being captured (live)
+  const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
+  const captureMotionState = useRef<'neutral' | 'execution' | 'follow_through'>('neutral');
+  const captureRepStartFrame = useRef(0);
+  const captureBaselineMetrics = useRef<any>(null);
   
   // Frame recording for replay
   const [recordedFrames, setRecordedFrames] = useState<Array<{
@@ -646,6 +651,78 @@ export default function Analysis() {
             weightTransfer: weightTransferVisible
           }
         });
+        
+        // Real-time rep detection and auto-stop logic
+        const currentFrameCount = recordedFramesRef.current.length;
+        
+        // Set baseline metrics from first 10 frames
+        if (currentFrameCount === 10 && !captureBaselineMetrics.current) {
+          captureBaselineMetrics.current = {
+            hipRotation: hipRotationCalc,
+            shoulderRotation: shoulderRotationCalc,
+            rightElbowAngle: rightElbowCalc,
+            weightTransfer: weightTransferCalc
+          };
+          console.log('🎯 Baseline metrics set:', captureBaselineMetrics.current);
+        }
+        
+        // Detect motion state changes after baseline is set
+        if (captureBaselineMetrics.current && currentFrameCount > 10) {
+          const previousState = captureMotionState.current;
+          
+          // Calculate changes from baseline
+          const hipChange = Math.abs(hipRotationCalc - captureBaselineMetrics.current.hipRotation);
+          const shoulderChange = Math.abs(shoulderRotationCalc - captureBaselineMetrics.current.shoulderRotation);
+          const elbowChange = Math.abs(rightElbowCalc - captureBaselineMetrics.current.rightElbowAngle);
+          const totalChange = hipChange + shoulderChange + elbowChange;
+          
+          // Calculate velocity (change from previous frame)
+          const prevFrame = recordedFramesRef.current[currentFrameCount - 2];
+          if (prevFrame) {
+            const hipVelocity = Math.abs(hipRotationCalc - prevFrame.metrics.hipRotation);
+            const shoulderVelocity = Math.abs(shoulderRotationCalc - prevFrame.metrics.shoulderRotation);
+            const totalVelocity = hipVelocity + shoulderVelocity;
+            
+            // Detect current state
+            let newState: 'neutral' | 'execution' | 'follow_through' = 'neutral';
+            if (totalChange < 20 && totalVelocity < 3) {
+              newState = 'neutral';
+            } else if (totalChange > 40 || totalVelocity > 3) {
+              newState = 'execution';
+            } else {
+              newState = 'follow_through';
+            }
+            
+            // Detect rep start: neutral → execution
+            if (previousState === 'neutral' && newState === 'execution') {
+              captureRepStartFrame.current = currentFrameCount;
+              console.log(`🟢 Rep ${currentCaptureRep} started at frame ${currentFrameCount}`);
+            }
+            
+            // Detect rep end: execution/follow_through → neutral
+            if ((previousState === 'follow_through' || previousState === 'execution') && 
+                newState === 'neutral' && 
+                currentFrameCount - captureRepStartFrame.current > 15) {
+              
+              console.log(`✅ Rep ${currentCaptureRep} completed at frame ${currentFrameCount}`);
+              setCompletedReps(prev => [...prev, currentCaptureRep]);
+              
+              // Check if this was the final rep
+              if (currentCaptureRep >= selectedReps) {
+                console.log(`🏁 All ${selectedReps} reps completed! Auto-stopping...`);
+                setTimeout(() => {
+                  stopAndScore();
+                }, 1000); // Wait 1 second after final rep before auto-stopping
+              } else {
+                // More reps to go
+                setCurrentCaptureRep(prev => prev + 1);
+                console.log(`🔄 Moving to rep ${currentCaptureRep + 1}`);
+              }
+            }
+            
+            captureMotionState.current = newState;
+          }
+        }
       }
       
       // Log biomechanical metrics (use calculated values, not state)
@@ -895,6 +972,10 @@ export default function Analysis() {
     // Start countdown instead of immediate capture
     setCountdown(5);
     setSessionState('countdown');
+    setCurrentCaptureRep(1); // Reset rep counter
+    setCompletedReps([]); // Clear completed reps
+    captureMotionState.current = 'neutral'; // Reset motion state
+    captureBaselineMetrics.current = null; // Clear baseline
     console.log('⏱️ Starting 5-second countdown');
     speak("Get ready. Starting in 5 seconds");
   };
@@ -1224,6 +1305,31 @@ export default function Analysis() {
                         {countdown}
                       </div>
                       <p className="text-2xl text-white mt-4">Get ready...</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Live Rep Counter During Capture */}
+                {sessionState === 'capturing' && selectedReps > 1 && (
+                  <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg px-4 py-3 border-2 border-blue-500">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-blue-400">
+                        Rep {currentCaptureRep} of {selectedReps}
+                      </div>
+                      <div className="flex gap-1 mt-2 justify-center">
+                        {Array.from({ length: selectedReps }, (_, i) => i + 1).map((rep) => (
+                          <div
+                            key={rep}
+                            className={`w-3 h-3 rounded-full ${
+                              completedReps.includes(rep)
+                                ? 'bg-green-500'
+                                : rep === currentCaptureRep
+                                ? 'bg-blue-500 animate-pulse'
+                                : 'bg-gray-600'
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
