@@ -691,11 +691,17 @@ export default function Analysis() {
             const maxSingleMetricChange = Math.max(hipChange, shoulderChange, elbowChange);
             const MIN_AMPLITUDE = 25;
             
-            if (totalChange < 35 && totalVelocity < 5) {
+            // Increased thresholds to prevent false positives
+            // Neutral: Low movement (increased from 35 to 45)
+            if (totalChange < 45 && totalVelocity < 5) {
               newState = 'neutral';
-            } else if ((totalChange > 60 || totalVelocity > 5) && maxSingleMetricChange > MIN_AMPLITUDE) {
+            } 
+            // Execution: High movement (increased from 60 to 80) AND significant single metric change
+            else if ((totalChange > 80 || totalVelocity > 8) && maxSingleMetricChange > MIN_AMPLITUDE) {
               newState = 'execution';
-            } else {
+            } 
+            // Follow-through: Everything else
+            else {
               newState = 'follow_through';
             }
             
@@ -703,15 +709,30 @@ export default function Analysis() {
             // MUST have been in neutral for at least 15 frames (0.5s) to prevent rapid re-triggering
             const framesSinceLastRep = currentFrameCount - (captureRepStartFrame.current || 0);
             
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRep > 45) {
+            // Get last rep end frame to enforce cool-down
+            const lastRepEndFrame = capturedRepBoundaries.current.length > 0 
+              ? capturedRepBoundaries.current[capturedRepBoundaries.current.length - 1].end 
+              : 0;
+            const framesSinceLastRepEnd = currentFrameCount - lastRepEndFrame;
+            
+            // STRICTER START CONDITION:
+            // 1. Must transition from neutral to execution
+            // 2. Must be at least 45 frames (1.5s) since last rep ENDED (cool-down)
+            // 3. Must have significant movement (already checked by newState === 'execution')
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 45) {
               captureRepStartFrame.current = currentFrameCount;
               console.log(`🟢 Rep ${currentCaptureRep} started at frame ${currentFrameCount}`);
             }
             
             // Detect rep end: execution/follow_through → neutral
+            // STRICTER END CONDITION:
+            // 1. Must transition to neutral
+            // 2. Must have lasted at least 45 frames (1.5s) to be a valid rep (prevents short twitches)
+            // 3. Must currently be tracking a valid rep (captureRepStartFrame > lastRepEndFrame)
             if ((previousState === 'follow_through' || previousState === 'execution') && 
                 newState === 'neutral' && 
-                currentFrameCount - captureRepStartFrame.current > 30) { // Minimum 30 frames (~1s) to count as rep
+                currentFrameCount - captureRepStartFrame.current > 45 && // Increased min duration to 1.5s
+                captureRepStartFrame.current > lastRepEndFrame) { // Ensure we're tracking a new rep
               
               console.log(`✅ Rep ${currentCaptureRep} completed at frame ${currentFrameCount}`);
               
