@@ -746,9 +746,9 @@ export default function Analysis() {
                 currentFrameCount - captureRepStartFrame.current > 30 && 
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
-              // Trim the end slightly to avoid capturing too much "standing still"
-              // We want to cut right as they settle into neutral
-              const trimEndFrames = 10; // Cut 0.3s off the end
+              // Trim the end aggressively to avoid capturing the setup for the NEXT rep
+              // We want to cut right as they return to neutral, leaving the "holding" phase for the next rep's pre-roll
+              const trimEndFrames = 20; // Cut ~0.7s off the end (increased from 10)
               const actualEndFrame = Math.max(captureRepStartFrame.current + 30, currentFrameCount - trimEndFrames);
               
               console.log(`✅ Rep ${currentCaptureRep} completed at frame ${actualEndFrame}`);
@@ -763,11 +763,15 @@ export default function Analysis() {
               
               // Check if this was the final rep
               // Use ref here to ensure we have the latest value inside the closure
-              if (currentCaptureRep >= selectedRepsRef.current) {
+              // IMPORTANT: We check completedReps.length + 1 because the state update hasn't happened yet
+              const totalCompleted = completedReps.length + 1;
+              
+              if (totalCompleted >= selectedRepsRef.current) {
                 console.log(`🏁 All ${selectedRepsRef.current} reps completed! Auto-stopping...`);
+                // Stop immediately to prevent capturing extra frames or starting a new rep
                 setTimeout(() => {
                   stopAndScore();
-                }, 1000); // Wait 1 second after final rep before auto-stopping
+                }, 500); // Reduced wait time to 0.5s for snappier finish
               } else {
                 // More reps to go
                 setCurrentCaptureRep(prev => prev + 1);
