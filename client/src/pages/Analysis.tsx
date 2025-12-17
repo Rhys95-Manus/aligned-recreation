@@ -746,10 +746,12 @@ export default function Analysis() {
                 currentFrameCount - captureRepStartFrame.current > 30 && 
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
-              // Trim the end aggressively to avoid capturing the setup for the NEXT rep
-              // We want to cut right as they return to neutral, leaving the "holding" phase for the next rep's pre-roll
-              const trimEndFrames = 20; // Cut ~0.7s off the end (increased from 10)
-              const actualEndFrame = Math.max(captureRepStartFrame.current + 30, currentFrameCount - trimEndFrames);
+              // BACKDATE REP END:
+              // We detected neutral after 30 frames of stability.
+              // So the rep ACTUALLY ended 30 frames ago, when the stability started.
+              // We cut the video there to remove the "standing still" period entirely.
+              const stabilityDuration = 30; 
+              const actualEndFrame = Math.max(captureRepStartFrame.current + 30, currentFrameCount - stabilityDuration);
               
               console.log(`✅ Rep ${currentCaptureRep} completed at frame ${actualEndFrame}`);
               
@@ -768,10 +770,15 @@ export default function Analysis() {
               
               if (totalCompleted >= selectedRepsRef.current) {
                 console.log(`🏁 All ${selectedRepsRef.current} reps completed! Auto-stopping...`);
-                // Stop immediately to prevent capturing extra frames or starting a new rep
+                
+                // FORCE STOP IMMEDIATELY
+                // We set the state to 'complete' directly here to bypass any React delays
+                // This prevents any further frames from being processed or the user needing to walk to camera
+                isCapturingRef.current = false; // Kill the capture loop instantly
+                
                 setTimeout(() => {
                   stopAndScore();
-                }, 500); // Reduced wait time to 0.5s for snappier finish
+                }, 100); // Almost instant transition
               } else {
                 // More reps to go
                 setCurrentCaptureRep(prev => prev + 1);
