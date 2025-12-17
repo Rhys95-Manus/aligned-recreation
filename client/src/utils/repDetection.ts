@@ -45,22 +45,24 @@ export function detectMotionState(
   const totalChange = hipChange + shoulderChange + elbowChange + weightChange;
   const totalVelocity = hipVelocity + shoulderVelocity + elbowVelocity;
   
-  // Thresholds for state detection (tuned for faster transitions)
-  const NEUTRAL_THRESHOLD = 20; // Total change from baseline (lowered from 30 for faster detection)
-  const EXECUTION_THRESHOLD = 40; // Significant movement (lowered from 50)
-  const VELOCITY_THRESHOLD = 3; // High rate of change (lowered from 5 for quicker response)
+  // Thresholds for state detection (tuned for stability)
+  const NEUTRAL_THRESHOLD = 35; // Total change from baseline (increased to prevent false starts)
+  const EXECUTION_THRESHOLD = 60; // Significant movement required (increased to ignore jitter)
+  const VELOCITY_THRESHOLD = 5; // High rate of change required (increased to ignore noise)
+  const MIN_AMPLITUDE = 25; // Minimum degree change required to count as valid motion
   
   // Neutral: Close to baseline, low velocity
   if (totalChange < NEUTRAL_THRESHOLD && totalVelocity < VELOCITY_THRESHOLD) {
     return 'neutral';
   }
+    // Execution: High change from baseline OR high velocity AND minimum amplitude
+  // Must have significant movement in at least one key metric to be "execution"
+  const maxSingleMetricChange = Math.max(hipChange, shoulderChange, elbowChange);
   
-  // Execution: Significant change and high velocity
-  if (totalChange > EXECUTION_THRESHOLD || totalVelocity > VELOCITY_THRESHOLD) {
+  if ((totalChange > EXECUTION_THRESHOLD || totalVelocity > VELOCITY_THRESHOLD) && 
+      maxSingleMetricChange > MIN_AMPLITUDE) {
     return 'execution';
-  }
-  
-  // Follow-through: Significant change but slowing down
+  } // Follow-through: Significant change but slowing down
   return 'follow_through';
 }
 
@@ -105,7 +107,7 @@ export function detectRepBoundaries(
     // Detect rep end: transition from follow_through/execution back to neutral
     if ((previousState === 'follow_through' || previousState === 'execution') && 
         currentState === 'neutral' && 
-        i - repStartFrame > 15) { // Minimum rep duration (15 frames = ~0.5 seconds, lowered for faster detection)
+        i - repStartFrame > 30) { // Minimum rep duration (30 frames = ~1.0 second, increased to prevent micro-reps)
       
       boundaries.push({
         repNumber: currentRepNumber,

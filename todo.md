@@ -710,3 +710,19 @@
 - [x] Update scrubber and frame index when clicking rep dot (setCurrentFrameIndex(0))
 - [x] Add hover effects (scale-125) and tooltips ("Jump to Rep X")
 - [ ] Test with 3-rep throwing session to verify all improvements
+
+
+## FIX REP DETECTION SENSITIVITY
+- [x] Increased NEUTRAL_THRESHOLD to 35 and EXECUTION_THRESHOLD to 60
+- [x] Added MIN_AMPLITUDE check (must move >25 degrees to count as execution)
+- [x] Increased minimum rep duration to 30 frames (~1 second) to prevent micro-reps
+- [x] Updated both repDetection.ts (post-processing) and Analysis.tsx (real-time)
+- [x] Added stricter velocity checks (>5) to ignore camera jitter
+
+
+## FIX REP DOUBLE-COUNTING & UI
+- [x] Added mandatory "cool-down" check: must be in Neutral for >45 frames (1.5s) before starting next rep
+- [x] Prevented rapid re-triggering by checking framesSinceLastRep
+- [x] Simplified capture UI: removed text, kept only elegant progress dots
+- [x] Made dots smaller (w-2 h-2) and added subtle animations (scale-125 for current)
+- [x] Auto-stop logic now respects the cool-down period, ensuring distinct reps
