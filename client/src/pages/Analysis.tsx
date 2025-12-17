@@ -683,18 +683,26 @@ export default function Analysis() {
             const shoulderVelocity = Math.abs(shoulderRotationCalc - prevFrame.metrics.shoulderRotation);
             const totalVelocity = hipVelocity + shoulderVelocity;
             
-            // Detect current state
+            // Detect current state (using stricter thresholds to prevent false positives)
             let newState: 'neutral' | 'execution' | 'follow_through' = 'neutral';
-            if (totalChange < 20 && totalVelocity < 3) {
+            
+            // Check minimum amplitude for execution (must move significantly)
+            const maxSingleMetricChange = Math.max(hipChange, shoulderChange, elbowChange);
+            const MIN_AMPLITUDE = 25;
+            
+            if (totalChange < 35 && totalVelocity < 5) {
               newState = 'neutral';
-            } else if (totalChange > 40 || totalVelocity > 3) {
+            } else if ((totalChange > 60 || totalVelocity > 5) && maxSingleMetricChange > MIN_AMPLITUDE) {
               newState = 'execution';
             } else {
               newState = 'follow_through';
             }
             
             // Detect rep start: neutral → execution
-            if (previousState === 'neutral' && newState === 'execution') {
+            // MUST have been in neutral for at least 15 frames (0.5s) to prevent rapid re-triggering
+            const framesSinceLastRep = currentFrameCount - (captureRepStartFrame.current || 0);
+            
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRep > 45) {
               captureRepStartFrame.current = currentFrameCount;
               console.log(`🟢 Rep ${currentCaptureRep} started at frame ${currentFrameCount}`);
             }
@@ -702,7 +710,7 @@ export default function Analysis() {
             // Detect rep end: execution/follow_through → neutral
             if ((previousState === 'follow_through' || previousState === 'execution') && 
                 newState === 'neutral' && 
-                currentFrameCount - captureRepStartFrame.current > 15) {
+                currentFrameCount - captureRepStartFrame.current > 30) { // Minimum 30 frames (~1s) to count as rep
               
               console.log(`✅ Rep ${currentCaptureRep} completed at frame ${currentFrameCount}`);
               setCompletedReps(prev => [...prev, currentCaptureRep]);
@@ -1309,27 +1317,22 @@ export default function Analysis() {
                   </div>
                 )}
                 
-                {/* Live Rep Counter During Capture */}
+                {/* Live Rep Counter During Capture - Dots Only */}
                 {sessionState === 'capturing' && selectedReps > 1 && (
-                  <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg px-4 py-3 border-2 border-blue-500">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-400">
-                        Rep {currentCaptureRep} of {selectedReps}
-                      </div>
-                      <div className="flex gap-1 mt-2 justify-center">
-                        {Array.from({ length: selectedReps }, (_, i) => i + 1).map((rep) => (
-                          <div
-                            key={rep}
-                            className={`w-3 h-3 rounded-full ${
-                              completedReps.includes(rep)
-                                ? 'bg-green-500'
-                                : rep === currentCaptureRep
-                                ? 'bg-blue-500 animate-pulse'
-                                : 'bg-gray-600'
-                            }`}
-                          />
-                        ))}
-                      </div>
+                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm rounded-full px-3 py-2 border border-blue-500/50">
+                    <div className="flex gap-2 justify-center items-center">
+                      {Array.from({ length: selectedReps }, (_, i) => i + 1).map((rep) => (
+                        <div
+                          key={rep}
+                          className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                            completedReps.includes(rep)
+                              ? 'bg-green-500 scale-100'
+                              : rep === currentCaptureRep
+                              ? 'bg-blue-500 animate-pulse scale-125'
+                              : 'bg-gray-600 scale-90'
+                          }`}
+                        />
+                      ))}
                     </div>
                   </div>
                 )}
