@@ -728,8 +728,13 @@ export default function Analysis() {
             // 1. Must transition from neutral to execution
             // 2. Must be at least 30 frames (1.0s) since last rep ENDED
             if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 30) {
-              captureRepStartFrame.current = currentFrameCount;
-              console.log(`🟢 Rep ${currentCaptureRep} started at frame ${currentFrameCount}`);
+              // Add PRE-ROLL BUFFER: Start the rep 45 frames (1.5s) BEFORE the movement actually begins
+              // This captures the "Setup" / "Ready" phase
+              const preRollFrames = 45;
+              const actualStartFrame = Math.max(lastRepEndFrame + 1, currentFrameCount - preRollFrames);
+              
+              captureRepStartFrame.current = actualStartFrame;
+              console.log(`🟢 Rep ${currentCaptureRep} started at frame ${actualStartFrame} (with pre-roll)`);
             }
             
             // END CONDITION:
@@ -741,12 +746,17 @@ export default function Analysis() {
                 currentFrameCount - captureRepStartFrame.current > 30 && 
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
-              console.log(`✅ Rep ${currentCaptureRep} completed at frame ${currentFrameCount}`);
+              // Trim the end slightly to avoid capturing too much "standing still"
+              // We want to cut right as they settle into neutral
+              const trimEndFrames = 10; // Cut 0.3s off the end
+              const actualEndFrame = Math.max(captureRepStartFrame.current + 30, currentFrameCount - trimEndFrames);
+              
+              console.log(`✅ Rep ${currentCaptureRep} completed at frame ${actualEndFrame}`);
               
               // Save boundary for this rep
               capturedRepBoundaries.current.push({
                 start: captureRepStartFrame.current,
-                end: currentFrameCount
+                end: actualEndFrame
               });
               
               setCompletedReps(prev => [...prev, currentCaptureRep]);
