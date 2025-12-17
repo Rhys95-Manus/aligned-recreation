@@ -528,15 +528,22 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 </span>
                 <div className="flex gap-1">
                   {Array.from({ length: selectedReps }, (_, i) => (
-                    <div
+                    <button
                       key={i}
-                      className={`w-3 h-3 rounded-full transition-all ${
+                      onClick={() => {
+                        // Jump to specific rep
+                        setCurrentRep(i + 1);
+                        setCurrentFrameIndex(0);
+                        setIsPlaying(true);
+                      }}
+                      className={`w-3 h-3 rounded-full transition-all cursor-pointer hover:scale-125 ${
                         i + 1 < currentRep
-                          ? 'bg-green-500' // Completed
+                          ? 'bg-green-500 hover:bg-green-400' // Completed
                           : i + 1 === currentRep
                           ? 'bg-blue-500 animate-pulse' // Current
-                          : 'bg-gray-600' // Upcoming
+                          : 'bg-gray-600 hover:bg-gray-500' // Upcoming
                       }`}
+                      title={`Jump to Rep ${i + 1}`}
                     />
                   ))}
                 </div>

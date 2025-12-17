@@ -687,3 +687,26 @@
 - [x] Handle edge cases with splitEvenly fallback if detection fails
 - [x] Regenerate professional frames to match current rep segment length
 - [ ] Test with 3-rep throwing motion to verify proper segmentation
+
+
+## REP DETECTION IMPROVEMENTS
+- [x] Tune detection thresholds in repDetection.ts for faster neutral detection
+- [x] Lower NEUTRAL_THRESHOLD from 30 to 20 for quicker reset detection
+- [x] Lower EXECUTION_THRESHOLD from 50 to 40
+- [x] Lower VELOCITY_THRESHOLD from 5 to 3 for more responsive phase transitions
+- [x] Reduce minimum rep duration from 20 to 15 frames for faster rep end detection
+- [x] Implement smart auto-stop logic (different for single vs multi-rep)
+- [x] For single rep: auto-stop after follow-through phase ends (detects neutral return)
+- [x] For multi-rep: auto-stop after final rep's follow-through (detects neutral return after last rep)
+- [x] Add real-time rep detection during capture with baseline metrics
+- [x] Track motion state changes (neutral, execution, follow_through) during capture
+- [x] Auto-trigger stopAndScore() 1 second after final rep completes
+- [x] Add live rep counter UI in Analysis page during capture
+- [x] Show "Rep X of Y" badge with progress dots (top-right overlay)
+- [x] Animate progress dots (green for completed, blue pulsing for current, gray for upcoming)
+- [x] Only show when selectedReps > 1 and sessionState is 'capturing'
+- [x] Add clickable rep dots in Replay page header
+- [x] Implement jumpToRep function (onClick sets currentRep, resets frameIndex, starts playback)
+- [x] Update scrubber and frame index when clicking rep dot (setCurrentFrameIndex(0))
+- [x] Add hover effects (scale-125) and tooltips ("Jump to Rep X")
+- [ ] Test with 3-rep throwing session to verify all improvements
