@@ -167,6 +167,7 @@ export default function Analysis() {
   const [customReps, setCustomReps] = useState('');
   const [currentCaptureRep, setCurrentCaptureRep] = useState(1); // Current rep being captured (live)
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
+  const [feedbackMessage, setFeedbackMessage] = useState(""); // Visual feedback for rep detection
   const captureMotionState = useRef<'neutral' | 'execution' | 'follow_through'>('neutral');
   const captureRepStartFrame = useRef(0);
   const capturedRepBoundaries = useRef<{start: number, end: number}[]>([]);
@@ -684,23 +685,36 @@ export default function Analysis() {
             const shoulderVelocity = Math.abs(shoulderRotationCalc - prevFrame.metrics.shoulderRotation);
             const totalVelocity = hipVelocity + shoulderVelocity;
             
-            // Detect current state (using stricter thresholds to prevent false positives)
+            // DYNAMIC NEUTRAL DETECTION
+            // Instead of comparing to fixed baseline, check if velocity is low (user stopped moving)
+            // This allows user to reset at a slightly different position
+            
             let newState: 'neutral' | 'execution' | 'follow_through' = 'neutral';
             
-            // Check minimum amplitude for execution (must move significantly)
-            const maxSingleMetricChange = Math.max(hipChange, shoulderChange, elbowChange);
-            const MIN_AMPLITUDE = 25;
+            // Velocity-based state detection
+            // If velocity is very low, user is likely in neutral/holding position
+            const isStatic = totalVelocity < 3.0; // Very low movement
             
-            // Increased thresholds to prevent false positives
-            // Neutral: Low movement (increased from 35 to 45)
-            if (totalChange < 45 && totalVelocity < 5) {
+            // If static for a moment, we consider it neutral regardless of position relative to start
+            if (isStatic) {
               newState = 'neutral';
+              
+              // Update baseline to current position if we've been static (Dynamic Neutral)
+              // This prevents "drift" from breaking detection
+              if (previousState === 'neutral') {
+                 captureBaselineMetrics.current = {
+                   hipRotation: hipRotationCalc,
+                   shoulderRotation: shoulderRotationCalc,
+                   rightElbowAngle: rightElbowCalc,
+                   weightTransfer: weightTransferCalc
+                 };
+              }
             } 
-            // Execution: High movement (increased from 60 to 80) AND significant single metric change
-            else if ((totalChange > 80 || totalVelocity > 8) && maxSingleMetricChange > MIN_AMPLITUDE) {
+            // High velocity = Execution
+            else if (totalVelocity > 8.0) {
               newState = 'execution';
-            } 
-            // Follow-through: Everything else
+            }
+            // Moderate velocity = Follow-through / Transition
             else {
               newState = 'follow_through';
             }
@@ -715,24 +729,28 @@ export default function Analysis() {
               : 0;
             const framesSinceLastRepEnd = currentFrameCount - lastRepEndFrame;
             
-            // STRICTER START CONDITION:
+            // DYNAMIC START CONDITION:
             // 1. Must transition from neutral to execution
-            // 2. Must be at least 45 frames (1.5s) since last rep ENDED (cool-down)
+            // 2. Must be at least 30 frames (1.0s) since last rep ENDED (reduced from 45 to be more responsive)
             // 3. Must have significant movement (already checked by newState === 'execution')
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 45) {
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 30) {
               captureRepStartFrame.current = currentFrameCount;
               console.log(`🟢 Rep ${currentCaptureRep} started at frame ${currentFrameCount}`);
+              
+              // Visual feedback
+              setFeedbackMessage(`Rep ${currentCaptureRep} Started!`);
+              setTimeout(() => setFeedbackMessage(""), 1000);
             }
             
             // Detect rep end: execution/follow_through → neutral
-            // STRICTER END CONDITION:
-            // 1. Must transition to neutral
-            // 2. Must have lasted at least 45 frames (1.5s) to be a valid rep (prevents short twitches)
+            // DYNAMIC END CONDITION:
+            // 1. Must transition to neutral (velocity drops)
+            // 2. Must have lasted at least 30 frames (1.0s) to be a valid rep
             // 3. Must currently be tracking a valid rep (captureRepStartFrame > lastRepEndFrame)
             if ((previousState === 'follow_through' || previousState === 'execution') && 
                 newState === 'neutral' && 
-                currentFrameCount - captureRepStartFrame.current > 45 && // Increased min duration to 1.5s
-                captureRepStartFrame.current > lastRepEndFrame) { // Ensure we're tracking a new rep
+                currentFrameCount - captureRepStartFrame.current > 30 && 
+                captureRepStartFrame.current > lastRepEndFrame) { 
               
               console.log(`✅ Rep ${currentCaptureRep} completed at frame ${currentFrameCount}`);
               
@@ -744,9 +762,14 @@ export default function Analysis() {
               
               setCompletedReps(prev => [...prev, currentCaptureRep]);
               
+              // Visual feedback
+              setFeedbackMessage(`Rep ${currentCaptureRep} Complete! Resetting...`);
+              setTimeout(() => setFeedbackMessage(""), 2000);
+              
               // Check if this was the final rep
               if (currentCaptureRep >= selectedReps) {
                 console.log(`🏁 All ${selectedReps} reps completed! Auto-stopping...`);
+                setFeedbackMessage("All Reps Done! Analyzing...");
                 setTimeout(() => {
                   stopAndScore();
                 }, 1000); // Wait 1 second after final rep before auto-stopping
@@ -1373,6 +1396,15 @@ export default function Analysis() {
                           }`}
                         />
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Visual Feedback Overlay */}
+                {feedbackMessage && (
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
+                    <div className="bg-black/70 backdrop-blur-md px-6 py-3 rounded-xl border border-white/20 shadow-2xl animate-in fade-in zoom-in duration-300">
+                      <span className="text-white font-bold text-xl tracking-wide">{feedbackMessage}</span>
                     </div>
                   </div>
                 )}
