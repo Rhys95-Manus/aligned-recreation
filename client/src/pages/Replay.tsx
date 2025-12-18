@@ -740,33 +740,52 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                   value={manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)}
                   onChange={(e) => {
                     const newStart = parseInt(e.target.value);
-                    // Get current end from state OR fallback to detected boundary OR fallback to end of recording
                     const currentEnd = manualBoundaries[currentRep]?.end ?? 
                                       (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame) ?? 
                                       (recordedFrames.length - 1);
                     
-                    // Allow dragging anywhere as long as start < end
                     if (newStart < currentEnd) {
                       setManualBoundaries(prev => ({
                         ...prev,
                         [currentRep]: { start: newStart, end: currentEnd }
                       }));
-                      // Don't reset playback constantly while dragging, it's annoying
                     }
                   }}
-                  className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20 pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto"
-                />
-                <div 
-                  className="absolute top-1/2 w-4 h-6 bg-green-500 rounded -translate-y-1/2 shadow-lg border border-white cursor-ew-resize z-10 pointer-events-none flex items-center justify-center"
-                  style={{ 
-                    left: `${((manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)) / (recordedFrames.length - 1)) * 100}%`,
-                    transform: 'translate(-50%, -50%)'
+                  className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-30"
+                  style={{
+                    pointerEvents: 'none',
+                    WebkitAppearance: 'none',
+                    background: 'transparent'
                   }}
-                >
-                  <span className="text-[8px] text-black font-bold">S</span>
-                </div>
+                />
+                {/* Custom Thumb for Start - Positioned by JS, but input handles events via pseudo-element hacks or just rely on the input being on top */}
+                {/* ACTUALLY, let's use a simpler approach: 
+                    Two inputs, but give the Start input a higher z-index when hovering near the start handle?
+                    No, the best way is to use pointer-events-auto on the thumb only.
+                    We already tried that. Let's try making the inputs half-height?
+                    
+                    NEW APPROACH: Top half is Start, Bottom half is End.
+                */}
                 
-                {/* End Handle (Red) */}
+                {/* Start Input - Top Half */}
+                <input
+                  type="range"
+                  min="0"
+                  max={recordedFrames.length - 1}
+                  value={manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)}
+                  onChange={(e) => {
+                    const newStart = parseInt(e.target.value);
+                    const currentEnd = manualBoundaries[currentRep]?.end ?? 
+                                      (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame) ?? 
+                                      (recordedFrames.length - 1);
+                    if (newStart < currentEnd) {
+                      setManualBoundaries(prev => ({ ...prev, [currentRep]: { start: newStart, end: currentEnd } }));
+                    }
+                  }}
+                  className="absolute top-0 w-full h-1/2 opacity-0 cursor-ew-resize z-30"
+                />
+                
+                {/* End Input - Bottom Half */}
                 <input
                   type="range"
                   min="0"
@@ -775,25 +794,26 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                   onChange={(e) => {
                     const newEnd = parseInt(e.target.value);
                     const currentStart = manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0);
-                    
-                    // Allow dragging anywhere as long as end > start
                     if (newEnd > currentStart) {
-                      setManualBoundaries(prev => ({
-                        ...prev,
-                        [currentRep]: { start: currentStart, end: newEnd }
-                      }));
+                      setManualBoundaries(prev => ({ ...prev, [currentRep]: { start: currentStart, end: newEnd } }));
                     }
                   }}
-                  className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20 pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto"
+                  className="absolute bottom-0 w-full h-1/2 opacity-0 cursor-ew-resize z-30"
                 />
+
+                {/* Visual Handles (Non-interactive) */}
                 <div 
-                  className="absolute top-1/2 w-4 h-6 bg-red-500 rounded -translate-y-1/2 shadow-lg border border-white cursor-ew-resize z-10 pointer-events-none flex items-center justify-center"
-                  style={{ 
-                    left: `${((manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)) / (recordedFrames.length - 1)) * 100}%`,
-                    transform: 'translate(-50%, -50%)'
-                  }}
+                  className="absolute top-0 h-full w-0.5 bg-green-500 z-10 pointer-events-none"
+                  style={{ left: `${((manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)) / (recordedFrames.length - 1)) * 100}%` }}
                 >
-                  <span className="text-[8px] text-white font-bold">E</span>
+                   <div className="absolute top-0 -translate-x-1/2 -translate-y-1/2 bg-green-500 text-black text-[8px] font-bold px-1 rounded border border-white">S</div>
+                </div>
+                
+                <div 
+                  className="absolute top-0 h-full w-0.5 bg-red-500 z-10 pointer-events-none"
+                  style={{ left: `${((manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)) / (recordedFrames.length - 1)) * 100}%` }}
+                >
+                   <div className="absolute bottom-0 -translate-x-1/2 translate-y-1/2 bg-red-500 text-white text-[8px] font-bold px-1 rounded border border-white">E</div>
                 </div>
               </div>
               

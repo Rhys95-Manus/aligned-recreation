@@ -170,11 +170,10 @@ export default function Analysis() {
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
   // Visual feedback removed as per user request
   const captureMotionState = useRef<'neutral' | 'execution' | 'follow_through'>('neutral');
-  const captureRepStartFrame = useRef(0);
-  const capturedRepBoundaries = useRef<{start: number, end: number}[]>([]);
+  const captureRepStartFrame = useRef<number>(0);
+  const capturedRepBoundaries = useRef<Array<{start: number, end: number}>>([]);
   const captureBaselineMetrics = useRef<any>(null);
-  
-  // Frame recording for replay
+  const neutralHoldCounter = useRef<number>(0);  // Frame recording for replay
   const [recordedFrames, setRecordedFrames] = useState<Array<{
     timestamp: number;
     landmarks: any[];
@@ -760,11 +759,24 @@ export default function Analysis() {
             // END CONDITION:
             // 1. Must transition back to neutral (posture matches baseline)
             // 2. Must have lasted at least 36 frames (1.2s) to be a valid rep (MINIMUM DURATION)
-            //    This ignores short twitches or false starts
             // 3. Must currently be tracking a valid rep
+            // 4. NEUTRAL HOLD: Must hold neutral for 10 frames (0.3s) to confirm end
             const repDurationFrames = currentFrameCount - captureRepStartFrame.current;
-            if ((previousState === 'follow_through' || previousState === 'execution') && 
-                newState === 'neutral' && 
+            
+            // Initialize neutral hold counter if entering neutral
+            if ((previousState === 'follow_through' || previousState === 'execution') && newState === 'neutral') {
+               neutralHoldCounter.current = 0;
+            }
+            
+            // Increment counter if in neutral
+            if (newState === 'neutral') {
+               neutralHoldCounter.current = (neutralHoldCounter.current || 0) + 1;
+            } else {
+               neutralHoldCounter.current = 0;
+            }
+
+            if (newState === 'neutral' && 
+                (neutralHoldCounter.current || 0) >= 10 && // Require 10 frames of neutral hold
                 repDurationFrames > 36 && // Min duration 1.2s
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
@@ -1097,7 +1109,7 @@ export default function Analysis() {
     console.log('🛑 stopAndScore function called! sessionState:', sessionState);
     isCapturingRef.current = false; // Stop peak tracking
     console.log('⏹️ Stopped capture - isCapturingRef set to:', isCapturingRef.current);
-    speak("Here's your detailed analysis");
+    // speak("Here's your detailed analysis"); // Removed to prevent double speech
     
     // Get professional reference for this motion
     const category = params.get('category') || '';
@@ -1450,6 +1462,7 @@ export default function Analysis() {
                 <div className="bg-[#1a1f2e] rounded-lg p-4 mt-4">
                   <h3 className="font-semibold mb-3 text-center">Rep Counter</h3>
                   <p className="text-xs text-gray-400 text-center mb-3">Select how many reps you want to do</p>
+                  <p className="text-xs text-blue-400 text-center mb-3 font-medium">Return to neutral posture after final rep to finish</p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {[1, 3, 5, 10].map((rep) => (
                       <button
