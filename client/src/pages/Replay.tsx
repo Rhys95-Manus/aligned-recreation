@@ -613,10 +613,10 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         
         
         {/* Side-by-Side Replay */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {/* User Motion */}
-          <div className="bg-[#1a1f2e] rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4 text-green-400">Your Motion</h2>
+          <div className="bg-[#1a1f2e] rounded-lg p-4">
+            <h2 className="text-xl font-bold mb-2 text-green-400">Your Motion</h2>
             <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
               <canvas
                 ref={userCanvasRef}
@@ -628,8 +628,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           </div>
           
           {/* Professional Hologram */}
-          <div className="bg-[#1a1f2e] rounded-lg p-6">
-            <div className="flex flex-col gap-3 mb-4">
+          <div className="bg-[#1a1f2e] rounded-lg p-4">
+            <div className="flex flex-col gap-2 mb-2">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-pink-400">Professional Reference</h2>
                 <Button 

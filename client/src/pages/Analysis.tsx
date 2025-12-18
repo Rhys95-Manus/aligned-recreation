@@ -168,6 +168,18 @@ export default function Analysis() {
   const [customReps, setCustomReps] = useState('');
   const [currentCaptureRep, setCurrentCaptureRep] = useState(1); // Current rep being captured (live)
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
+
+  // Watch for completion of all reps
+  useEffect(() => {
+    if (completedReps.length > 0 && completedReps.length >= selectedRepsRef.current) {
+      console.log(`🎯 useEffect detected all ${selectedRepsRef.current} reps complete. Triggering stopAndScore...`);
+      // Small timeout to ensure state is settled
+      const timer = setTimeout(() => {
+        stopAndScore();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [completedReps]);
   // Visual feedback removed as per user request
   const captureMotionState = useRef<'neutral' | 'execution' | 'follow_through'>('neutral');
   const captureRepStartFrame = useRef<number>(0);
@@ -810,12 +822,9 @@ export default function Analysis() {
                 isCapturingRef.current = false; // Kill the capture loop instantly
                 setSessionState('complete'); // Force UI update
                 
-                // Call stopAndScore immediately without timeout to ensure navigation happens
-                // Use setTimeout(0) to break out of the current execution stack and ensure state updates are processed
-                setTimeout(() => {
-                  console.log('🚀 Triggering navigation to Replay...');
-                  stopAndScore();
-                }, 0);
+                // We DON'T call stopAndScore here anymore.
+                // We rely on the useEffect below to trigger it when 'completedReps' updates.
+                // This avoids race conditions where the state update hasn't propagated.
               } else {
                 // More reps to go
                 setCurrentCaptureRep(prev => prev + 1);
@@ -1401,9 +1410,9 @@ export default function Analysis() {
           </div>
 
           {/* Video Feed and Detection Status */}
-          <div className="flex flex-col lg:flex-row gap-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4 mb-4">
             {/* Video Feed - Takes up 80% width on large screens */}
-            <div className="lg:w-[80%] bg-[#1a1f2e] rounded-lg p-6">
+            <div className="lg:w-[80%] bg-[#1a1f2e] rounded-lg p-4">
               <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', maxHeight: '500px' }}>
                 <video
                   ref={videoRef}
@@ -1459,10 +1468,11 @@ export default function Analysis() {
 
               {/* Rep Selector - Only show when camera is active and ready to capture */}
               {cameraActive && poseInitialized && (sessionState === 'idle' || sessionState === 'ready') && (
-                <div className="bg-[#1a1f2e] rounded-lg p-4 mt-4">
-                  <h3 className="font-semibold mb-3 text-center">Rep Counter</h3>
-                  <p className="text-xs text-gray-400 text-center mb-3">Select how many reps you want to do</p>
-                  <p className="text-xs text-blue-400 text-center mb-3 font-medium">Return to neutral posture after final rep to finish</p>
+                <div className="bg-[#1a1f2e] rounded-lg p-3 mt-2">
+                  <div className="flex items-center justify-center gap-4 mb-2">
+                    <h3 className="font-semibold text-sm">Rep Counter</h3>
+                    <p className="text-xs text-blue-400 font-medium">Return to neutral to finish</p>
+                  </div>
                   <div className="flex flex-wrap justify-center gap-2">
                     {[1, 3, 5, 10].map((rep) => (
                       <button
