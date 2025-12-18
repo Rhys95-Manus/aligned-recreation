@@ -237,6 +237,14 @@ export default function Analysis() {
     };
   }, [stream]);
   
+  // Auto-stop navigation effect
+  useEffect(() => {
+    if (sessionState === 'complete') {
+      console.log('🏁 Session complete detected via useEffect - triggering stopAndScore');
+      stopAndScore();
+    }
+  }, [sessionState]);
+
   // Countdown timer effect
   useEffect(() => {
     if (sessionState === 'countdown' && countdown > 0) {
@@ -727,9 +735,9 @@ export default function Analysis() {
             
             // START CONDITION:
             // 1. Must transition from neutral to execution
-            // // Must be at least 24 frames (0.8s) since last rep ENDED (MANDATORY COOL-DOWN)
+            // // Must be at least 30 frames (1.0s) since last rep ENDED (MANDATORY COOL-DOWN)
             // This prevents the "follow-through wobble" from being counted as a new rep
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 24) {
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 30) {
               // Add EXTENDED PRE-ROLL BUFFER: Start the rep 60 frames (2.0s) BEFORE the movement actually begins
               // This captures the "Setup" / "Ready" phase even if detection is slightly late
               const preRollFrames = 60;
@@ -741,12 +749,12 @@ export default function Analysis() {
             
             // END CONDITION:
             // 1. Must transition back to neutral (posture matches baseline)
-            // 2. Must have lasted at least 24 frames (0.8s) to be a valid rep (MINIMUM DURATION)
+            // 2. Must have lasted at least 36 frames (1.2s) to be a valid rep (MINIMUM DURATION)
             //    This ignores short twitches or false starts
             // 3. Must currently be tracking a valid rep
             if ((previousState === 'follow_through' || previousState === 'execution') && 
                 newState === 'neutral' && 
-                currentFrameCount - captureRepStartFrame.current > 24 && 
+                currentFrameCount - captureRepStartFrame.current > 36 && 
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
               // NO BACKDATING:
