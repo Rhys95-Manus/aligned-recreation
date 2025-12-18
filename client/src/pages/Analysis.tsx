@@ -633,6 +633,15 @@ export default function Analysis() {
         if (Math.abs(shoulderRotationCalc) > Math.abs(peakShoulderRotation.current)) peakShoulderRotation.current = shoulderRotationCalc;
         if (Math.abs(hipShoulderSeparationCalc) > Math.abs(peakHipShoulderSeparation.current)) peakHipShoulderSeparation.current = hipShoulderSeparationCalc;
         
+        // HARD KILL SWITCH: Stop recording immediately if we've reached the target reps
+        // This prevents "walking over to camera" from being recorded
+        if (completedReps.length >= selectedRepsRef.current) {
+          console.log('🛑 Hard kill switch triggered: Target reps reached. Stopping frame recording.');
+          isCapturingRef.current = false;
+          setSessionState('complete');
+          return; // EXIT IMMEDIATELY
+        }
+
         // Record this frame for replay
         const timestamp = Date.now() - captureStartTimeRef.current;
         recordedFramesRef.current.push({
@@ -735,9 +744,9 @@ export default function Analysis() {
             
             // START CONDITION:
             // 1. Must transition from neutral to execution
-            // // Must be at least 30 frames (1.0s) since last rep ENDED (MANDATORY COOL-DOWN)
+            // // Must be at least 15 frames (0.5s) since last rep ENDED (MANDATORY COOL-DOWN)
             // This prevents the "follow-through wobble" from being counted as a new rep
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 30) {
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 15) {
               // Add EXTENDED PRE-ROLL BUFFER: Start the rep 60 frames (2.0s) BEFORE the movement actually begins
               // This captures the "Setup" / "Ready" phase even if detection is slightly late
               const preRollFrames = 60;
@@ -749,12 +758,12 @@ export default function Analysis() {
             
             // END CONDITION:
             // 1. Must transition back to neutral (posture matches baseline)
-            // 2. Must have lasted at least 36 frames (1.2s) to be a valid rep (MINIMUM DURATION)
+            // 2. Must have lasted at least 15 frames (0.5s) to be a valid rep (MINIMUM DURATION)
             //    This ignores short twitches or false starts
             // 3. Must currently be tracking a valid rep
             if ((previousState === 'follow_through' || previousState === 'execution') && 
                 newState === 'neutral' && 
-                currentFrameCount - captureRepStartFrame.current > 36 && 
+                currentFrameCount - captureRepStartFrame.current > 15 && 
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
               // NO BACKDATING:
