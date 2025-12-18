@@ -701,12 +701,13 @@ export default function Analysis() {
             const totalChange = hipChange + shoulderChange + elbowChange + weightChange;
             
             // Thresholds for state detection
-            // Neutral: Must be close to original posture (low deviation) AND low velocity
-            if (totalChange < 45 && totalVelocity < 5.0) {
+            // Neutral: Relaxed thresholds to ensure reps are registered even if user isn't perfectly still
+            // Increased totalChange from 45 to 60 to allow for more variance in stance
+            if (totalChange < 60 && totalVelocity < 8.0) {
               newState = 'neutral';
             } 
             // Execution: Significant deviation from baseline OR high velocity
-            else if (totalChange > 70 || totalVelocity > 8.0) {
+            else if (totalChange > 80 || totalVelocity > 10.0) {
               newState = 'execution';
             } 
             // Follow-through: In-between state
@@ -746,12 +747,11 @@ export default function Analysis() {
                 currentFrameCount - captureRepStartFrame.current > 30 && 
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
-              // BACKDATE REP END:
-              // We detected neutral after 30 frames of stability.
-              // So the rep ACTUALLY ended 30 frames ago, when the stability started.
-              // We cut the video there to remove the "standing still" period entirely.
-              const stabilityDuration = 30; 
-              const actualEndFrame = Math.max(captureRepStartFrame.current + 30, currentFrameCount - stabilityDuration);
+              // NO BACKDATING:
+              // We want to capture the full follow-through and return to neutral.
+              // Cutting too early makes the replay confusing.
+              // We just use the current frame as the end point.
+              const actualEndFrame = currentFrameCount;
               
               console.log(`✅ Rep ${currentCaptureRep} completed at frame ${actualEndFrame}`);
               
