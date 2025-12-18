@@ -740,7 +740,10 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                   value={manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)}
                   onChange={(e) => {
                     const newStart = parseInt(e.target.value);
-                    const currentEnd = manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1);
+                    // Get current end from state OR fallback to detected boundary OR fallback to end of recording
+                    const currentEnd = manualBoundaries[currentRep]?.end ?? 
+                                      (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame) ?? 
+                                      (recordedFrames.length - 1);
                     
                     // Allow dragging anywhere as long as start < end
                     if (newStart < currentEnd) {
@@ -748,7 +751,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                         ...prev,
                         [currentRep]: { start: newStart, end: currentEnd }
                       }));
-                      setCurrentFrameIndex(0); // Reset playback
+                      // Don't reset playback constantly while dragging, it's annoying
                     }
                   }}
                   className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20"

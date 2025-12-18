@@ -744,9 +744,10 @@ export default function Analysis() {
             
             // START CONDITION:
             // 1. Must transition from neutral to execution
-            // // Must be at least 15 frames (0.5s) since last rep ENDED (MANDATORY COOL-DOWN)
-            // This prevents the "follow-through wobble" from being counted as a new rep
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 15) {
+            // // START CONDITION:
+            // 1. Must transition from neutral to execution
+            // REMOVED COOL-DOWN: We rely on posture returning to neutral.
+            if (previousState === 'neutral' && newState === 'execution') {
               // Add EXTENDED PRE-ROLL BUFFER: Start the rep 60 frames (2.0s) BEFORE the movement actually begins
               // This captures the "Setup" / "Ready" phase even if detection is slightly late
               const preRollFrames = 60;
@@ -758,12 +759,13 @@ export default function Analysis() {
             
             // END CONDITION:
             // 1. Must transition back to neutral (posture matches baseline)
-            // 2. Must have lasted at least 15 frames (0.5s) to be a valid rep (MINIMUM DURATION)
+            // 2. Must have lasted at least 36 frames (1.2s) to be a valid rep (MINIMUM DURATION)
             //    This ignores short twitches or false starts
             // 3. Must currently be tracking a valid rep
+            const repDurationFrames = currentFrameCount - captureRepStartFrame.current;
             if ((previousState === 'follow_through' || previousState === 'execution') && 
                 newState === 'neutral' && 
-                currentFrameCount - captureRepStartFrame.current > 15 && 
+                repDurationFrames > 36 && // Min duration 1.2s
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
               // NO BACKDATING:
@@ -1009,6 +1011,14 @@ export default function Analysis() {
         
         // Process video frames
         const processFrame = async () => {
+          // UPSTREAM KILL SWITCH: Check if we should stop processing
+          // If session is complete, STOP IMMEDIATELY. Do not process another frame.
+          if (sessionState === 'complete') {
+            console.log('🛑 Upstream kill switch: Session complete. Stopping animation loop.');
+            processingRef.current = false;
+            return;
+          }
+
           if (videoRef.current && poseRef.current && processingRef.current) {
             try {
               await poseRef.current.send({ image: videoRef.current });
