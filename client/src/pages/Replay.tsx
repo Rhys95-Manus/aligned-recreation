@@ -685,7 +685,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
             </Button>
           </div>
           
-          {/* Scrubber */}
+          {/* Scrubber (Relative to Current Rep) */}
           <div className="flex items-center gap-4 mb-4">
             <span className="text-sm">{(currentFrameIndex / 30).toFixed(1)}s</span>
             <input
@@ -702,35 +702,37 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
             <span className="text-sm">{(currentRepFrames.length / 30).toFixed(1)}s</span>
           </div>
 
-          {/* Manual Timeline Editor */}
+          {/* Global Session Timeline Editor */}
           <div className="bg-gray-800/50 rounded-lg p-4 mb-4 border border-gray-700">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-blue-400 flex items-center gap-2">
-                <span>✂️</span> Manual Timeline Editor
+                <span>✂️</span> Global Session Editor (Rep {currentRep})
               </h3>
-              <span className="text-xs text-gray-400">Adjust start/end points if detection is off</span>
+              <span className="text-xs text-gray-400">Drag handles to adjust this rep's range within the full session</span>
             </div>
             
             <div className="flex items-center gap-4">
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center gap-1 w-16">
                 <span className="text-xs text-gray-400">Start</span>
                 <span className="text-xs font-mono text-green-400">{((manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)) / 30).toFixed(2)}s</span>
               </div>
               
-              <div className="relative flex-1 h-8">
-                {/* Track */}
-                <div className="absolute top-1/2 left-0 right-0 h-2 bg-gray-700 rounded-full -translate-y-1/2"></div>
+              <div className="relative flex-1 h-12">
+                {/* Full Session Track */}
+                <div className="absolute top-1/2 left-0 right-0 h-2 bg-gray-700 rounded-full -translate-y-1/2 overflow-hidden">
+                  {/* Visual markers for other reps could go here */}
+                </div>
                 
-                {/* Selected Range */}
+                {/* Selected Range Highlight */}
                 <div 
-                  className="absolute top-1/2 h-2 bg-blue-500/50 rounded-full -translate-y-1/2"
+                  className="absolute top-1/2 h-2 bg-blue-500/50 rounded-full -translate-y-1/2 pointer-events-none"
                   style={{
                     left: `${((manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)) / (recordedFrames.length - 1)) * 100}%`,
                     right: `${100 - ((manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)) / (recordedFrames.length - 1)) * 100}%`
                   }}
                 ></div>
                 
-                {/* Start Handle */}
+                {/* Start Handle (Green) */}
                 <input
                   type="range"
                   min="0"
@@ -740,24 +742,28 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                     const newStart = parseInt(e.target.value);
                     const currentEnd = manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1);
                     
+                    // Allow dragging anywhere as long as start < end
                     if (newStart < currentEnd) {
                       setManualBoundaries(prev => ({
                         ...prev,
                         [currentRep]: { start: newStart, end: currentEnd }
                       }));
-                      setCurrentFrameIndex(0); // Reset playback to start
+                      setCurrentFrameIndex(0); // Reset playback
                     }
                   }}
                   className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20"
                 />
                 <div 
-                  className="absolute top-1/2 w-4 h-4 bg-green-500 rounded-full -translate-y-1/2 shadow-lg border-2 border-white cursor-ew-resize z-10 pointer-events-none"
+                  className="absolute top-1/2 w-4 h-6 bg-green-500 rounded -translate-y-1/2 shadow-lg border border-white cursor-ew-resize z-10 pointer-events-none flex items-center justify-center"
                   style={{ 
-                    left: `${((manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)) / (recordedFrames.length - 1)) * 100}%` 
+                    left: `${((manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)) / (recordedFrames.length - 1)) * 100}%`,
+                    transform: 'translate(-50%, -50%)'
                   }}
-                ></div>
+                >
+                  <span className="text-[8px] text-black font-bold">S</span>
+                </div>
                 
-                {/* End Handle */}
+                {/* End Handle (Red) */}
                 <input
                   type="range"
                   min="0"
@@ -767,6 +773,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                     const newEnd = parseInt(e.target.value);
                     const currentStart = manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0);
                     
+                    // Allow dragging anywhere as long as end > start
                     if (newEnd > currentStart) {
                       setManualBoundaries(prev => ({
                         ...prev,
@@ -777,17 +784,23 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                   className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20"
                 />
                 <div 
-                  className="absolute top-1/2 w-4 h-4 bg-red-500 rounded-full -translate-y-1/2 shadow-lg border-2 border-white cursor-ew-resize z-10 pointer-events-none"
+                  className="absolute top-1/2 w-4 h-6 bg-red-500 rounded -translate-y-1/2 shadow-lg border border-white cursor-ew-resize z-10 pointer-events-none flex items-center justify-center"
                   style={{ 
-                    left: `${((manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)) / (recordedFrames.length - 1)) * 100}%` 
+                    left: `${((manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)) / (recordedFrames.length - 1)) * 100}%`,
+                    transform: 'translate(-50%, -50%)'
                   }}
-                ></div>
+                >
+                  <span className="text-[8px] text-white font-bold">E</span>
+                </div>
               </div>
               
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center gap-1 w-16">
                 <span className="text-xs text-gray-400">End</span>
                 <span className="text-xs font-mono text-red-400">{((manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)) / 30).toFixed(2)}s</span>
               </div>
+            </div>
+            <div className="mt-2 text-center">
+               <span className="text-xs text-gray-500">Total Session Length: {(recordedFrames.length / 30).toFixed(1)}s</span>
             </div>
           </div>
           
