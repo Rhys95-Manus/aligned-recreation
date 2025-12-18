@@ -727,11 +727,12 @@ export default function Analysis() {
             
             // START CONDITION:
             // 1. Must transition from neutral to execution
-            // 2. Must be at least 30 frames (1.0s) since last rep ENDED
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 30) {
-              // Add PRE-ROLL BUFFER: Start the rep 45 frames (1.5s) BEFORE the movement actually begins
-              // This captures the "Setup" / "Ready" phase
-              const preRollFrames = 45;
+            // // Must be at least 45 frames (1.5s) since last rep ENDED (MANDATORY COOL-DOWN)
+            // This prevents the "follow-through wobble" from being counted as a new rep
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 45) {
+              // Add EXTENDED PRE-ROLL BUFFER: Start the rep 60 frames (2.0s) BEFORE the movement actually begins
+              // This captures the "Setup" / "Ready" phase even if detection is slightly late
+              const preRollFrames = 60;
               const actualStartFrame = Math.max(lastRepEndFrame + 1, currentFrameCount - preRollFrames);
               
               captureRepStartFrame.current = actualStartFrame;
@@ -740,11 +741,12 @@ export default function Analysis() {
             
             // END CONDITION:
             // 1. Must transition back to neutral (posture matches baseline)
-            // 2. Must have lasted at least 30 frames (1.0s) to be a valid rep
+            // 2. Must have lasted at least 45 frames (1.5s) to be a valid rep (MINIMUM DURATION)
+            //    This ignores short twitches or false starts
             // 3. Must currently be tracking a valid rep
             if ((previousState === 'follow_through' || previousState === 'execution') && 
                 newState === 'neutral' && 
-                currentFrameCount - captureRepStartFrame.current > 30 && 
+                currentFrameCount - captureRepStartFrame.current > 45 && 
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
               // NO BACKDATING:
