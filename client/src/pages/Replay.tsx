@@ -73,6 +73,10 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     };
   }>>([]); // Scores for each completed rep
   const [showRepSummary, setShowRepSummary] = useState(false); // Show summary at end of all reps
+  
+  // Manual Timeline Editor State
+  const [manualBoundaries, setManualBoundaries] = useState<Record<number, { start: number, end: number }>>({});
+  
   const currentRepPeaks = useRef({
     hipRotation: 0,
     shoulderRotation: 0,
@@ -87,26 +91,31 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   // Get rep boundaries from detailed analysis (if multiple reps detected)
   const repBoundaries = detailedAnalysis?.repBoundaries || [];
   
-	  // Calculate current rep's frame range
-	  const getCurrentRepFrames = () => {
-	    // If we have explicit boundaries, ALWAYS use them, even for single rep
-	    // This ensures we only play the detected motion, not the setup/cooldown
-	    if (repBoundaries.length > 0) {
-	      const boundary = repBoundaries.find((b: any) => b.repNumber === currentRep);
-	      if (boundary) {
-	        // Ensure indices are within bounds
-	        const start = Math.max(0, boundary.startFrame);
-	        const end = Math.min(recordedFrames.length - 1, boundary.endFrame);
-	        
-	        if (start <= end) {
-	          return recordedFrames.slice(start, end + 1);
-	        }
-	      }
-	    }
-	    
-	    // Fallback: if no boundaries found (legacy recordings), use all frames
-	    return recordedFrames;
-	  };
+// Calculate current rep's frame range
+  const getCurrentRepFrames = () => {
+    // 1. Check for manual overrides first
+    if (manualBoundaries[currentRep]) {
+      const { start, end } = manualBoundaries[currentRep];
+      return recordedFrames.slice(start, end + 1);
+    }
+  
+    // 2. If we have explicit boundaries, use them
+    if (repBoundaries.length > 0) {
+      const boundary = repBoundaries.find((b: any) => b.repNumber === currentRep);
+      if (boundary) {
+        // Ensure indices are within bounds
+        const start = Math.max(0, boundary.startFrame);
+        const end = Math.min(recordedFrames.length - 1, boundary.endFrame);
+        
+        if (start <= end) {
+          return recordedFrames.slice(start, end + 1);
+        }
+      }
+    }
+    
+    // 3. Fallback: use all frames
+    return recordedFrames;
+  };
 	  
 	  const currentRepFrames = getCurrentRepFrames();
   
@@ -682,19 +691,108 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
             <input
               type="range"
               min="0"
-              max={recordedFrames.length - 1}
+              max={currentRepFrames.length - 1}
               value={currentFrameIndex}
               onChange={handleScrub}
               className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
               style={{
-                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${progress}%, #374151 ${progress}%, #374151 100%)`
+                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(currentFrameIndex / (currentRepFrames.length - 1)) * 100}%, #374151 ${(currentFrameIndex / (currentRepFrames.length - 1)) * 100}%, #374151 100%)`
               }}
             />
-            <span className="text-sm">{(recordedFrames.length / 30).toFixed(1)}s</span>
+            <span className="text-sm">{(currentRepFrames.length / 30).toFixed(1)}s</span>
+          </div>
+
+          {/* Manual Timeline Editor */}
+          <div className="bg-gray-800/50 rounded-lg p-4 mb-4 border border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-blue-400 flex items-center gap-2">
+                <span>✂️</span> Manual Timeline Editor
+              </h3>
+              <span className="text-xs text-gray-400">Adjust start/end points if detection is off</span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-xs text-gray-400">Start</span>
+                <span className="text-xs font-mono text-green-400">{((manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)) / 30).toFixed(2)}s</span>
+              </div>
+              
+              <div className="relative flex-1 h-8">
+                {/* Track */}
+                <div className="absolute top-1/2 left-0 right-0 h-2 bg-gray-700 rounded-full -translate-y-1/2"></div>
+                
+                {/* Selected Range */}
+                <div 
+                  className="absolute top-1/2 h-2 bg-blue-500/50 rounded-full -translate-y-1/2"
+                  style={{
+                    left: `${((manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)) / (recordedFrames.length - 1)) * 100}%`,
+                    right: `${100 - ((manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)) / (recordedFrames.length - 1)) * 100}%`
+                  }}
+                ></div>
+                
+                {/* Start Handle */}
+                <input
+                  type="range"
+                  min="0"
+                  max={recordedFrames.length - 1}
+                  value={manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)}
+                  onChange={(e) => {
+                    const newStart = parseInt(e.target.value);
+                    const currentEnd = manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1);
+                    
+                    if (newStart < currentEnd) {
+                      setManualBoundaries(prev => ({
+                        ...prev,
+                        [currentRep]: { start: newStart, end: currentEnd }
+                      }));
+                      setCurrentFrameIndex(0); // Reset playback to start
+                    }
+                  }}
+                  className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                />
+                <div 
+                  className="absolute top-1/2 w-4 h-4 bg-green-500 rounded-full -translate-y-1/2 shadow-lg border-2 border-white cursor-ew-resize z-10 pointer-events-none"
+                  style={{ 
+                    left: `${((manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0)) / (recordedFrames.length - 1)) * 100}%` 
+                  }}
+                ></div>
+                
+                {/* End Handle */}
+                <input
+                  type="range"
+                  min="0"
+                  max={recordedFrames.length - 1}
+                  value={manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)}
+                  onChange={(e) => {
+                    const newEnd = parseInt(e.target.value);
+                    const currentStart = manualBoundaries[currentRep]?.start ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.startFrame ?? 0);
+                    
+                    if (newEnd > currentStart) {
+                      setManualBoundaries(prev => ({
+                        ...prev,
+                        [currentRep]: { start: currentStart, end: newEnd }
+                      }));
+                    }
+                  }}
+                  className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                />
+                <div 
+                  className="absolute top-1/2 w-4 h-4 bg-red-500 rounded-full -translate-y-1/2 shadow-lg border-2 border-white cursor-ew-resize z-10 pointer-events-none"
+                  style={{ 
+                    left: `${((manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)) / (recordedFrames.length - 1)) * 100}%` 
+                  }}
+                ></div>
+              </div>
+              
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-xs text-gray-400">End</span>
+                <span className="text-xs font-mono text-red-400">{((manualBoundaries[currentRep]?.end ?? (repBoundaries.find((b: any) => b.repNumber === currentRep)?.endFrame ?? recordedFrames.length - 1)) / 30).toFixed(2)}s</span>
+              </div>
+            </div>
           </div>
           
           {/* Playback Speed Control */}
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 mb-6">
             <span className="text-sm text-gray-400">Speed:</span>
             <div className="flex gap-2">
               <Button 
