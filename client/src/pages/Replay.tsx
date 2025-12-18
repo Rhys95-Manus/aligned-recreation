@@ -754,7 +754,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                       // Don't reset playback constantly while dragging, it's annoying
                     }
                   }}
-                  className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                  className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20 pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto"
                 />
                 <div 
                   className="absolute top-1/2 w-4 h-6 bg-green-500 rounded -translate-y-1/2 shadow-lg border border-white cursor-ew-resize z-10 pointer-events-none flex items-center justify-center"
@@ -784,7 +784,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                       }));
                     }
                   }}
-                  className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                  className="absolute top-0 w-full h-full opacity-0 cursor-ew-resize z-20 pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto"
                 />
                 <div 
                   className="absolute top-1/2 w-4 h-6 bg-red-500 rounded -translate-y-1/2 shadow-lg border border-white cursor-ew-resize z-10 pointer-events-none flex items-center justify-center"

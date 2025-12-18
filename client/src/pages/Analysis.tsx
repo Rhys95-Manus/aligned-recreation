@@ -799,7 +799,11 @@ export default function Analysis() {
                 setSessionState('complete'); // Force UI update
                 
                 // Call stopAndScore immediately without timeout to ensure navigation happens
-                stopAndScore();
+                // Use setTimeout(0) to break out of the current execution stack and ensure state updates are processed
+                setTimeout(() => {
+                  console.log('🚀 Triggering navigation to Replay...');
+                  stopAndScore();
+                }, 0);
               } else {
                 // More reps to go
                 setCurrentCaptureRep(prev => prev + 1);
@@ -1296,6 +1300,9 @@ export default function Analysis() {
     const newTotal = totalPoints + points;
     setTotalPoints(newTotal);
     localStorage.setItem('totalPoints', newTotal.toString());
+    
+    // REMOVED SPEECH: Replay page will handle the announcement
+    // speak("Here is your detailed analysis"); 
   };
   
   const resetSession = () => {
