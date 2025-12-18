@@ -727,9 +727,9 @@ export default function Analysis() {
             
             // START CONDITION:
             // 1. Must transition from neutral to execution
-            // // Must be at least 45 frames (1.5s) since last rep ENDED (MANDATORY COOL-DOWN)
+            // // Must be at least 24 frames (0.8s) since last rep ENDED (MANDATORY COOL-DOWN)
             // This prevents the "follow-through wobble" from being counted as a new rep
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 45) {
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 24) {
               // Add EXTENDED PRE-ROLL BUFFER: Start the rep 60 frames (2.0s) BEFORE the movement actually begins
               // This captures the "Setup" / "Ready" phase even if detection is slightly late
               const preRollFrames = 60;
@@ -741,12 +741,12 @@ export default function Analysis() {
             
             // END CONDITION:
             // 1. Must transition back to neutral (posture matches baseline)
-            // 2. Must have lasted at least 45 frames (1.5s) to be a valid rep (MINIMUM DURATION)
+            // 2. Must have lasted at least 24 frames (0.8s) to be a valid rep (MINIMUM DURATION)
             //    This ignores short twitches or false starts
             // 3. Must currently be tracking a valid rep
             if ((previousState === 'follow_through' || previousState === 'execution') && 
                 newState === 'neutral' && 
-                currentFrameCount - captureRepStartFrame.current > 45 && 
+                currentFrameCount - captureRepStartFrame.current > 24 && 
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
               // NO BACKDATING:
@@ -777,10 +777,10 @@ export default function Analysis() {
                 // We set the state to 'complete' directly here to bypass any React delays
                 // This prevents any further frames from being processed or the user needing to walk to camera
                 isCapturingRef.current = false; // Kill the capture loop instantly
+                setSessionState('complete'); // Force UI update
                 
-                setTimeout(() => {
-                  stopAndScore();
-                }, 100); // Almost instant transition
+                // Call stopAndScore immediately without timeout to ensure navigation happens
+                stopAndScore();
               } else {
                 // More reps to go
                 setCurrentCaptureRep(prev => prev + 1);
