@@ -1471,7 +1471,7 @@ export default function Analysis() {
                 <div className="bg-[#1a1f2e] rounded-lg p-3 mt-2">
                   <div className="flex items-center justify-center gap-4 mb-2">
                     <h3 className="font-semibold text-sm">Rep Counter</h3>
-                    <p className="text-xs text-blue-400 font-medium">Return to neutral to finish</p>
+                    <p className="text-sm text-blue-400 font-bold uppercase tracking-wide bg-blue-900/30 px-2 py-1 rounded">Return to neutral to finish</p>
                   </div>
                   <div className="flex flex-wrap justify-center gap-2">
                     {[1, 3, 5, 10].map((rep) => (
