@@ -59,101 +59,127 @@ export interface MotionPhase {
 export function generateProfessionalMotion(totalFrames: number, motionType: string = "football-throw"): ProfessionalFrame[] {
   const frames: ProfessionalFrame[] = [];
   
-  // Define motion phases for football throw with CORRECT metrics
+  // Define motion phases for football throw with CLARIFIED metrics
+  // 90° = Closed (Sideways to target)
+  // 0° = Square (Facing target)
+  // Timing: 1.2-1.8s for motion, 1.7-2.4s for return to neutral
+  
+  const motionEndFrame = Math.floor(totalFrames * 0.75);
+  
   const phases: MotionPhase[] = [
     {
       name: "Neutral Stance",
-      instruction: "Ball near chest, stand sideways, weight balanced",
+      instruction: "Start tall and balanced with the ball near your chest, standing sideways to the target with a relaxed posture that prepares your body to rotate smoothly.",
       startFrame: 0,
-      endFrame: Math.floor(totalFrames * 0.2),
+      endFrame: Math.floor(motionEndFrame * 0.2), // ~0.3s
       metrics: {
-        hipRotation: 90,         // 90° Back
-        shoulderRotation: 90,    // 90° Back
-        rightElbowAngle: 70,     // Bent (low number)
-        leftElbowAngle: 80,
-        rightKneeFlexion: 145,   // Slightly bent (high number = straighter)
-        leftKneeFlexion: 145,
-        spineAngle: -3,          // Slight back lean
-        rightShoulderAngle: 60,
-        leftShoulderAngle: 60,
-        footPositioning: 170,
-        weightTransfer: 0        // Balanced (50/50)
+        hipRotation: 80,         // 70-90° Back (Sideways)
+        shoulderRotation: 90,    // 80-100° Back (Throwing shoulder back)
+        rightElbowAngle: 75,     // 60-90° (Relaxed, hands at chest)
+        leftElbowAngle: 75,      // 60-90° (Balanced, hands at chest)
+        rightKneeFlexion: 160,   // 150-170° (Athletic bend)
+        leftKneeFlexion: 160,    // 150-170° (Ready to step)
+        spineAngle: 5,           // 0-10° (Tall)
+        rightShoulderAngle: 45,  // Relaxed
+        leftShoulderAngle: 45,   // Relaxed
+        footPositioning: 180,    // Sideways
+        weightTransfer: 0        // -5% to +5% (Balanced)
       }
     },
     {
       name: "Early Cocking",
-      instruction: "Weight shifts slightly to back foot, throwing arm in backstroke position, pivot front foot",
-      startFrame: Math.floor(totalFrames * 0.2),
-      endFrame: Math.floor(totalFrames * 0.4),
+      instruction: "Shift slightly into your back leg as your throwing arm moves into its backstroke position, pivoting your front foot toward the target while keeping your shoulders closed.",
+      startFrame: Math.floor(motionEndFrame * 0.2),
+      endFrame: Math.floor(motionEndFrame * 0.4), // ~0.25s
       metrics: {
-        hipRotation: 70,         // 70° Back
-        shoulderRotation: 90,    // 90° Back (shoulders stay closed)
-        rightElbowAngle: 78,
-        leftElbowAngle: 75,
-        rightKneeFlexion: 135,
-        leftKneeFlexion: 140,
-        spineAngle: -9,          // More back lean (-8° to -10° range)
-        rightShoulderAngle: 70,
-        leftShoulderAngle: 65,
-        footPositioning: 165,
-        weightTransfer: -60      // Back foot 60% (negative = back)
+        hipRotation: 62,         // 55-70° Back (Hips begin to turn)
+        shoulderRotation: 85,    // 75-95° Back (Shoulders stay back)
+        rightElbowAngle: 90,     // 80-100° (Compact arm)
+        leftElbowAngle: 85,      // 70-100° (Counterbalance)
+        rightKneeFlexion: 150,   // 140-160° (Absorb load)
+        leftKneeFlexion: 160,    // 150-170° (Free to pivot)
+        spineAngle: 5,           // 0-10° (Stay tall)
+        rightShoulderAngle: 90,  // Shoulder level
+        leftShoulderAngle: 60,
+        footPositioning: 160,
+        weightTransfer: -15      // -10% to -20% (Load back leg)
       }
     },
     {
       name: "Late Cocking",
-      instruction: "Begin shifting weight forward, hips rotate forward, shoulders stay closed, arm makes L shape behind head",
-      startFrame: Math.floor(totalFrames * 0.4),
-      endFrame: Math.floor(totalFrames * 0.6),
+      instruction: "Begin shifting your weight forward as your hips rotate open while your shoulders stay closed, creating torque as your throwing arm forms a clean L-shape behind your head.",
+      startFrame: Math.floor(motionEndFrame * 0.4),
+      endFrame: Math.floor(motionEndFrame * 0.6), // ~0.25s
       metrics: {
-        hipRotation: 50,         // 50° Back (hips opening)
-        shoulderRotation: 90,    // 90° Back (shoulders still closed - max separation)
-        rightElbowAngle: 95,     // L-shape behind head
-        leftElbowAngle: 70,
-        rightKneeFlexion: 125,   // More bent
-        leftKneeFlexion: 135,
-        spineAngle: -6,          // Less back lean as weight shifts forward (-8° to -4° range)
-        rightShoulderAngle: 85,
+        hipRotation: 37,         // 30-45° Back (Hips lead power)
+        shoulderRotation: 70,    // 60-80° Back (Shoulders delayed)
+        rightElbowAngle: 92,     // 85-100° (Strong L-shape)
+        leftElbowAngle: 120,     // 100-140° (Pull torso through)
+        rightKneeFlexion: 157,   // 150-165° (Drive from back leg)
+        leftKneeFlexion: 150,    // 140-160° (Prepare to brace)
+        spineAngle: 0,           // -5° to +5° (Tall with control)
+        rightShoulderAngle: 90,  // At shoulder level
         leftShoulderAngle: 70,
-        footPositioning: 160,
-        weightTransfer: 55       // Front foot 55% (positive = front)
+        footPositioning: 150,
+        weightTransfer: 5        // 0% to +10% (Energy moves forward)
       }
     },
     {
       name: "Release",
-      instruction: "Drive hips square leading the shoulders, extend arm through target",
-      startFrame: Math.floor(totalFrames * 0.6),
-      endFrame: Math.floor(totalFrames * 0.8),
+      instruction: "Drive your hips square to lead your shoulders, then whip your elbow forward in a straight line and extend your arm through the target as you release the ball.",
+      startFrame: Math.floor(motionEndFrame * 0.6),
+      endFrame: Math.floor(motionEndFrame * 0.8), // ~0.2s
       metrics: {
-        hipRotation: 2,          // Nearly square (2° Back)
-        shoulderRotation: 2,     // Nearly square
-        rightElbowAngle: 140,    // Extending (was 150°)
-        leftElbowAngle: 30,      // Bent forward (was 65°)
-        rightKneeFlexion: 165,   // Nearly straight
-        leftKneeFlexion: 150,
-        spineAngle: 3,           // Forward lean
-        rightShoulderAngle: 120,
+        hipRotation: 0,          // 10° Back -> 0° -> 10° Forward (Square)
+        shoulderRotation: 0,     // 20° Back -> 0° -> 20° Forward (Whip through)
+        rightElbowAngle: 135,    // 90° -> 170-180° (Elbow leads hand)
+        leftElbowAngle: 80,      // 140° -> 70-90° (Pull torso through)
+        rightKneeFlexion: 175,   // 170-180° (Finish drive)
+        leftKneeFlexion: 175,    // 170-180° (Brace and transfer)
+        spineAngle: 5,           // 0-10° (No collapse)
+        rightShoulderAngle: 100,
         leftShoulderAngle: 80,
-        footPositioning: 155,
-        weightTransfer: 60       // Front foot 60%
+        footPositioning: 140,
+        weightTransfer: 30       // +20% to +40% (Finish into throw)
       }
     },
     {
       name: "Follow-through",
-      instruction: "Finish with arm extended across body, slight lean forward",
-      startFrame: Math.floor(totalFrames * 0.8),
+      instruction: "Let your arm naturally follow through across your body with your palm down as your shoulders and hips rotate fully, finishing your weight on the front foot with a relaxed forward lean.",
+      startFrame: Math.floor(motionEndFrame * 0.8),
+      endFrame: motionEndFrame, // ~0.35s
+      metrics: {
+        hipRotation: -20,        // 10-30° Forward (Hips through)
+        shoulderRotation: -45,   // 30-60° Forward (Full rotation)
+        rightElbowAngle: 175,    // 170-180° (Full release)
+        leftElbowAngle: 50,      // 30-70° (Absorb rotation)
+        rightKneeFlexion: 160,   // 150-170° (Trail release)
+        leftKneeFlexion: 175,    // 170-180° (Stable finish)
+        spineAngle: 10,          // 5-15° Forward (Natural decel)
+        rightShoulderAngle: 80,  // Arm comes down/across
+        leftShoulderAngle: 80,
+        footPositioning: 130,
+        weightTransfer: 70       // +60% to +80% (Complete transfer)
+      }
+    },
+    // Return to Neutral Phase (simulated)
+    {
+      name: "Return to Neutral",
+      instruction: "Return to starting position to finish.",
+      startFrame: motionEndFrame,
       endFrame: totalFrames,
       metrics: {
-        hipRotation: -10,        // 10° Forward (was -5°)
-        shoulderRotation: -10,   // 10° Forward (was -5°)
-        rightElbowAngle: 163,    // Extended (was 173°)
-        leftElbowAngle: 30,      // Bent forward (was 60°)
-        rightKneeFlexion: 140,   // Bent again
-        leftKneeFlexion: 160,    // Straighter
-        spineAngle: 10,          // Forward lean
-        rightShoulderAngle: 140,
-        leftShoulderAngle: 90,
-        footPositioning: 150,
-        weightTransfer: 70       // Front foot 70%
+        hipRotation: 80,         // Back to 70-90° Back
+        shoulderRotation: 90,    // Back to 80-100° Back
+        rightElbowAngle: 100,
+        leftElbowAngle: 100,
+        rightKneeFlexion: 160,
+        leftKneeFlexion: 160,
+        spineAngle: 5,
+        rightShoulderAngle: 45,
+        leftShoulderAngle: 45,
+        footPositioning: 180,
+        weightTransfer: 0        // Back to -5% to +5%
       }
     }
   ];
@@ -186,6 +212,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
     };
     
     // Get interpolated landmarks from keyframes
+    // Note: Keyframes need to be updated to match these new phases if we want perfect visual sync
+    // For now, we rely on the metrics driving the hologram
     const progress = i / totalFrames;
     const landmarks = interpolateKeyframes(progress);
     
@@ -204,11 +232,12 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
  */
 export function getPhaseForFrame(frameIndex: number, totalFrames: number): { name: string; instruction: string } {
   const phases = [
-    { name: "Neutral Stance", instruction: "Ball near chest, stand sideways, weight balanced", endPercent: 0.2 },
-    { name: "Early Cocking", instruction: "Weight shifts slightly to back foot, throwing arm in backstroke position, pivot front foot", endPercent: 0.4 },
-    { name: "Late Cocking", instruction: "Begin shifting weight forward, hips rotate forward, shoulders stay closed, arm makes L shape behind head", endPercent: 0.6 },
-    { name: "Release", instruction: "Drive hips square leading the shoulders, extend arm through target", endPercent: 0.8 },
-    { name: "Follow-through", instruction: "Finish with arm extended across body, slight lean forward", endPercent: 1.0 }
+    { name: "Neutral Stance", instruction: "Start tall and balanced with the ball near your chest, standing sideways to the target with a relaxed posture that prepares your body to rotate smoothly.", endPercent: 0.15 },
+    { name: "Early Cocking", instruction: "Shift slightly into your back leg as your throwing arm moves into its backstroke position, pivoting your front foot toward the target while keeping your shoulders closed.", endPercent: 0.3 },
+    { name: "Late Cocking", instruction: "Begin shifting your weight forward as your hips rotate open while your shoulders stay closed, creating torque as your throwing arm forms a clean L-shape behind your head.", endPercent: 0.45 },
+    { name: "Release", instruction: "Drive your hips square to lead your shoulders, then whip your elbow forward in a straight line and extend your arm through the target as you release the ball.", endPercent: 0.6 },
+    { name: "Follow-through", instruction: "Let your arm naturally follow through across your body with your palm down as your shoulders and hips rotate fully, finishing your weight on the front foot with a relaxed forward lean.", endPercent: 0.75 },
+    { name: "Return to Neutral", instruction: "Return to starting position to finish.", endPercent: 1.0 }
   ];
   
   const progress = frameIndex / totalFrames;

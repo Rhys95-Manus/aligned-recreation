@@ -724,14 +724,17 @@ export default function Analysis() {
             const hipChange = Math.abs(hipRotationCalc - (captureBaselineMetrics.current?.hipRotation || 0));
             const shoulderChange = Math.abs(shoulderRotationCalc - (captureBaselineMetrics.current?.shoulderRotation || 0));
             const elbowChange = Math.abs(rightElbowCalc - (captureBaselineMetrics.current?.rightElbowAngle || 0));
-            const weightChange = Math.abs(weightTransferCalc - (captureBaselineMetrics.current?.weightTransfer || 0));
+            // Exclude weight change from neutral detection as it's too noisy/variable
+            // const weightChange = Math.abs(weightTransferCalc - (captureBaselineMetrics.current?.weightTransfer || 0));
             
-            const totalChange = hipChange + shoulderChange + elbowChange + weightChange;
+            // Only track core posture metrics for neutral return
+            const totalChange = hipChange + shoulderChange + elbowChange;
             
             // Thresholds for state detection
             // Neutral: Relaxed thresholds to ensure reps are registered even if user isn't perfectly still
-            // Increased totalChange from 45 to 60 to allow for more variance in stance
-            if (totalChange < 60 && totalVelocity < 8.0) {
+            // totalChange < 100: Allows for ~33 degrees of variance per joint (hips, shoulders, elbow)
+            // totalVelocity < 3.0: Ensures user has actually stopped moving
+            if ((totalChange < 100 && totalVelocity < 8.0) || (totalVelocity < 3.0)) {
               newState = 'neutral';
             } 
             // Execution: Significant deviation from baseline OR high velocity
