@@ -6,6 +6,7 @@ import { POSE_CONNECTIONS } from "@mediapipe/pose";
 import { generateProfessionalMotion, getPhaseForFrame, ProfessionalFrame } from "../utils/professionalMotionGenerator";
 import { detectThrowingPhase, getPhaseMiddleFrame, type MotionPhase } from "../utils/phaseDetection";
 import { calculateRotation, formatWeightDistribution, formatSpineAngle, formatRotationAngle, formatRotationWithSide } from "../utils/rotationCalculations";
+import Hologram3D from "../components/Hologram3D";
 
 interface ReplayProps {
   recordedFrames: Array<{
@@ -45,6 +46,8 @@ interface ReplayProps {
 export default function Replay({ recordedFrames, professionalReference, motionName, onBack, detailedAnalysis, selectedReps = 1 }: ReplayProps) {
   const userCanvasRef = useRef<HTMLCanvasElement>(null);
   const proCanvasRef = useRef<HTMLCanvasElement>(null);
+  const hologramContainerRef = useRef<HTMLDivElement>(null);
+  const [use3DHologram, setUse3DHologram] = useState(true); // Toggle between 2D and 3D rendering
   
   const [isPlaying, setIsPlaying] = useState(true); // Auto-play on load
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
@@ -129,6 +132,9 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   useEffect(() => {
     setProfessionalFrames(generateProfessionalMotion(currentRepFrames.length, "football-throw"));
   }, [currentRep, currentRepFrames.length]);
+
+  // Calculate current professional frame for rendering
+  const proFrame = professionalFrames[Math.min(currentFrameIndex, professionalFrames.length - 1)];
   
   const animationFrameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
@@ -661,11 +667,11 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
               </div>
             </div>
             <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
-              <canvas
-                ref={proCanvasRef}
-                width={640}
-                height={480}
-                className="w-full h-full"
+              <Hologram3D
+                landmarks={proFrame?.landmarks || []}
+                rotationAngle={rotationAngle}
+                isRightHanded={isRightHanded}
+                metrics={proFrame?.metrics}
               />
             </div>
           </div>

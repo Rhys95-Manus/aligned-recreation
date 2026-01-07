@@ -1,0 +1,172 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "Three.js GLTFExporter"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [0]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Body",
+      "mesh": 0,
+      "skin": 0,
+      "children": [1]
+    },
+    {
+      "name": "Armature",
+      "children": [2]
+    },
+    {
+      "name": "Root",
+      "children": [3, 8, 14]
+    },
+    {
+      "name": "Spine",
+      "children": [4, 9, 15]
+    },
+    {
+      "name": "Chest",
+      "children": [5, 7]
+    },
+    {
+      "name": "LeftShoulder",
+      "children": [6]
+    },
+    {
+      "name": "LeftArm",
+      "children": [6]
+    },
+    {
+      "name": "RightShoulder",
+      "children": [7]
+    },
+    {
+      "name": "RightArm",
+      "children": [7]
+    },
+    {
+      "name": "LeftHip",
+      "children": [10]
+    },
+    {
+      "name": "LeftLeg",
+      "children": [11]
+    },
+    {
+      "name": "LeftFoot"
+    },
+    {
+      "name": "RightHip",
+      "children": [13]
+    },
+    {
+      "name": "RightLeg",
+      "children": [14]
+    },
+    {
+      "name": "RightFoot"
+    }
+  ],
+  "meshes": [
+    {
+      "name": "BodyMesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "JOINTS_0": 2,
+            "WEIGHTS_0": 3
+          },
+          "indices": 4,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "HologramMaterial",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [0, 1, 1, 0.8],
+        "metallicFactor": 0.5,
+        "roughnessFactor": 0.4
+      },
+      "emissiveFactor": [0, 0.5, 0.5]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5125,
+      "count": 24,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5125,
+      "count": 36,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteStride": 12
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 288,
+      "byteStride": 12
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 576,
+      "byteStride": 16
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 960,
+      "byteStride": 16
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1344
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 1488
+    }
+  ],
+  "skins": [
+    {
+      "inverseBindMatrices": 5,
+      "joints": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+      "skeleton": 2
+    }
+  ]
+}
