@@ -12,7 +12,7 @@ import Analysis from "./pages/Analysis";
 import Pricing from "./pages/Pricing";
 import SessionHistory from "./pages/SessionHistory";
 import Community from "./pages/Community";
-import TestReplay from "./pages/TestReplay";
+
 
 function Router() {
   return (
@@ -25,7 +25,7 @@ function Router() {
       <Route path={"/pricing"} component={Pricing} />
       <Route path={"/history"} component={SessionHistory} />
       <Route path={"/community"} component={Community} />
-      <Route path={"/test-replay"} component={TestReplay} />
+  
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
