@@ -6,17 +6,17 @@ interface Hologram3DProps {
   rotationAngle?: number;
   isRightHanded?: boolean;
   metrics?: {
-    hipRotation: number;
-    shoulderRotation: number;
-    rightElbowAngle: number;
-    leftElbowAngle: number;
-    rightKneeFlexion: number;
-    leftKneeFlexion: number;
-    spineAngle: number;
-    rightShoulderAngle: number;
-    leftShoulderAngle: number;
-    footPositioning: number;
-    weightTransfer: number;
+    hipRotation?: number;
+    shoulderRotation?: number;
+    rightElbowAngle?: number;
+    leftElbowAngle?: number;
+    rightKneeFlexion?: number;
+    leftKneeFlexion?: number;
+    spineAngle?: number;
+    rightShoulderAngle?: number;
+    leftShoulderAngle?: number;
+    footPositioning?: number;
+    weightTransfer?: number;
   };
   onRotationChange?: (angle: number) => void;
 }
@@ -36,7 +36,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   const bonesRef = useRef<Map<string, THREE.Object3D>>(new Map());
   const animationFrameRef = useRef<number>(0);
 
-  // Initialize Scene only once
+  // Initialize Scene
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -45,12 +45,12 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
     // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0e27); // Deep dark blue background
+    scene.background = new THREE.Color(0x0a0e27);
     sceneRef.current = scene;
 
     // Camera
     const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-    camera.position.set(0, 0.0, 2.2); // Centered vertically
+    camera.position.set(0, 0, 2.5);
     cameraRef.current = camera;
 
     // Renderer
@@ -60,19 +60,12 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // --- Build High-Fidelity Wireframe Model with Edge-Glow ---
-    const modelGroup = new THREE.Group();
-    modelGroupRef.current = modelGroup;
-    scene.add(modelGroup);
-
-    // === ENHANCED EDGE-GLOW SHADER MATERIAL ===
+    // Edge-glow shader material
     const edgeGlowMaterial = new THREE.ShaderMaterial({
       vertexShader: `
         varying vec3 vNormal;
-        varying vec3 vPosition;
         void main() {
           vNormal = normalize(normalMatrix * normal);
-          vPosition = position;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
@@ -80,15 +73,9 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         uniform vec3 glowColor;
         varying vec3 vNormal;
         void main() {
-          // Calculate edge intensity based on view angle
           float edge = 1.0 - dot(normalize(vec3(0.0, 0.0, 1.0)), vNormal);
-          
-          // Enhance edge brightness with power function
           edge = pow(edge, 1.2);
-          
-          // Add extra glow with brighter intensity
           float glow = edge * 2.0;
-          
           gl_FragColor = vec4(glowColor * glow, edge * 0.9);
         }
       `,
@@ -100,7 +87,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       side: THREE.DoubleSide
     });
 
-    // Helper to create a joint (sphere)
+    // Helper functions
     const createJoint = (radius: number, name: string) => {
       const geometry = new THREE.SphereGeometry(radius, 8, 8);
       const mesh = new THREE.Mesh(geometry, edgeGlowMaterial);
@@ -108,123 +95,143 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       return mesh;
     };
 
-    // Helper to create a limb (cylinder)
     const createLimb = (radius: number, height: number, name: string) => {
       const geometry = new THREE.CylinderGeometry(radius, radius, height, 8, 1);
+      const mesh = new THREE.Mesh(geometry, edgeGlowMaterial);
+      mesh.position.y = height / 2;
+      mesh.name = name;
+      return mesh;
+    };
+
+    const createFoot = (name: string) => {
+      const geometry = new THREE.BoxGeometry(0.08, 0.05, 0.15);
       const mesh = new THREE.Mesh(geometry, edgeGlowMaterial);
       mesh.name = name;
       return mesh;
     };
 
-    // Helper to create a foot
-    const createFoot = (name: string) => {
-      const group = new THREE.Group();
-      
-      // Foot sole
-      const footGeometry = new THREE.BoxGeometry(0.08, 0.04, 0.15);
-      const footMesh = new THREE.Mesh(footGeometry, edgeGlowMaterial);
-      footMesh.position.z = 0.05;
-      group.add(footMesh);
-      
-      // Toes
-      const toeGeometry = new THREE.BoxGeometry(0.06, 0.03, 0.08);
-      const toeMesh = new THREE.Mesh(toeGeometry, edgeGlowMaterial);
-      toeMesh.position.set(0, -0.02, 0.12);
-      group.add(toeMesh);
-      
-      group.name = name;
-      return group;
-    };
+    // Create model group (for 3D rotation)
+    const modelGroup = new THREE.Group();
+    // Rotate 180 degrees on X-axis to fix orientation (head up, feet down)
+    modelGroup.rotation.x = Math.PI;
+    scene.add(modelGroup);
+    modelGroupRef.current = modelGroup;
 
-    // Build skeleton hierarchy
+    // TORSO - Larger proportions
     const hips = createJoint(0.12, 'hips');
-    hips.position.y = 0;
+    hips.position.set(0, -0.15, 0);
     modelGroup.add(hips);
     bonesRef.current.set('hips', hips);
 
-    // Spine
-    const spine = createLimb(0.08, 0.25, 'spine');
-    spine.position.y = 0.125;
+    // Spine - connects hips to chest
+    const spine = createLimb(0.11, 0.35, 'spine');
+    spine.position.y = 0.175;
     hips.add(spine);
     bonesRef.current.set('spine', spine);
 
-    const chest = createJoint(0.1, 'chest');
-    chest.position.y = 0.125;
+    // Chest - larger upper body
+    const chest = createJoint(0.13, 'chest');
+    chest.position.y = 0.35;
     spine.add(chest);
     bonesRef.current.set('chest', chest);
 
+    // Neck
+    const neck = createLimb(0.08, 0.15, 'neck');
+    neck.position.y = 0.075;
+    chest.add(neck);
+    bonesRef.current.set('neck', neck);
+
     // Head
     const head = createJoint(0.12, 'head');
-    head.position.y = 0.2;
-    chest.add(head);
+    head.position.y = 0.15;
+    neck.add(head);
     bonesRef.current.set('head', head);
 
-    // Shoulders
-    const leftShoulder = createJoint(0.08, 'leftShoulder');
-    leftShoulder.position.set(-0.25, 0.05, 0);
-    chest.add(leftShoulder);
-    bonesRef.current.set('leftShoulder', leftShoulder);
-
-    const rightShoulder = createJoint(0.08, 'rightShoulder');
-    rightShoulder.position.set(0.25, 0.05, 0);
+    // RIGHT ARM - Proper throwing mechanics
+    const rightShoulder = createJoint(0.105, 'rightShoulder');
+    rightShoulder.position.set(0.18, 0.25, 0);
     chest.add(rightShoulder);
     bonesRef.current.set('rightShoulder', rightShoulder);
 
-    // Arms
-    const leftUpperArm = createLimb(0.06, 0.35, 'leftUpperArm');
-    leftUpperArm.position.y = -0.175;
-    leftShoulder.add(leftUpperArm);
-    bonesRef.current.set('leftUpperArm', leftUpperArm);
-
-    const leftElbow = createJoint(0.07, 'leftElbow');
-    leftElbow.position.y = -0.175;
-    leftUpperArm.add(leftElbow);
-    bonesRef.current.set('leftElbow', leftElbow);
-
-    const leftForearm = createLimb(0.05, 0.3, 'leftForearm');
-    leftForearm.position.y = -0.15;
-    leftElbow.add(leftForearm);
-    bonesRef.current.set('leftForearm', leftForearm);
-
-    const rightUpperArm = createLimb(0.06, 0.35, 'rightUpperArm');
-    rightUpperArm.position.y = -0.175;
+    const rightUpperArm = createLimb(0.08, 0.35, 'rightUpperArm');
+    rightUpperArm.position.y = 0.175;
     rightShoulder.add(rightUpperArm);
     bonesRef.current.set('rightUpperArm', rightUpperArm);
 
-    const rightElbow = createJoint(0.07, 'rightElbow');
-    rightElbow.position.y = -0.175;
+    const rightElbow = createJoint(0.075, 'rightElbow');
+    rightElbow.position.y = 0.35;
     rightUpperArm.add(rightElbow);
     bonesRef.current.set('rightElbow', rightElbow);
 
-    const rightForearm = createLimb(0.05, 0.3, 'rightForearm');
-    rightForearm.position.y = -0.15;
+    const rightForearm = createLimb(0.065, 0.32, 'rightForearm');
+    rightForearm.position.y = 0.16;
     rightElbow.add(rightForearm);
     bonesRef.current.set('rightForearm', rightForearm);
 
-    // Legs with feet
-    const leftHipJoint = createJoint(0.09, 'leftHipJoint');
-    leftHipJoint.position.set(-0.15, -0.1, 0);
+    const rightWrist = createJoint(0.06, 'rightWrist');
+    rightWrist.position.y = 0.32;
+    rightForearm.add(rightWrist);
+    bonesRef.current.set('rightWrist', rightWrist);
+
+    const rightHand = createLimb(0.05, 0.12, 'rightHand');
+    rightHand.position.y = 0.06;
+    rightWrist.add(rightHand);
+    bonesRef.current.set('rightHand', rightHand);
+
+    // LEFT ARM - Mirror of right
+    const leftShoulder = createJoint(0.105, 'leftShoulder');
+    leftShoulder.position.set(-0.18, 0.25, 0);
+    chest.add(leftShoulder);
+    bonesRef.current.set('leftShoulder', leftShoulder);
+
+    const leftUpperArm = createLimb(0.08, 0.35, 'leftUpperArm');
+    leftUpperArm.position.y = 0.175;
+    leftShoulder.add(leftUpperArm);
+    bonesRef.current.set('leftUpperArm', leftUpperArm);
+
+    const leftElbow = createJoint(0.075, 'leftElbow');
+    leftElbow.position.y = 0.35;
+    leftUpperArm.add(leftElbow);
+    bonesRef.current.set('leftElbow', leftElbow);
+
+    const leftForearm = createLimb(0.065, 0.32, 'leftForearm');
+    leftForearm.position.y = 0.16;
+    leftElbow.add(leftForearm);
+    bonesRef.current.set('leftForearm', leftForearm);
+
+    const leftWrist = createJoint(0.06, 'leftWrist');
+    leftWrist.position.y = 0.32;
+    leftForearm.add(leftWrist);
+    bonesRef.current.set('leftWrist', leftWrist);
+
+    const leftHand = createLimb(0.05, 0.12, 'leftHand');
+    leftHand.position.y = 0.06;
+    leftWrist.add(leftHand);
+    bonesRef.current.set('leftHand', leftHand);
+
+    // LEGS
+    const leftHipJoint = createJoint(0.095, 'leftHipJoint');
+    leftHipJoint.position.set(-0.16, -0.12, 0);
     hips.add(leftHipJoint);
     bonesRef.current.set('leftHipJoint', leftHipJoint);
 
-    const leftThigh = createLimb(0.09, 0.45, 'leftThigh');
-    leftThigh.position.y = -0.225;
+    const leftThigh = createLimb(0.095, 0.48, 'leftThigh');
+    leftThigh.position.y = 0.24;
     leftHipJoint.add(leftThigh);
     bonesRef.current.set('leftThigh', leftThigh);
 
-    const leftKnee = createJoint(0.08, 'leftKnee');
-    leftKnee.position.y = -0.225;
+    const leftKnee = createJoint(0.085, 'leftKnee');
+    leftKnee.position.y = 0.48;
     leftThigh.add(leftKnee);
     bonesRef.current.set('leftKnee', leftKnee);
 
-    const leftShin = createLimb(0.07, 0.4, 'leftShin');
-    leftShin.position.y = -0.2;
+    const leftShin = createLimb(0.075, 0.42, 'leftShin');
+    leftShin.position.y = 0.21;
     leftKnee.add(leftShin);
     bonesRef.current.set('leftShin', leftShin);
 
-    // LEFT FOOT
-    const leftAnkle = createJoint(0.07, 'leftAnkle');
-    leftAnkle.position.y = -0.2;
+    const leftAnkle = createJoint(0.075, 'leftAnkle');
+    leftAnkle.position.y = 0.42;
     leftShin.add(leftAnkle);
     bonesRef.current.set('leftAnkle', leftAnkle);
 
@@ -233,30 +240,29 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     leftAnkle.add(leftFoot);
     bonesRef.current.set('leftFoot', leftFoot);
 
-    // Right leg
-    const rightHipJoint = createJoint(0.09, 'rightHipJoint');
-    rightHipJoint.position.set(0.15, -0.1, 0);
+    // RIGHT LEG
+    const rightHipJoint = createJoint(0.095, 'rightHipJoint');
+    rightHipJoint.position.set(0.16, -0.12, 0);
     hips.add(rightHipJoint);
     bonesRef.current.set('rightHipJoint', rightHipJoint);
 
-    const rightThigh = createLimb(0.09, 0.45, 'rightThigh');
-    rightThigh.position.y = -0.225;
+    const rightThigh = createLimb(0.095, 0.48, 'rightThigh');
+    rightThigh.position.y = 0.24;
     rightHipJoint.add(rightThigh);
     bonesRef.current.set('rightThigh', rightThigh);
 
-    const rightKnee = createJoint(0.08, 'rightKnee');
-    rightKnee.position.y = -0.225;
+    const rightKnee = createJoint(0.085, 'rightKnee');
+    rightKnee.position.y = 0.48;
     rightThigh.add(rightKnee);
     bonesRef.current.set('rightKnee', rightKnee);
 
-    const rightShin = createLimb(0.07, 0.4, 'rightShin');
-    rightShin.position.y = -0.2;
+    const rightShin = createLimb(0.075, 0.42, 'rightShin');
+    rightShin.position.y = 0.21;
     rightKnee.add(rightShin);
     bonesRef.current.set('rightShin', rightShin);
 
-    // RIGHT FOOT
-    const rightAnkle = createJoint(0.07, 'rightAnkle');
-    rightAnkle.position.y = -0.2;
+    const rightAnkle = createJoint(0.075, 'rightAnkle');
+    rightAnkle.position.y = 0.42;
     rightShin.add(rightAnkle);
     bonesRef.current.set('rightAnkle', rightAnkle);
 
@@ -265,30 +271,25 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     rightAnkle.add(rightFoot);
     bonesRef.current.set('rightFoot', rightFoot);
 
-    // === ENHANCED LIGHTING FOR HOLOGRAPHIC EFFECT ===
-    // Ambient light for overall illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    // Primary cyan point light - brighter
-    const cyanLight = new THREE.PointLight(0x00ffff, 4, 20);
+    const cyanLight = new THREE.PointLight(0x00ffff, 5, 25);
     cyanLight.position.set(2, 1, 3);
     scene.add(cyanLight);
 
-    // Secondary magenta light for contrast
-    const magentaLight = new THREE.PointLight(0xff00ff, 2.5, 18);
+    const magentaLight = new THREE.PointLight(0xff00ff, 3, 20);
     magentaLight.position.set(-2, -1, 2);
     scene.add(magentaLight);
 
-    // Back light for rim effect
-    const rimLight = new THREE.PointLight(0x0088ff, 2, 12);
+    const rimLight = new THREE.PointLight(0x0088ff, 2.5, 15);
     rimLight.position.set(0, 0, -3);
     scene.add(rimLight);
 
-    // Animation Loop
+    // Animation loop
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
-
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
@@ -306,53 +307,75 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     };
   }, []);
 
-  // Update bones when metrics change (THIS IS THE KEY FIX)
+  // Update bones based on metrics
   useEffect(() => {
     if (!metrics || !bonesRef.current) return;
 
-    // Apply hip rotation (Y-axis)
-    const hipRotationRad = (metrics.hipRotation - 90) * (Math.PI / 180);
-    if (modelGroupRef.current) {
-      modelGroupRef.current.rotation.y = hipRotationRad;
+    // Hip rotation (Y-axis) - rotate the entire lower body
+    const hipRotationRad = (metrics.hipRotation || 0) * (Math.PI / 180);
+    const hipsNode = bonesRef.current.get('hips');
+    if (hipsNode) {
+      hipsNode.rotation.y = hipRotationRad;
     }
 
-    // Apply shoulder rotation relative to hips
-    const shoulderRotationRad = (metrics.shoulderRotation - 90) * (Math.PI / 180);
+    // Spine angle (X-axis for forward lean)
+    const spineNode = bonesRef.current.get('spine');
+    if (spineNode) {
+      spineNode.rotation.x = (metrics.spineAngle || 0) * (Math.PI / 180);
+    }
+
+    // Chest/shoulder rotation (Y-axis, relative to hips)
+    const shoulderRotationRad = (metrics.shoulderRotation || 0) * (Math.PI / 180);
     const chestNode = bonesRef.current.get('chest');
     if (chestNode) {
       chestNode.rotation.y = shoulderRotationRad - hipRotationRad;
     }
 
-    // Right elbow flexion
+    // RIGHT SHOULDER - raise arm for throwing (X-axis)
+    const rightShoulderNode = bonesRef.current.get('rightShoulder');
+    if (rightShoulderNode) {
+      const shoulderRaise = ((metrics.rightShoulderAngle || 0) - 45) * (Math.PI / 180);
+      rightShoulderNode.rotation.x = shoulderRaise;
+      // Add Y-axis rotation for external rotation in throwing
+      rightShoulderNode.rotation.z = 0.3; // External rotation
+    }
+
+    // LEFT SHOULDER - lower for balance
+    const leftShoulderNode = bonesRef.current.get('leftShoulder');
+    if (leftShoulderNode) {
+      const shoulderRaise = ((metrics.leftShoulderAngle || 0) - 45) * (Math.PI / 180);
+      leftShoulderNode.rotation.x = -shoulderRaise;
+    }
+
+    // RIGHT ELBOW - flexion/extension (X-axis for forward/backward motion)
     const rightElbowNode = bonesRef.current.get('rightElbow');
     if (rightElbowNode) {
-      rightElbowNode.rotation.z = (metrics.rightElbowAngle - 90) * (Math.PI / 180);
+      // 90° = straight, 0° = fully bent
+      const elbowFlexion = ((metrics.rightElbowAngle || 90) - 90) * (Math.PI / 180);
+      rightElbowNode.rotation.x = -elbowFlexion; // Negative for proper bending
     }
 
-    // Left elbow flexion
+    // LEFT ELBOW - flexion/extension
     const leftElbowNode = bonesRef.current.get('leftElbow');
     if (leftElbowNode) {
-      leftElbowNode.rotation.z = -(metrics.leftElbowAngle - 90) * (Math.PI / 180);
+      const elbowFlexion = ((metrics.leftElbowAngle || 90) - 90) * (Math.PI / 180);
+      leftElbowNode.rotation.x = elbowFlexion;
     }
 
-    // Right knee flexion
+    // RIGHT KNEE flexion (X-axis)
     const rightKneeNode = bonesRef.current.get('rightKnee');
     if (rightKneeNode) {
-      rightKneeNode.rotation.x = (metrics.rightKneeFlexion - 180) * (Math.PI / 180);
+      const kneeFlexion = (180 - (metrics.rightKneeFlexion || 160)) * (Math.PI / 180);
+      rightKneeNode.rotation.x = kneeFlexion;
     }
 
-    // Left knee flexion
+    // LEFT KNEE flexion (X-axis)
     const leftKneeNode = bonesRef.current.get('leftKnee');
     if (leftKneeNode) {
-      leftKneeNode.rotation.x = (metrics.leftKneeFlexion - 180) * (Math.PI / 180);
+      const kneeFlexion = (180 - (metrics.leftKneeFlexion || 160)) * (Math.PI / 180);
+      leftKneeNode.rotation.x = kneeFlexion;
     }
-
-    // Spine angle
-    const spineNode = bonesRef.current.get('spine');
-    if (spineNode) {
-      spineNode.rotation.z = metrics.spineAngle * (Math.PI / 180);
-    }
-  }, [metrics]); // Re-run whenever metrics change
+  }, [metrics]);
 
   // Handle window resize
   useEffect(() => {
@@ -371,12 +394,9 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Handle rotation angle changes
+  // Handle 3D rotation (separate from hip rotation)
   useEffect(() => {
     if (modelGroupRef.current) {
-      // Store the current hip rotation
-      const currentHipRotation = modelGroupRef.current.rotation.y;
-      // Apply the view rotation on top of hip rotation
       const rotationRad = (rotationAngle * Math.PI) / 180;
       modelGroupRef.current.rotation.y = rotationRad;
     }
