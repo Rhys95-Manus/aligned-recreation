@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 interface Hologram3DProps {
@@ -33,9 +33,8 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const modelGroupRef = useRef<THREE.Group | null>(null);
-  const timeRef = useRef(0);
-  const animationFrameRef = useRef<number>(0);
   const bonesRef = useRef<Map<string, THREE.Object3D>>(new Map());
+  const animationFrameRef = useRef<number>(0);
 
   // Initialize Scene only once
   useEffect(() => {
@@ -101,96 +100,63 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       side: THREE.DoubleSide
     });
 
-    // Bright wireframe material
-    const wireframeMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ffff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.8
-    });
-
-    // Bright joint material
-    const jointMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ffff,
-      transparent: true,
-      opacity: 1.0
-    });
-
-    // Helper to create body parts with edge glow
-    const createLimb = (radius: number, length: number, name: string) => {
-      const geometry = new THREE.CylinderGeometry(radius, radius * 0.8, length, 16, 8, true);
-      
-      // Main edge-glow mesh
-      const mesh = new THREE.Mesh(geometry, edgeGlowMaterial);
-      
-      // Add wireframe overlay for extra definition
-      const wireframeGeometry = new THREE.CylinderGeometry(radius, radius * 0.8, length, 16, 8, true);
-      const wireframeMesh = new THREE.Mesh(wireframeGeometry, wireframeMaterial);
-      wireframeMesh.scale.multiplyScalar(0.95);
-      mesh.add(wireframeMesh);
-
-      mesh.name = name;
-      return mesh;
-    };
-
+    // Helper to create a joint (sphere)
     const createJoint = (radius: number, name: string) => {
-      const geometry = new THREE.IcosahedronGeometry(radius, 2);
-      
-      // Edge-glow mesh
+      const geometry = new THREE.SphereGeometry(radius, 8, 8);
       const mesh = new THREE.Mesh(geometry, edgeGlowMaterial);
-      
-      // Bright joint overlay
-      const jointGeometry = new THREE.IcosahedronGeometry(radius * 0.9, 2);
-      const jointMesh = new THREE.Mesh(jointGeometry, jointMaterial);
-      mesh.add(jointMesh);
-
       mesh.name = name;
       return mesh;
     };
 
+    // Helper to create a limb (cylinder)
+    const createLimb = (radius: number, height: number, name: string) => {
+      const geometry = new THREE.CylinderGeometry(radius, radius, height, 8, 1);
+      const mesh = new THREE.Mesh(geometry, edgeGlowMaterial);
+      mesh.name = name;
+      return mesh;
+    };
+
+    // Helper to create a foot
     const createFoot = (name: string) => {
-      // Foot as a flat rectangular shape
-      const geometry = new THREE.BoxGeometry(0.12, 0.08, 0.28);
-      const mesh = new THREE.Mesh(geometry, edgeGlowMaterial);
+      const group = new THREE.Group();
       
-      // Add wireframe overlay
-      const wireframeGeometry = new THREE.BoxGeometry(0.12, 0.08, 0.28);
-      const wireframeMesh = new THREE.Mesh(wireframeGeometry, wireframeMaterial);
-      wireframeMesh.scale.multiplyScalar(0.95);
-      mesh.add(wireframeMesh);
+      // Foot sole
+      const footGeometry = new THREE.BoxGeometry(0.08, 0.04, 0.15);
+      const footMesh = new THREE.Mesh(footGeometry, edgeGlowMaterial);
+      footMesh.position.z = 0.05;
+      group.add(footMesh);
       
-      mesh.name = name;
-      return mesh;
+      // Toes
+      const toeGeometry = new THREE.BoxGeometry(0.06, 0.03, 0.08);
+      const toeMesh = new THREE.Mesh(toeGeometry, edgeGlowMaterial);
+      toeMesh.position.set(0, -0.02, 0.12);
+      group.add(toeMesh);
+      
+      group.name = name;
+      return group;
     };
 
-    // --- Construct Skeleton Hierarchy ---
-    // Hips (Root)
-    const hips = createJoint(0.15, 'hips');
+    // Build skeleton hierarchy
+    const hips = createJoint(0.12, 'hips');
+    hips.position.y = 0;
     modelGroup.add(hips);
     bonesRef.current.set('hips', hips);
 
     // Spine
-    const spine = createLimb(0.12, 0.5, 'spine');
-    spine.position.y = 0.25;
+    const spine = createLimb(0.08, 0.25, 'spine');
+    spine.position.y = 0.125;
     hips.add(spine);
     bonesRef.current.set('spine', spine);
 
-    // Chest
-    const chest = createJoint(0.14, 'chest');
-    chest.position.y = 0.25;
+    const chest = createJoint(0.1, 'chest');
+    chest.position.y = 0.125;
     spine.add(chest);
     bonesRef.current.set('chest', chest);
 
-    // Neck
-    const neck = createLimb(0.05, 0.15, 'neck');
-    neck.position.y = 0.1;
-    chest.add(neck);
-    bonesRef.current.set('neck', neck);
-
     // Head
-    const head = createJoint(0.18, 'head');
-    head.position.y = 0.15;
-    neck.add(head);
+    const head = createJoint(0.12, 'head');
+    head.position.y = 0.2;
+    chest.add(head);
     bonesRef.current.set('head', head);
 
     // Shoulders
@@ -322,55 +288,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Animation Loop
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
-      timeRef.current += 0.01;
-
-      if (modelGroupRef.current && metrics) {
-        // Apply hip rotation (Y-axis)
-        const hipRotationRad = (metrics.hipRotation - 90) * (Math.PI / 180);
-        modelGroupRef.current.rotation.y = hipRotationRad;
-
-        // Apply shoulder rotation relative to hips
-        const shoulderRotationRad = (metrics.shoulderRotation - 90) * (Math.PI / 180);
-        const chestNode = bonesRef.current.get('chest');
-        if (chestNode) {
-          chestNode.rotation.y = shoulderRotationRad - hipRotationRad;
-        }
-
-        // Right elbow flexion
-        const rightElbowNode = bonesRef.current.get('rightElbow');
-        if (rightElbowNode) {
-          rightElbowNode.rotation.z = (metrics.rightElbowAngle - 90) * (Math.PI / 180);
-        }
-
-        // Left elbow flexion
-        const leftElbowNode = bonesRef.current.get('leftElbow');
-        if (leftElbowNode) {
-          leftElbowNode.rotation.z = -(metrics.leftElbowAngle - 90) * (Math.PI / 180);
-        }
-
-        // Right knee flexion
-        const rightKneeNode = bonesRef.current.get('rightKnee');
-        if (rightKneeNode) {
-          rightKneeNode.rotation.x = (metrics.rightKneeFlexion - 180) * (Math.PI / 180);
-        }
-
-        // Left knee flexion
-        const leftKneeNode = bonesRef.current.get('leftKnee');
-        if (leftKneeNode) {
-          leftKneeNode.rotation.x = (metrics.leftKneeFlexion - 180) * (Math.PI / 180);
-        }
-
-        // Spine angle
-        const spineNode = bonesRef.current.get('spine');
-        if (spineNode) {
-          spineNode.rotation.z = metrics.spineAngle * (Math.PI / 180);
-        }
-      }
-
-      // Subtle idle animation
-      if (modelGroupRef.current) {
-        modelGroupRef.current.position.y = Math.sin(timeRef.current * 0.5) * 0.01;
-      }
 
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
@@ -388,6 +305,54 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       rendererRef.current?.dispose();
     };
   }, []);
+
+  // Update bones when metrics change (THIS IS THE KEY FIX)
+  useEffect(() => {
+    if (!metrics || !bonesRef.current) return;
+
+    // Apply hip rotation (Y-axis)
+    const hipRotationRad = (metrics.hipRotation - 90) * (Math.PI / 180);
+    if (modelGroupRef.current) {
+      modelGroupRef.current.rotation.y = hipRotationRad;
+    }
+
+    // Apply shoulder rotation relative to hips
+    const shoulderRotationRad = (metrics.shoulderRotation - 90) * (Math.PI / 180);
+    const chestNode = bonesRef.current.get('chest');
+    if (chestNode) {
+      chestNode.rotation.y = shoulderRotationRad - hipRotationRad;
+    }
+
+    // Right elbow flexion
+    const rightElbowNode = bonesRef.current.get('rightElbow');
+    if (rightElbowNode) {
+      rightElbowNode.rotation.z = (metrics.rightElbowAngle - 90) * (Math.PI / 180);
+    }
+
+    // Left elbow flexion
+    const leftElbowNode = bonesRef.current.get('leftElbow');
+    if (leftElbowNode) {
+      leftElbowNode.rotation.z = -(metrics.leftElbowAngle - 90) * (Math.PI / 180);
+    }
+
+    // Right knee flexion
+    const rightKneeNode = bonesRef.current.get('rightKnee');
+    if (rightKneeNode) {
+      rightKneeNode.rotation.x = (metrics.rightKneeFlexion - 180) * (Math.PI / 180);
+    }
+
+    // Left knee flexion
+    const leftKneeNode = bonesRef.current.get('leftKnee');
+    if (leftKneeNode) {
+      leftKneeNode.rotation.x = (metrics.leftKneeFlexion - 180) * (Math.PI / 180);
+    }
+
+    // Spine angle
+    const spineNode = bonesRef.current.get('spine');
+    if (spineNode) {
+      spineNode.rotation.z = metrics.spineAngle * (Math.PI / 180);
+    }
+  }, [metrics]); // Re-run whenever metrics change
 
   // Handle window resize
   useEffect(() => {
@@ -409,6 +374,9 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   // Handle rotation angle changes
   useEffect(() => {
     if (modelGroupRef.current) {
+      // Store the current hip rotation
+      const currentHipRotation = modelGroupRef.current.rotation.y;
+      // Apply the view rotation on top of hip rotation
       const rotationRad = (rotationAngle * Math.PI) / 180;
       modelGroupRef.current.rotation.y = rotationRad;
     }
