@@ -48,8 +48,9 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   const proCanvasRef = useRef<HTMLCanvasElement>(null);
   const hologramContainerRef = useRef<HTMLDivElement>(null);
   const [use3DHologram, setUse3DHologram] = useState(true); // Toggle between 2D and 3D rendering
+  const [isHologramLoaded, setIsHologramLoaded] = useState(false);
   
-  const [isPlaying, setIsPlaying] = useState(true); // Auto-play on load
+  const [isPlaying, setIsPlaying] = useState(false); // Wait for hologram to load
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isRightHanded, setIsRightHanded] = useState(true); // Toggle for left/right handed
   const [currentPhase, setCurrentPhase] = useState<MotionPhase>("Neutral");
@@ -672,7 +673,17 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 rotationAngle={rotationAngle}
                 isRightHanded={isRightHanded}
                 metrics={proFrame?.metrics}
+                onLoadComplete={() => {
+                  setIsHologramLoaded(true);
+                  setIsPlaying(true); // Start playing once loaded
+                }}
               />
+              {!isHologramLoaded && (
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                  <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mb-4"></div>
+                  <div className="text-cyan-400 font-mono text-sm animate-pulse">SYNCING HOLOGRAM...</div>
+                </div>
+              )}
             </div>
           </div>
         </div>
