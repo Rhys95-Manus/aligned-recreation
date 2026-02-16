@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 interface Hologram3DProps {
   landmarks: any[];
@@ -19,6 +20,7 @@ interface Hologram3DProps {
     weightTransfer: number;
   };
   onRotationChange?: (angle: number) => void;
+  onLoadComplete?: () => void;
 }
 
 const Hologram3D: React.FC<Hologram3DProps> = ({
@@ -26,17 +28,20 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   rotationAngle = 0,
   isRightHanded = true,
   metrics,
-  onRotationChange
+  onRotationChange,
+  onLoadComplete
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const modelGroupRef = useRef<THREE.Group | null>(null);
+  const modelRef = useRef<THREE.Group | null>(null);
   const bonesRef = useRef<Map<string, THREE.Object3D>>(new Map());
   const animationFrameRef = useRef<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
 
-  // Initialize Scene only once
+  // Initialize Scene
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -48,252 +53,149 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     scene.background = new THREE.Color(0x0a0e27); // Deep dark blue background
     sceneRef.current = scene;
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-    camera.position.set(0, 0.0, 2.2); // Centered vertically
+    // Camera - Macro Mode (Close up)
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 0.8, 4.5); // Closer and higher
+    camera.lookAt(0, 0.8, 0); // Look at chest/head area
     cameraRef.current = camera;
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // --- Build High-Fidelity Wireframe Model with Edge-Glow ---
-    const modelGroup = new THREE.Group();
-    modelGroupRef.current = modelGroup;
-    scene.add(modelGroup);
-
-    // === ENHANCED EDGE-GLOW SHADER MATERIAL ===
-    const edgeGlowMaterial = new THREE.ShaderMaterial({
-      vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-          vNormal = normalize(normalMatrix * normal);
-          vPosition = position;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 glowColor;
-        varying vec3 vNormal;
-        void main() {
-          // Calculate edge intensity based on view angle
-          float edge = 1.0 - dot(normalize(vec3(0.0, 0.0, 1.0)), vNormal);
-          
-          // Enhance edge brightness with power function
-          edge = pow(edge, 1.2);
-          
-          // Add extra glow with brighter intensity
-          float glow = edge * 2.0;
-          
-          gl_FragColor = vec4(glowColor * glow, edge * 0.9);
-        }
-      `,
-      uniforms: {
-        glowColor: { value: new THREE.Color(0x00ffff) }
-      },
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide
-    });
-
-    // Helper to create a joint (sphere)
-    const createJoint = (radius: number, name: string) => {
-      const geometry = new THREE.SphereGeometry(radius, 8, 8);
-      const mesh = new THREE.Mesh(geometry, edgeGlowMaterial);
-      mesh.name = name;
-      return mesh;
-    };
-
-    // Helper to create a limb (cylinder)
-    const createLimb = (radius: number, height: number, name: string) => {
-      const geometry = new THREE.CylinderGeometry(radius, radius, height, 8, 1);
-      const mesh = new THREE.Mesh(geometry, edgeGlowMaterial);
-      mesh.name = name;
-      return mesh;
-    };
-
-    // Helper to create a foot
-    const createFoot = (name: string) => {
-      const group = new THREE.Group();
-      
-      // Foot sole
-      const footGeometry = new THREE.BoxGeometry(0.08, 0.04, 0.15);
-      const footMesh = new THREE.Mesh(footGeometry, edgeGlowMaterial);
-      footMesh.position.z = 0.05;
-      group.add(footMesh);
-      
-      // Toes
-      const toeGeometry = new THREE.BoxGeometry(0.06, 0.03, 0.08);
-      const toeMesh = new THREE.Mesh(toeGeometry, edgeGlowMaterial);
-      toeMesh.position.set(0, -0.02, 0.12);
-      group.add(toeMesh);
-      
-      group.name = name;
-      return group;
-    };
-
-    // Build skeleton hierarchy
-    const hips = createJoint(0.12, 'hips');
-    hips.position.y = 0;
-    modelGroup.add(hips);
-    bonesRef.current.set('hips', hips);
-
-    // Spine
-    const spine = createLimb(0.08, 0.25, 'spine');
-    spine.position.y = 0.125;
-    hips.add(spine);
-    bonesRef.current.set('spine', spine);
-
-    const chest = createJoint(0.1, 'chest');
-    chest.position.y = 0.125;
-    spine.add(chest);
-    bonesRef.current.set('chest', chest);
-
-    // Head
-    const head = createJoint(0.12, 'head');
-    head.position.y = 0.2;
-    chest.add(head);
-    bonesRef.current.set('head', head);
-
-    // Shoulders
-    const leftShoulder = createJoint(0.08, 'leftShoulder');
-    leftShoulder.position.set(-0.25, 0.05, 0);
-    chest.add(leftShoulder);
-    bonesRef.current.set('leftShoulder', leftShoulder);
-
-    const rightShoulder = createJoint(0.08, 'rightShoulder');
-    rightShoulder.position.set(0.25, 0.05, 0);
-    chest.add(rightShoulder);
-    bonesRef.current.set('rightShoulder', rightShoulder);
-
-    // Arms
-    const leftUpperArm = createLimb(0.06, 0.35, 'leftUpperArm');
-    leftUpperArm.position.y = -0.175;
-    leftShoulder.add(leftUpperArm);
-    bonesRef.current.set('leftUpperArm', leftUpperArm);
-
-    const leftElbow = createJoint(0.07, 'leftElbow');
-    leftElbow.position.y = -0.175;
-    leftUpperArm.add(leftElbow);
-    bonesRef.current.set('leftElbow', leftElbow);
-
-    const leftForearm = createLimb(0.05, 0.3, 'leftForearm');
-    leftForearm.position.y = -0.15;
-    leftElbow.add(leftForearm);
-    bonesRef.current.set('leftForearm', leftForearm);
-
-    const rightUpperArm = createLimb(0.06, 0.35, 'rightUpperArm');
-    rightUpperArm.position.y = -0.175;
-    rightShoulder.add(rightUpperArm);
-    bonesRef.current.set('rightUpperArm', rightUpperArm);
-
-    const rightElbow = createJoint(0.07, 'rightElbow');
-    rightElbow.position.y = -0.175;
-    rightUpperArm.add(rightElbow);
-    bonesRef.current.set('rightElbow', rightElbow);
-
-    const rightForearm = createLimb(0.05, 0.3, 'rightForearm');
-    rightForearm.position.y = -0.15;
-    rightElbow.add(rightForearm);
-    bonesRef.current.set('rightForearm', rightForearm);
-
-    // Legs with feet
-    const leftHipJoint = createJoint(0.09, 'leftHipJoint');
-    leftHipJoint.position.set(-0.15, -0.1, 0);
-    hips.add(leftHipJoint);
-    bonesRef.current.set('leftHipJoint', leftHipJoint);
-
-    const leftThigh = createLimb(0.09, 0.45, 'leftThigh');
-    leftThigh.position.y = -0.225;
-    leftHipJoint.add(leftThigh);
-    bonesRef.current.set('leftThigh', leftThigh);
-
-    const leftKnee = createJoint(0.08, 'leftKnee');
-    leftKnee.position.y = -0.225;
-    leftThigh.add(leftKnee);
-    bonesRef.current.set('leftKnee', leftKnee);
-
-    const leftShin = createLimb(0.07, 0.4, 'leftShin');
-    leftShin.position.y = -0.2;
-    leftKnee.add(leftShin);
-    bonesRef.current.set('leftShin', leftShin);
-
-    // LEFT FOOT
-    const leftAnkle = createJoint(0.07, 'leftAnkle');
-    leftAnkle.position.y = -0.2;
-    leftShin.add(leftAnkle);
-    bonesRef.current.set('leftAnkle', leftAnkle);
-
-    const leftFoot = createFoot('leftFoot');
-    leftFoot.position.set(0, -0.1, 0.1);
-    leftAnkle.add(leftFoot);
-    bonesRef.current.set('leftFoot', leftFoot);
-
-    // Right leg
-    const rightHipJoint = createJoint(0.09, 'rightHipJoint');
-    rightHipJoint.position.set(0.15, -0.1, 0);
-    hips.add(rightHipJoint);
-    bonesRef.current.set('rightHipJoint', rightHipJoint);
-
-    const rightThigh = createLimb(0.09, 0.45, 'rightThigh');
-    rightThigh.position.y = -0.225;
-    rightHipJoint.add(rightThigh);
-    bonesRef.current.set('rightThigh', rightThigh);
-
-    const rightKnee = createJoint(0.08, 'rightKnee');
-    rightKnee.position.y = -0.225;
-    rightThigh.add(rightKnee);
-    bonesRef.current.set('rightKnee', rightKnee);
-
-    const rightShin = createLimb(0.07, 0.4, 'rightShin');
-    rightShin.position.y = -0.2;
-    rightKnee.add(rightShin);
-    bonesRef.current.set('rightShin', rightShin);
-
-    // RIGHT FOOT
-    const rightAnkle = createJoint(0.07, 'rightAnkle');
-    rightAnkle.position.y = -0.2;
-    rightShin.add(rightAnkle);
-    bonesRef.current.set('rightAnkle', rightAnkle);
-
-    const rightFoot = createFoot('rightFoot');
-    rightFoot.position.set(0, -0.1, 0.1);
-    rightAnkle.add(rightFoot);
-    bonesRef.current.set('rightFoot', rightFoot);
-
-    // === ENHANCED LIGHTING FOR HOLOGRAPHIC EFFECT ===
-    // Ambient light for overall illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
-    // Primary cyan point light - brighter
-    const cyanLight = new THREE.PointLight(0x00ffff, 4, 20);
-    cyanLight.position.set(2, 1, 3);
-    scene.add(cyanLight);
+    const mainLight = new THREE.DirectionalLight(0x00ffff, 2);
+    mainLight.position.set(2, 2, 5);
+    scene.add(mainLight);
 
-    // Secondary magenta light for contrast
-    const magentaLight = new THREE.PointLight(0xff00ff, 2.5, 18);
-    magentaLight.position.set(-2, -1, 2);
-    scene.add(magentaLight);
-
-    // Back light for rim effect
-    const rimLight = new THREE.PointLight(0x0088ff, 2, 12);
-    rimLight.position.set(0, 0, -3);
+    const rimLight = new THREE.SpotLight(0xff00ff, 5);
+    rimLight.position.set(-2, 1, -2);
+    rimLight.lookAt(0, 0, 0);
     scene.add(rimLight);
+
+    const fillLight = new THREE.PointLight(0x0088ff, 1);
+    fillLight.position.set(0, -2, 2);
+    scene.add(fillLight);
+
+    // Load Model
+    const loader = new GLTFLoader();
+    loader.load(
+      '/Hologram1.0.glb',
+      (gltf: any) => {
+        const model = gltf.scene;
+        modelRef.current = model;
+
+        // Auto-scale logic
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        
+        // Scale to be huge (Macro Mode)
+        const scale = 3.5 / maxDim; 
+        model.scale.set(scale, scale, scale);
+
+        // Center the model vertically
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.x = -center.x * scale;
+        model.position.y = -box.min.y * scale - 1.6; // Shift up so feet are visible
+        model.position.z = -center.z * scale;
+
+        // Apply Materials
+        // Inner Body (Solid Ghost)
+        const innerMaterial = new THREE.MeshPhysicalMaterial({
+          color: 0x0044ff, // Rich Electric Blue
+          metalness: 0.9,
+          roughness: 0.2,
+          transparent: true,
+          opacity: 0.7,
+          transmission: 0.2,
+          side: THREE.DoubleSide
+        });
+
+        // Outer Wireframe (Neon Cyan)
+        const wireframeMaterial = new THREE.MeshBasicMaterial({
+          color: 0x00ffff,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.4
+        });
+
+        model.traverse((child: any) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            
+            // Clone mesh for wireframe overlay
+            const wireframeMesh = mesh.clone();
+            wireframeMesh.material = wireframeMaterial;
+            model.add(wireframeMesh);
+
+            // Apply inner material to original mesh
+            mesh.material = innerMaterial;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+          }
+
+          // Map Bones
+          if ((child as THREE.Bone).isBone) {
+            // Map standard Mixamo names to our internal map
+            // We store the bone reference for animation
+            const name = child.name.toLowerCase();
+            if (name.includes('hips')) bonesRef.current.set('hips', child);
+            if (name.includes('spine')) bonesRef.current.set('spine', child);
+            if (name.includes('neck') || name.includes('head')) bonesRef.current.set('head', child);
+            
+            if (name.includes('leftshoulder')) bonesRef.current.set('leftShoulder', child);
+            if (name.includes('rightshoulder')) bonesRef.current.set('rightShoulder', child);
+            
+            if (name.includes('leftarm')) bonesRef.current.set('leftArm', child);
+            if (name.includes('rightarm')) bonesRef.current.set('rightArm', child);
+            
+            if (name.includes('leftforearm')) bonesRef.current.set('leftForearm', child);
+            if (name.includes('rightforearm')) bonesRef.current.set('rightForearm', child);
+            
+            if (name.includes('leftupleg')) bonesRef.current.set('leftUpLeg', child);
+            if (name.includes('rightupleg')) bonesRef.current.set('rightUpLeg', child);
+            
+            if (name.includes('leftleg')) bonesRef.current.set('leftLeg', child);
+            if (name.includes('rightleg')) bonesRef.current.set('rightLeg', child);
+          }
+        });
+
+        scene.add(model);
+        setIsLoading(false);
+        if (onLoadComplete) onLoadComplete();
+      },
+      (xhr: any) => {
+        if (xhr.total > 0) {
+          setLoadProgress(Math.round((xhr.loaded / xhr.total) * 100));
+        }
+      },
+      (error: any) => {
+        console.error('An error happened loading the model:', error);
+        setIsLoading(false);
+      }
+    );
 
     // Animation Loop
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
-
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        // Rotate model slowly if no metrics
+        if (modelRef.current && !metrics) {
+           // modelRef.current.rotation.y += 0.002;
+        }
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
     };
-
     animate();
 
     // Cleanup
@@ -306,81 +208,67 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     };
   }, []);
 
-  // Update bones when metrics change (THIS IS THE KEY FIX)
+  // Handle Metrics Animation
   useEffect(() => {
-    if (!metrics || !bonesRef.current) return;
+    if (!metrics || bonesRef.current.size === 0) return;
 
-    // Apply hip rotation (Y-axis)
-    const hipRotationRad = (metrics.hipRotation - 90) * (Math.PI / 180);
-    if (modelGroupRef.current) {
-      modelGroupRef.current.rotation.y = hipRotationRad;
-    }
-
-    // Apply shoulder rotation relative to hips
-    const shoulderRotationRad = (metrics.shoulderRotation - 90) * (Math.PI / 180);
-    const chestNode = bonesRef.current.get('chest');
-    if (chestNode) {
-      chestNode.rotation.y = shoulderRotationRad - hipRotationRad;
-    }
-
-    // Right elbow flexion
-    const rightElbowNode = bonesRef.current.get('rightElbow');
-    if (rightElbowNode) {
-      rightElbowNode.rotation.z = (metrics.rightElbowAngle - 90) * (Math.PI / 180);
-    }
-
-    // Left elbow flexion
-    const leftElbowNode = bonesRef.current.get('leftElbow');
-    if (leftElbowNode) {
-      leftElbowNode.rotation.z = -(metrics.leftElbowAngle - 90) * (Math.PI / 180);
-    }
-
-    // Right knee flexion
-    const rightKneeNode = bonesRef.current.get('rightKnee');
-    if (rightKneeNode) {
-      rightKneeNode.rotation.x = (metrics.rightKneeFlexion - 180) * (Math.PI / 180);
-    }
-
-    // Left knee flexion
-    const leftKneeNode = bonesRef.current.get('leftKnee');
-    if (leftKneeNode) {
-      leftKneeNode.rotation.x = (metrics.leftKneeFlexion - 180) * (Math.PI / 180);
-    }
-
-    // Spine angle
-    const spineNode = bonesRef.current.get('spine');
-    if (spineNode) {
-      spineNode.rotation.z = metrics.spineAngle * (Math.PI / 180);
-    }
-  }, [metrics]); // Re-run whenever metrics change
-
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (!containerRef.current || !cameraRef.current || !rendererRef.current) return;
-
-      const width = containerRef.current.clientWidth;
-      const height = containerRef.current.clientHeight;
-
-      cameraRef.current.aspect = width / height;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(width, height);
+    // Helper to safely rotate bone
+    const rotateBone = (name: string, axis: 'x' | 'y' | 'z', angleDeg: number, offsetDeg: number = 0, invert: boolean = false) => {
+      const bone = bonesRef.current.get(name);
+      if (bone) {
+        const rad = (angleDeg + offsetDeg) * (Math.PI / 180);
+        bone.rotation[axis] = invert ? -rad : rad;
+      }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Handle rotation angle changes
-  useEffect(() => {
-    if (modelGroupRef.current) {
-      // Store the current hip rotation
-      const currentHipRotation = modelGroupRef.current.rotation.y;
-      // Apply the view rotation on top of hip rotation
-      const rotationRad = (rotationAngle * Math.PI) / 180;
-      modelGroupRef.current.rotation.y = rotationRad;
+    // --- Apply Metrics to Skeleton ---
+    
+    // Hips (Global Rotation)
+    // We rotate the whole model group for hip rotation usually, or the hip bone
+    if (modelRef.current) {
+       // Base rotation + hip rotation
+       const baseRot = (rotationAngle * Math.PI) / 180;
+       // Map hip rotation (0-180) to model rotation
+       // Assuming 90 is neutral facing forward
+       const hipRot = ((metrics.hipRotation - 90) * Math.PI) / 180;
+       modelRef.current.rotation.y = baseRot + hipRot;
     }
-  }, [rotationAngle]);
+
+    // Spine (Lean)
+    // Map spine angle (0-180) to spine bone z-axis (side lean) or x-axis (forward lean)
+    // Usually spine angle in throw is side lean
+    rotateBone('spine', 'z', metrics.spineAngle, -90, true); 
+
+    // Shoulders
+    // Shoulder rotation usually means chest rotation relative to hips
+    // We already rotated hips, so we rotate spine/chest further
+    rotateBone('spine', 'y', metrics.shoulderRotation, -90, true);
+
+    // Arms (The Throw)
+    // Right Arm (Throwing Arm)
+    // Shoulder Angle: 0 (down) to 180 (up) -> Z axis
+    // Right Arm (Throwing Arm)
+    // Shoulder Angle: 0 (down) to 180 (up) -> Z axis
+    // NOTE: Mixamo rigs often have X as the twist axis and Z as the lift axis
+    rotateBone('rightArm', 'z', metrics.rightShoulderAngle, -90, true);
+    // Add some forward/backward motion based on phase (simulated)
+    rotateBone('rightArm', 'x', metrics.shoulderRotation, -90, false);
+    // Elbow Flexion: 0 (straight) to 180 (bent) -> Z axis or Y axis depending on rig
+    // For Mixamo, forearm rotation is usually X or Z
+    // Elbow Flexion: 0 (straight) to 180 (bent) -> X axis is usually flexion for Mixamo
+    rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
+
+    // Left Arm (Non-throwing)
+    rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
+    rotateBone('leftArm', 'x', 20, 0, false); // Slight forward pose
+    rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
+
+    // Legs (Stance)
+    // Knee Flexion: 180 (straight) to 90 (bent) -> X axis
+    rotateBone('rightLeg', 'x', metrics.rightKneeFlexion, -180, false);
+    rotateBone('leftLeg', 'x', metrics.leftKneeFlexion, -180, false);
+
+  }, [metrics, rotationAngle]);
 
   return (
     <div
@@ -391,7 +279,15 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         position: 'relative',
         overflow: 'hidden'
       }}
-    />
+    >
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+          <div className="text-cyan-400 font-mono text-lg animate-pulse">
+            LOADING HOLOGRAM {loadProgress}%
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
