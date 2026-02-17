@@ -112,9 +112,9 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0xff0055, // Neon Red/Pink (matching new reference)
-          emissive: 0x0088ff, // Blue glow
-          emissiveIntensity: 0.5,
+          color: 0x0044ff, // Deep Electric Blue (Reverted)
+          emissive: 0x00ffff, // Cyan glow
+          emissiveIntensity: 0.8,
           metalness: 0.9,
           roughness: 0.2,
           transparent: true,
@@ -125,10 +125,10 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
         // Outer Wireframe (Neon Cyan)
         const wireframeMaterial = new THREE.MeshBasicMaterial({
-          color: 0x00ffff, // Cyan wireframe
+          color: 0x00ffff,
           wireframe: true,
           transparent: true,
-          opacity: 0.3
+          opacity: 0.4
         });
 
         model.traverse((child: any) => {
@@ -230,10 +230,15 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     if (modelRef.current) {
        // Base rotation + hip rotation
        const baseRot = (rotationAngle * Math.PI) / 180;
-       // Map hip rotation (0-180) to model rotation
-       // Assuming 90 is neutral facing forward
-       const hipRot = ((metrics.hipRotation - 90) * Math.PI) / 180;
-       modelRef.current.rotation.y = baseRot + hipRot;
+       
+       // CORRECTED LOGIC:
+       // 0° = Closed (Sideways to target) -> Model should be at 90° relative to camera
+       // 90° = Square (Facing target) -> Model should be at 0° relative to camera
+       // So we map 0 -> 90 (PI/2) and 90 -> 0 (0)
+       // Formula: 90 - hipRotation
+       
+       const hipRotRad = ((90 - metrics.hipRotation) * Math.PI) / 180;
+       modelRef.current.rotation.y = baseRot + hipRotRad;
     }
 
     // Spine (Lean)
@@ -263,7 +268,10 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     
     // 2. Horizontal Adduction (Bring arm across body)
     // We use shoulderRotation metric here to drive the arm forward
-    rotateBone('rightArm', 'x', metrics.shoulderRotation, -45, false);
+    // FIX: Ensure arm stays wide in closed stance (0 deg rotation)
+    // When shoulderRotation is 0 (closed), arm should be back (-45 or -90)
+    // When shoulderRotation is 90 (square), arm should be forward
+    rotateBone('rightArm', 'x', metrics.shoulderRotation, -20, false);
 
     // 3. Elbow Flexion
     // Mixamo Forearm: X is usually flexion. If Z was twisting, revert to X but check direction.

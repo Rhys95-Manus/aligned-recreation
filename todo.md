@@ -12,3 +12,7 @@
 - [ ] Update hologram color to match the lighter electric blue from the provided images
 - [ ] Recalibrate bone rotation axes in `Hologram3D.tsx` to fix deformation (focus on Mixamo rig standards)
 - [ ] Verify animation fluidity with the new calibration
+- [ ] Remap `hipRotation` and `shoulderRotation` metrics: 0° = Closed (Sideways/90° on model), 90° = Square (Facing target/0° on model)
+- [ ] Revert hologram color to **Deep Electric Blue** (remove red/pink)
+- [ ] Fix shoulder deformation: Ensure right shoulder stays wide and high in the "Closed" stance (prevent collapsing into torso)
+- [ ] Verify arm position in "Late Cocking" phase (L-shape) to ensure it's not clipping
