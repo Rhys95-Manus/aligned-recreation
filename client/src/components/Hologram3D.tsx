@@ -112,7 +112,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x2a0a4a, // Deep purple
+          color: 0x0088ff, // Lighter Electric Blue (matching reference)
           metalness: 0.9,
           roughness: 0.2,
           transparent: true,
@@ -250,18 +250,24 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Right Arm (Throwing Arm)
     // Shoulder Angle: 0 (down) to 180 (up) -> Z axis
     // NOTE: Mixamo rigs often have X as the twist axis and Z as the lift axis
+    // Right Arm (Throwing Arm)
+    // Mixamo: Z is usually lift (abduction), X is twist/forward
+    // We need to be careful about the initial T-pose offset (-90 usually brings it down)
     rotateBone('rightArm', 'z', metrics.rightShoulderAngle, -90, true);
     // Add some forward/backward motion based on phase (simulated)
     rotateBone('rightArm', 'x', metrics.shoulderRotation, -90, false);
     // Elbow Flexion: 0 (straight) to 180 (bent) -> Z axis or Y axis depending on rig
     // For Mixamo, forearm rotation is usually X or Z
     // Elbow Flexion: 0 (straight) to 180 (bent) -> X axis is usually flexion for Mixamo
-    rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
+    // Elbow Flexion: Mixamo usually flexes on X or Z. 
+    // If X was twisting, try Z. If Z was twisting, try Y.
+    // Let's try Z for flexion if X was wrong.
+    rotateBone('rightForearm', 'z', metrics.rightElbowAngle, 0, true);
 
     // Left Arm (Non-throwing)
     rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
     rotateBone('leftArm', 'x', 20, 0, false); // Slight forward pose
-    rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
+    rotateBone('leftForearm', 'z', metrics.leftElbowAngle, 0, false);
 
     // Legs (Stance)
     // Knee Flexion: 180 (straight) to 90 (bent) -> X axis

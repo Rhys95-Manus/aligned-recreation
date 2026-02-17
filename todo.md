@@ -7,3 +7,8 @@
 - [ ] Wait for user to upload quarterback video for animation calibration
 - [ ] Extract motion data from uploaded video to fix hologram deformation
 - [ ] Verify hologram animation with new data
+- [ ] Replace `yoga.webp` with `Snatch2.0.png`
+- [ ] Replace `archery.webp` with `kettlebellswing.png`
+- [ ] Update hologram color to match the lighter electric blue from the provided images
+- [ ] Recalibrate bone rotation axes in `Hologram3D.tsx` to fix deformation (focus on Mixamo rig standards)
+- [ ] Verify animation fluidity with the new calibration
