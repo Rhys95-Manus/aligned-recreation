@@ -73,16 +73,18 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
-    const mainLight = new THREE.DirectionalLight(0x00ffff, 2);
+    // Reduced lighting intensity to prevent washout
+    const mainLight = new THREE.DirectionalLight(0x00ffff, 0.8); // Reduced from 2
     mainLight.position.set(2, 2, 5);
     scene.add(mainLight);
 
-    const rimLight = new THREE.SpotLight(0xff00ff, 5);
-    rimLight.position.set(-2, 1, -2);
-    rimLight.lookAt(0, 0, 0);
-    scene.add(rimLight);
+    // Removed pink rim light to keep it pure blue
+    // const rimLight = new THREE.SpotLight(0xff00ff, 5);
+    // rimLight.position.set(-2, 1, -2);
+    // rimLight.lookAt(0, 0, 0);
+    // scene.add(rimLight);
 
-    const fillLight = new THREE.PointLight(0x0088ff, 1);
+    const fillLight = new THREE.PointLight(0x0000ff, 0.5); // Deep blue fill, reduced intensity
     fillLight.position.set(0, -2, 2);
     scene.add(fillLight);
 
@@ -112,13 +114,13 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x000088, // Very Dark Navy/Electric Blue
-          emissive: 0x0000ff, // Deep Blue glow (no cyan)
-          emissiveIntensity: 0.3, // Reduced intensity to prevent washout
-          metalness: 0.9,
-          roughness: 0.2,
+          color: 0x0000ff, // Pure Deep Blue
+          emissive: 0x0000aa, // Darker blue glow
+          emissiveIntensity: 0.2, // Very low emissive to avoid whiteout
+          metalness: 0.6, // Reduced metalness to reduce white reflections
+          roughness: 0.7, // Increased roughness to diffuse light (less shiny/white)
           transparent: true,
-          opacity: 0.7,
+          opacity: 0.85, // Slightly more opaque for better visibility
           transmission: 0.2,
           side: THREE.DoubleSide
         });
