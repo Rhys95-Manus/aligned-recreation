@@ -112,7 +112,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x0044ff, // Rich Electric Blue
+          color: 0x2a0a4a, // Deep purple
           metalness: 0.9,
           roughness: 0.2,
           transparent: true,
