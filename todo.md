@@ -2,3 +2,8 @@
 - [ ] Modify Hologram3D.tsx to prioritize metrics over landmarks for rotation
 - [ ] Verify hologram hips rotate correctly based on metrics
 - [ ] Verify Phase 1 elbow angles are correct
+- [ ] Restore `yoga.webp` and `archery.webp` with correct images (not kettlebell)
+- [ ] Revert hologram color to previous cyan/blue blend
+- [ ] Wait for user to upload quarterback video for animation calibration
+- [ ] Extract motion data from uploaded video to fix hologram deformation
+- [ ] Verify hologram animation with new data
