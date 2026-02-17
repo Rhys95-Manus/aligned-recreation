@@ -16,3 +16,7 @@
 - [ ] Revert hologram color to **Deep Electric Blue** (remove red/pink)
 - [ ] Fix shoulder deformation: Ensure right shoulder stays wide and high in the "Closed" stance (prevent collapsing into torso)
 - [ ] Verify arm position in "Late Cocking" phase (L-shape) to ensure it's not clipping
+- [ ] Update `professionalMotionGenerator.ts`: Neutral/Closed = 90° (Perpendicular), Release/Square = 0° (Facing target)
+- [ ] Darken hologram color significantly: Use deep navy/electric blue (`0x000088`), remove/reduce cyan emissive glow
+- [ ] Fix shoulder deformation: Hard-code arm position in "Closed" stance to ensure it stays wide and away from torso
+- [ ] Verify arm position in "Neutral" phase to ensure no clipping

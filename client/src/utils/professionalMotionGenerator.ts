@@ -59,9 +59,9 @@ export interface MotionPhase {
 export function generateProfessionalMotion(totalFrames: number, motionType: string = "football-throw"): ProfessionalFrame[] {
   const frames: ProfessionalFrame[] = [];
   
-  // Define motion phases for football throw with EXACT metrics from user document
-  // 90° = Closed (Sideways to target)
-  // 0° = Square (Facing target)
+  // Define motion phases for football throw with CORRECTED metrics logic
+  // 90° = Closed (Sideways to target) - Neutral Stance
+  // 0° = Square (Facing target) - Release
   // Timing: 1.2-1.8s for motion, 1.7-2.4s for return to neutral
   
   const motionEndFrame = Math.floor(totalFrames * 0.75);
@@ -73,8 +73,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: 0,
       endFrame: Math.floor(motionEndFrame * 0.2), // ~0.3s
       metrics: {
-        hipRotation: 5,          // 0-10° (Closed hips)
-        shoulderRotation: 5,     // 0-10° (Closed shoulders)
+        hipRotation: 90,         // 90° (Closed/Sideways)
+        shoulderRotation: 90,    // 90° (Closed/Sideways)
         rightElbowAngle: 100,    // 80-120° (Relaxed arm)
         leftElbowAngle: 95,      // 70-120° (Balanced counter)
         rightKneeFlexion: 160,   // 150-170° (Athletic bend)
@@ -92,8 +92,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: Math.floor(motionEndFrame * 0.2),
       endFrame: Math.floor(motionEndFrame * 0.4), // ~0.25s
       metrics: {
-        hipRotation: 17,         // 10-25° open (Hips start first)
-        shoulderRotation: 5,     // 0-10° open (Shoulders stay closed)
+        hipRotation: 75,         // 70-80° (Hips start to open slightly)
+        shoulderRotation: 90,    // 90° (Shoulders stay closed)
         rightElbowAngle: 90,     // 80-100° (Compact arm)
         leftElbowAngle: 50,      // 30-70° (Counterbalance)
         rightKneeFlexion: 150,   // 140-160° (Absorb load)
@@ -111,8 +111,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: Math.floor(motionEndFrame * 0.4),
       endFrame: Math.floor(motionEndFrame * 0.6), // ~0.25s
       metrics: {
-        hipRotation: 37,         // 30-45° open (Hips lead power)
-        shoulderRotation: 10,    // 5-15° open (Delay shoulders)
+        hipRotation: 45,         // 40-50° (Hips lead power, opening up)
+        shoulderRotation: 80,    // 75-85° (Shoulders delayed, still mostly closed)
         rightElbowAngle: 92,     // 85-100° (Strong L-shape)
         leftElbowAngle: 50,      // 30-70° (Pull torso through)
         rightKneeFlexion: 157,   // 150-165° (Drive from back leg)
@@ -130,8 +130,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: Math.floor(motionEndFrame * 0.6),
       endFrame: Math.floor(motionEndFrame * 0.8), // ~0.2s
       metrics: {
-        hipRotation: 52,         // 45-60° (Square) (Hips finish first)
-        shoulderRotation: 52,    // 45-60° (Shoulders whip)
+        hipRotation: 0,          // 0° (Square to target)
+        shoulderRotation: 0,     // 0° (Square to target)
         rightElbowAngle: 175,    // 90° -> 170-180° (Elbow leads hand)
         leftElbowAngle: 65,      // 40-90° (Pull torso through)
         rightKneeFlexion: 175,   // 170-180° (Finish drive)
@@ -149,8 +149,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: Math.floor(motionEndFrame * 0.8),
       endFrame: motionEndFrame, // ~0.35s
       metrics: {
-        hipRotation: 75,         // >60° (Hips through)
-        shoulderRotation: 75,    // 60-90° (Full rotation)
+        hipRotation: -20,        // -20° (Hips rotate past square)
+        shoulderRotation: -30,   // -30° (Shoulders rotate past square)
         rightElbowAngle: 175,    // 170-180° (Full release)
         leftElbowAngle: 50,      // 30-70° (Absorb rotation)
         rightKneeFlexion: 160,   // 150-170° (Trail release)
@@ -169,8 +169,8 @@ export function generateProfessionalMotion(totalFrames: number, motionType: stri
       startFrame: motionEndFrame,
       endFrame: totalFrames,
       metrics: {
-        hipRotation: 5,          // Back to 0-10°
-        shoulderRotation: 5,     // Back to 0-10°
+        hipRotation: 90,         // Back to 90° (Closed)
+        shoulderRotation: 90,    // Back to 90° (Closed)
         rightElbowAngle: 100,    // Back to 80-120°
         leftElbowAngle: 95,      // Back to 70-120°
         rightKneeFlexion: 160,   // Back to 150-170°
