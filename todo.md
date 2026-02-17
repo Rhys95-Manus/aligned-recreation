@@ -20,3 +20,7 @@
 - [ ] Darken hologram color significantly: Use deep navy/electric blue (`0x000088`), remove/reduce cyan emissive glow
 - [ ] Fix shoulder deformation: Hard-code arm position in "Closed" stance to ensure it stays wide and away from torso
 - [ ] Verify arm position in "Neutral" phase to ensure no clipping
+- [ ] Reduce scene lighting intensity: Lower main light and spot light brightness
+- [ ] Adjust hologram material: Increase roughness to reduce white specular highlights
+- [ ] Remove/Darken pink rim light: Eliminate the pink tint that might be mixing with blue
+- [ ] Set base color to pure deep blue (`0x0000ff`)
