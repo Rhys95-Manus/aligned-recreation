@@ -116,13 +116,13 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x0033cc, // Royal Blue (Flat, Solid)
-          emissive: 0x000000, // NO GLOW (Prevents "electric" look)
-          emissiveIntensity: 0.0, // Completely disabled
-          metalness: 0.0, // No metalness
-          roughness: 1.0, // Completely matte
+          color: 0x0044cc, // Deep Royal Blue
+          emissive: 0x0022aa, // Subtle Electric Blue Glow
+          emissiveIntensity: 0.15, // Just enough for "little electricity"
+          metalness: 0.1, // Slight metalness for definition
+          roughness: 0.8, // Matte but not flat
           transparent: true,
-          opacity: 0.9, // Solid blue
+          opacity: 0.9, // Solid look
           depthWrite: true, // Ensure proper depth sorting
           transmission: 0.2,
           side: THREE.DoubleSide
@@ -233,17 +233,12 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Hips (Global Rotation)
     // We rotate the whole model group for hip rotation usually, or the hip bone
     if (modelRef.current) {
-       // Base rotation + hip rotation
-       const baseRot = (rotationAngle * Math.PI) / 180;
-       
-       // CORRECTED LOGIC (User Request):
-       // 90° = Closed (Sideways to target) -> Model should be at 90° relative to camera
-       // 0° = Square (Facing target) -> Model should be at 0° relative to camera
-       // So we map 90 -> 90 (PI/2) and 0 -> 0 (0)
-       // Formula: hipRotation directly maps to model rotation
-       
-       const hipRotRad = (metrics.hipRotation * Math.PI) / 180;
-       modelRef.current.rotation.y = baseRot + hipRotRad;
+       // FIX: Rotate entire model 180 degrees to face Left (Target)
+       // Base rotation: -90 degrees (Facing Left)
+       // As hips open (metric 0 -> 90), we rotate towards 0 (Facing Front)
+       const baseRot = -Math.PI / 2; // -90 degrees (Facing Left/Target)
+       const hipRotRad = ((90 - metrics.hipRotation) * Math.PI) / 180; // Invert logic
+       modelRef.current.rotation.y = baseRot + (hipRotRad * 0.5); // Add rotation to open up
     }
 
     // Spine (Posture)
@@ -271,18 +266,17 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Shoulder Y: Internal/External Rotation (Twist)
     
     // 1. Lift Arm (Abduction)
+    // FIX: The Z-axis was pulling arms BACK (Extension) instead of UP/DOWN.
+    // Switching to X-axis for Abduction (Up/Down) relative to T-pose.
     // FORCE ARMS DOWN IN NEUTRAL (Phase 1)
-    // If shoulder rotation is high (Closed/Neutral > 60 deg), force arm down (0-20 deg)
-    // Only lift when rotation opens up (Throwing phase)
-    const armLift = metrics.shoulderRotation > 60 ? 20 : metrics.rightShoulderAngle;
-    rotateBone('rightArm', 'z', armLift, -90, true);
+    const armLift = metrics.shoulderRotation > 60 ? 80 : metrics.rightShoulderAngle; // 80 deg down from T-pose
+    rotateBone('rightArm', 'x', armLift, 0, false); // Use X-axis for Up/Down
     
     // 2. Horizontal Adduction (Bring arm across body)
+    // FIX: Using Z-axis for Forward/Back motion relative to torso
     // FORCE ARM FORWARD/ACROSS CHEST IN NEUTRAL
-    // If Closed (90 deg), arm must be forward (+45 to +60)
-    // If Open (0 deg), arm goes back (-45)
-    const armAdduction = metrics.shoulderRotation > 60 ? 60 : (90 - metrics.shoulderRotation) - 45;
-    rotateBone('rightArm', 'x', armAdduction, 0, false);
+    const armAdduction = metrics.shoulderRotation > 60 ? 45 : (90 - metrics.shoulderRotation) - 45;
+    rotateBone('rightArm', 'z', armAdduction, 0, false); // Use Z-axis for Forward/Back
 
     // 3. Elbow Flexion
     // Ensure elbow is bent comfortably (approx 90 deg) in Phase 1
