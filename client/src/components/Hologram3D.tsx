@@ -53,10 +53,11 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     scene.background = new THREE.Color(0x0a0e27); // Deep dark blue background
     sceneRef.current = scene;
 
-    // Camera - Macro Mode (Close up)
+    // Camera - Full Body Mode
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 0.8, 4.5); // Closer and higher
-    camera.lookAt(0, 0.8, 0); // Look at chest/head area
+    // Zoom out (Z: 5.5) and lower target (Y: 1.0) to show feet
+    camera.position.set(0, 1.2, 5.5); 
+    camera.lookAt(0, 1.0, 0); // Look at center of body
     cameraRef.current = camera;
 
     // Renderer
