@@ -73,18 +73,18 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
-    // Reduced lighting intensity to prevent washout
-    const mainLight = new THREE.DirectionalLight(0x00ffff, 0.8); // Reduced from 2
+    // Balanced lighting for vibrant cyan look
+    const mainLight = new THREE.DirectionalLight(0x00ffff, 1.2); // Moderate intensity
     mainLight.position.set(2, 2, 5);
     scene.add(mainLight);
 
-    // Removed pink rim light to keep it pure blue
-    // const rimLight = new THREE.SpotLight(0xff00ff, 5);
-    // rimLight.position.set(-2, 1, -2);
-    // rimLight.lookAt(0, 0, 0);
-    // scene.add(rimLight);
+    // Add back a subtle rim light for definition (Blue/Cyan, not Pink)
+    const rimLight = new THREE.SpotLight(0x0088ff, 3);
+    rimLight.position.set(-2, 1, -2);
+    rimLight.lookAt(0, 0, 0);
+    scene.add(rimLight);
 
-    const fillLight = new THREE.PointLight(0x0000ff, 0.5); // Deep blue fill, reduced intensity
+    const fillLight = new THREE.PointLight(0x0044ff, 0.8); // Blue fill for depth
     fillLight.position.set(0, -2, 2);
     scene.add(fillLight);
 
@@ -114,13 +114,13 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x0000ff, // Pure Deep Blue
-          emissive: 0x0000aa, // Darker blue glow
-          emissiveIntensity: 0.2, // Very low emissive to avoid whiteout
-          metalness: 0.6, // Reduced metalness to reduce white reflections
-          roughness: 0.7, // Increased roughness to diffuse light (less shiny/white)
+          color: 0x00ffff, // Electric Cyan (Matching video reference)
+          emissive: 0x0088ff, // Blue-Cyan glow
+          emissiveIntensity: 0.6, // Balanced glow for vibrancy
+          metalness: 0.1, // Low metalness to prevent white reflections
+          roughness: 0.8, // High roughness for matte, glowing look
           transparent: true,
-          opacity: 0.85, // Slightly more opaque for better visibility
+          opacity: 0.6, // Semi-transparent "ghost" look
           transmission: 0.2,
           side: THREE.DoubleSide
         });

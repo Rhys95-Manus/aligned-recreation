@@ -24,3 +24,6 @@
 - [ ] Adjust hologram material: Increase roughness to reduce white specular highlights
 - [ ] Remove/Darken pink rim light: Eliminate the pink tint that might be mixing with blue
 - [ ] Set base color to pure deep blue (`0x0000ff`)
+- [ ] Extract frame from `IMG_3222.MOV` to identify the exact blue color and lighting setup
+- [ ] Update `Hologram3D.tsx` to match the extracted color (likely a brighter, more saturated electric blue with specific emissive settings)
+- [ ] Adjust lighting to recreate the "perfect" look from the video (likely balanced ambient + directional light)
