@@ -36,3 +36,9 @@
     - [ ] Reduce emissive intensity to prevent white washout
     - [ ] Lower scene lighting intensity (Main Light 1.2 -> 0.5)
     - [ ] Increase material roughness to eliminate white specular highlights
+- [ ] Refine Hologram Color:
+    - [ ] Change base color to Royal Blue (`0x0033cc`)
+    - [ ] Reduce emissive intensity to minimize "electric" look
+- [ ] Fix Arm/Shoulder Pose:
+    - [ ] Ensure starting arm position is at chest/sternum (Phase 1), not behind head
+    - [ ] Correct shoulder rotation: Right Shoulder back (away from target), Left Shoulder forward (toward target) for right-handed thrower
