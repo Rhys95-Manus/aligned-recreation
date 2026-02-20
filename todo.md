@@ -30,3 +30,9 @@
 - [ ] Update `Home.tsx`: Rename "Yoga" to "Kettlebell Snatch" and "Archery" to "Kettlebell Swing"
 - [ ] Update descriptions for Kettlebell exercises to be relevant (e.g., "Master the explosive hip drive" instead of generic text)
 - [ ] Provide the direct preview link for incognito testing
+- [ ] Update `Home.tsx`: Change "Master the explosive hip drive" to "Optimize your hip drive"
+- [ ] Fix `Hologram3D.tsx`:
+    - [ ] Set base color to Deep Electric Blue (`0x0000cc`)
+    - [ ] Reduce emissive intensity to prevent white washout
+    - [ ] Lower scene lighting intensity (Main Light 1.2 -> 0.5)
+    - [ ] Increase material roughness to eliminate white specular highlights
