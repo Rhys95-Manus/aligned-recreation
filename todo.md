@@ -27,3 +27,6 @@
 - [ ] Extract frame from `IMG_3222.MOV` to identify the exact blue color and lighting setup
 - [ ] Update `Hologram3D.tsx` to match the extracted color (likely a brighter, more saturated electric blue with specific emissive settings)
 - [ ] Adjust lighting to recreate the "perfect" look from the video (likely balanced ambient + directional light)
+- [ ] Update `Home.tsx`: Rename "Yoga" to "Kettlebell Snatch" and "Archery" to "Kettlebell Swing"
+- [ ] Update descriptions for Kettlebell exercises to be relevant (e.g., "Master the explosive hip drive" instead of generic text)
+- [ ] Provide the direct preview link for incognito testing

@@ -33,10 +33,10 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24">
           <div className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer">
-            <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/SOnnUycYEwqvJYwg.webp" alt="Yoga" className="w-full h-64 object-cover" />
+            <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/SOnnUycYEwqvJYwg.webp" alt="Kettlebell Snatch" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">
-              <h3 className="text-2xl font-bold mb-2">Yoga</h3>
-              <p className="text-slate-300 text-sm">Perfect your yoga form</p>
+              <h3 className="text-2xl font-bold mb-2">Kettlebell Snatch</h3>
+              <p className="text-slate-300 text-sm">Master the explosive hip drive</p>
             </div>
           </div>
           <div className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer">
@@ -54,10 +54,10 @@ export default function Home() {
             </div>
           </div>
           <div className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer">
-            <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/fjcdgycFVnPgCPZP.webp" alt="Archery" className="w-full h-64 object-cover" />
+            <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/fjcdgycFVnPgCPZP.webp" alt="Kettlebell Swing" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">
-              <h3 className="text-2xl font-bold mb-2">Archery</h3>
-              <p className="text-slate-300 text-sm">Improve your archery stance</p>
+              <h3 className="text-2xl font-bold mb-2">Kettlebell Swing</h3>
+              <p className="text-slate-300 text-sm">Perfect your hinge pattern</p>
             </div>
           </div>
         </div>
