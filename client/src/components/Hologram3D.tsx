@@ -73,18 +73,20 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
-    // Balanced lighting for vibrant cyan look
-    const mainLight = new THREE.DirectionalLight(0x00ffff, 1.2); // Moderate intensity
+    // Dark, moody lighting for deep blue look (prevents white washout)
+    const mainLight = new THREE.DirectionalLight(0x0044ff, 0.5); // Very low intensity, deep blue
     mainLight.position.set(2, 2, 5);
     scene.add(mainLight);
 
-    // Add back a subtle rim light for definition (Blue/Cyan, not Pink)
-    const rimLight = new THREE.SpotLight(0x0088ff, 3);
+    // Subtle rim light for definition (Deep Blue)
+    const rimLight = new THREE.SpotLight(0x0000ff, 1.5); // Reduced intensity
     rimLight.position.set(-2, 1, -2);
     rimLight.lookAt(0, 0, 0);
     scene.add(rimLight);
 
-    const fillLight = new THREE.PointLight(0x0044ff, 0.8); // Blue fill for depth
+    const fillLight = new THREE.PointLight(0x000088, 0.3); // Very dark fill
+    fillLight.position.set(0, -2, 2);
+    scene.add(fillLight);
     fillLight.position.set(0, -2, 2);
     scene.add(fillLight);
 
@@ -114,13 +116,13 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x00ffff, // Electric Cyan (Matching video reference)
-          emissive: 0x0088ff, // Blue-Cyan glow
-          emissiveIntensity: 0.6, // Balanced glow for vibrancy
-          metalness: 0.1, // Low metalness to prevent white reflections
-          roughness: 0.8, // High roughness for matte, glowing look
+          color: 0x0000cc, // Deep Electric Blue (Base)
+          emissive: 0x0044ff, // Rich Blue Glow (No Cyan/White)
+          emissiveIntensity: 0.4, // Low enough to not be white, high enough to glow
+          metalness: 0.1, // Low metalness prevents white reflections
+          roughness: 0.9, // Very high roughness = matte finish (no shiny white spots)
           transparent: true,
-          opacity: 0.6, // Semi-transparent "ghost" look
+          opacity: 0.8, // More solid to show the deep color better
           transmission: 0.2,
           side: THREE.DoubleSide
         });
