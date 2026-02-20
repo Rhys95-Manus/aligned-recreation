@@ -73,18 +73,18 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
-    // Dark, moody lighting for deep blue look (prevents white washout)
-    const mainLight = new THREE.DirectionalLight(0x0044ff, 0.5); // Very low intensity, deep blue
+    // Extremely dark, moody lighting for deep blue look
+    const mainLight = new THREE.DirectionalLight(0x0000ff, 0.3); // Minimal intensity, pure blue
     mainLight.position.set(2, 2, 5);
     scene.add(mainLight);
 
     // Subtle rim light for definition (Deep Blue)
-    const rimLight = new THREE.SpotLight(0x0000ff, 1.5); // Reduced intensity
+    const rimLight = new THREE.SpotLight(0x0000aa, 1.0); // Very low intensity
     rimLight.position.set(-2, 1, -2);
     rimLight.lookAt(0, 0, 0);
     scene.add(rimLight);
 
-    const fillLight = new THREE.PointLight(0x000088, 0.3); // Very dark fill
+    const fillLight = new THREE.PointLight(0x000044, 0.2); // Almost black fill
     fillLight.position.set(0, -2, 2);
     scene.add(fillLight);
     fillLight.position.set(0, -2, 2);
@@ -116,13 +116,13 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x0000cc, // Deep Electric Blue (Base)
-          emissive: 0x0044ff, // Rich Blue Glow (No Cyan/White)
-          emissiveIntensity: 0.4, // Low enough to not be white, high enough to glow
-          metalness: 0.1, // Low metalness prevents white reflections
-          roughness: 0.9, // Very high roughness = matte finish (no shiny white spots)
+          color: 0x000088, // Dark Navy Blue (Base)
+          emissive: 0x0000ff, // Pure Blue Glow (No Cyan/White)
+          emissiveIntensity: 0.2, // Very low emissive to avoid whiteout
+          metalness: 0.0, // No metalness to prevent white reflections
+          roughness: 1.0, // Maximum roughness = matte finish (no shiny white spots)
           transparent: true,
-          opacity: 0.8, // More solid to show the deep color better
+          opacity: 0.9, // Solid to show the deep color better
           transmission: 0.2,
           side: THREE.DoubleSide
         });
@@ -245,10 +245,12 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
        modelRef.current.rotation.y = baseRot + hipRotRad;
     }
 
-    // Spine (Lean)
-    // Map spine angle (0-180) to spine bone z-axis (side lean) or x-axis (forward lean)
-    // Usually spine angle in throw is side lean
-    rotateBone('spine', 'z', metrics.spineAngle, -90, true); 
+    // Spine (Posture)
+    // "Stand Tall" -> Spine Angle should be close to 0 (upright)
+    // Only allow slight forward lean (5-15 deg) in Follow-Through phase
+    // Force upright posture for Neutral/Cocking phases
+    const spineTilt = metrics.spineAngle > 15 ? 15 : metrics.spineAngle; 
+    rotateBone('spine', 'x', spineTilt, 0, false); // Forward/Back tilt (X-axis)
 
     // Shoulders
     // Shoulder rotation usually means chest rotation relative to hips
