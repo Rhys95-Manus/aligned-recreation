@@ -69,3 +69,12 @@
 - [ ] Darken Hologram:
     - [ ] Reduce Metalness to 0 and increase Roughness to 1.0 (maximum matte)
     - [ ] Lower base color brightness to Deep Matte Blue (`0x0022aa`)
+- [ ] Force Arms Down (Hard Override):
+    - [ ] Bypass metric-based rotation for arms in Neutral Phase
+    - [ ] Hard-code bone rotations to static "A-Pose" (arms down)
+- [ ] Replace Material (Color Fix):
+    - [ ] Use `MeshBasicMaterial` or dull `MeshLambertMaterial` in Dark Navy Blue (`0x001188`)
+    - [ ] Remove all lighting calculations to eliminate shine/whiteness
+- [ ] Adjust Camera:
+    - [ ] Zoom out (increase Z position)
+    - [ ] Pan down (decrease Y target) to show feet fully
