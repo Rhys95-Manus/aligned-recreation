@@ -51,3 +51,11 @@
 - [ ] Correct Shoulder Rotation:
     - [ ] Force Right Shoulder BACK (negative rotation)
     - [ ] Force Left Shoulder FORWARD (positive rotation) for side-on stance
+- [ ] Fix Arm Rotation Axis:
+    - [ ] Swap `rightArm` rotation from Z to X/Y to force arms DOWN instead of BACK
+    - [ ] Ensure arms are at chest/sides in Neutral Phase
+- [ ] Rotate Model:
+    - [ ] Rotate entire hologram 180 degrees (Y-axis) so Left Shoulder points to Target
+- [ ] Deepen Blue Color:
+    - [ ] Set base color to Royal Blue (`0x0044cc`)
+    - [ ] Add minimal glow (0.15) for "little electricity" without white washout
