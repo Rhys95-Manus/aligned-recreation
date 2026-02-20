@@ -116,13 +116,13 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x000088, // Dark Navy Blue (Base)
-          emissive: 0x0000ff, // Pure Blue Glow (No Cyan/White)
-          emissiveIntensity: 0.2, // Very low emissive to avoid whiteout
-          metalness: 0.0, // No metalness to prevent white reflections
-          roughness: 1.0, // Maximum roughness = matte finish (no shiny white spots)
+          color: 0x0033cc, // Royal Blue (Less Electric, More Solid)
+          emissive: 0x001188, // Subtle Deep Blue Glow
+          emissiveIntensity: 0.15, // Minimal glow to reduce "neon" look
+          metalness: 0.1, // Slight metalness for definition
+          roughness: 0.8, // Matte finish
           transparent: true,
-          opacity: 0.9, // Solid to show the deep color better
+          opacity: 0.95, // Very solid look
           transmission: 0.2,
           side: THREE.DoubleSide
         });
@@ -273,16 +273,19 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     rotateBone('rightArm', 'z', metrics.rightShoulderAngle, -90, true);
     
     // 2. Horizontal Adduction (Bring arm across body)
-    // FIX: Ensure arm stays wide in closed stance (90 deg rotation)
-    // When shoulderRotation is 90 (closed), arm should be back/wide (-45)
-    // When shoulderRotation is 0 (square), arm should be forward (+45)
-    // We need to invert the relationship: Higher rotation (90) = More back (-45)
-    // Formula: (90 - shoulderRotation) - 45
-    rotateBone('rightArm', 'x', (90 - metrics.shoulderRotation), -45, false);
+    // PHASE 1 FIX: Arm should be at CHEST/STERNUM, not behind head.
+    // When shoulderRotation is 90 (closed), arm should be forward/across chest (+45)
+    // Only in Phase 3 (Late Cocking) does it go back (-45)
+    // We map this dynamically based on phase/rotation:
+    // High Rotation (90) -> Arm Forward (+30 to +45)
+    // Low Rotation (0) -> Arm Forward (+45)
+    // The "Back" motion happens in Phase 2/3.
+    // For now, let's bring it FORWARD in the neutral stance.
+    const armAdduction = metrics.shoulderRotation > 60 ? 45 : (90 - metrics.shoulderRotation) - 45;
+    rotateBone('rightArm', 'x', armAdduction, 0, false);
 
     // 3. Elbow Flexion
-    // Mixamo Forearm: X is usually flexion. If Z was twisting, revert to X but check direction.
-    // Let's try X again but with different offset/invert
+    // Ensure elbow is bent comfortably (approx 90 deg) in Phase 1
     rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
 
     // Left Arm (Non-throwing)
