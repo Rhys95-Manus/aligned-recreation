@@ -116,13 +116,13 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Apply Materials
         // Inner Body (Solid Ghost)
         const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x0044cc, // Deep Royal Blue
-          emissive: 0x0022aa, // Subtle Electric Blue Glow
-          emissiveIntensity: 0.15, // Just enough for "little electricity"
-          metalness: 0.1, // Slight metalness for definition
-          roughness: 0.8, // Matte but not flat
+          color: 0x0022aa, // Deep Matte Blue (Darker)
+          emissive: 0x001188, // Very subtle glow
+          emissiveIntensity: 0.1, // Minimal electricity
+          metalness: 0.0, // No metalness (prevents shiny reflections)
+          roughness: 1.0, // Maximum matte (absorbs light)
           transparent: true,
-          opacity: 0.9, // Solid look
+          opacity: 0.95, // Very solid
           depthWrite: true, // Ensure proper depth sorting
           transmission: 0.2,
           side: THREE.DoubleSide
@@ -236,9 +236,18 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
        // FIX: Rotate entire model 180 degrees to face Left (Target)
        // Base rotation: -90 degrees (Facing Left)
        // As hips open (metric 0 -> 90), we rotate towards 0 (Facing Front)
-       const baseRot = -Math.PI / 2; // -90 degrees (Facing Left/Target)
-       const hipRotRad = ((90 - metrics.hipRotation) * Math.PI) / 180; // Invert logic
-       modelRef.current.rotation.y = baseRot + (hipRotRad * 0.5); // Add rotation to open up
+       // NOTE: We apply this to the HIP BONE or internal group, NOT the modelRef directly
+       // because modelRef is controlled by the OrbitControls/View Angle slider.
+       // However, since we don't have a separate hip bone reference easily accessible here without traversing,
+       // we will apply this rotation offset to the *bones* themselves or a child group if possible.
+       // For now, let's try to respect the `rotationAngle` prop passed from parent (View Angle slider).
+       
+       const viewRotationRad = (rotationAngle * Math.PI) / 180;
+       const stanceOffset = -Math.PI / 2; // -90 degrees (Facing Left/Target)
+       const hipActionRad = ((90 - metrics.hipRotation) * Math.PI) / 180; // Invert logic
+       
+       // Combine: View Angle + Stance Offset + Animation
+       modelRef.current.rotation.y = viewRotationRad + stanceOffset + (hipActionRad * 0.5);
     }
 
     // Spine (Posture)
@@ -265,18 +274,19 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Shoulder X: Flexion/Extension (Move arm forward/back)
     // Shoulder Y: Internal/External Rotation (Twist)
     
-    // 1. Lift Arm (Abduction)
-    // FIX: The Z-axis was pulling arms BACK (Extension) instead of UP/DOWN.
-    // Switching to X-axis for Abduction (Up/Down) relative to T-pose.
+    // 1. Lift Arm (Abduction) - UP/DOWN
     // FORCE ARMS DOWN IN NEUTRAL (Phase 1)
-    const armLift = metrics.shoulderRotation > 60 ? 80 : metrics.rightShoulderAngle; // 80 deg down from T-pose
-    rotateBone('rightArm', 'x', armLift, 0, false); // Use X-axis for Up/Down
+    // If shoulder rotation is high (Closed/Neutral > 60 deg), force arm DOWN (positive X)
+    // 80-90 degrees down means arm is by side.
+    const armLift = metrics.shoulderRotation > 60 ? 85 : metrics.rightShoulderAngle; 
+    rotateBone('rightArm', 'x', armLift, 0, false); // X-axis controls Up/Down (Abduction)
     
-    // 2. Horizontal Adduction (Bring arm across body)
-    // FIX: Using Z-axis for Forward/Back motion relative to torso
+    // 2. Horizontal Adduction - FORWARD/BACK
     // FORCE ARM FORWARD/ACROSS CHEST IN NEUTRAL
-    const armAdduction = metrics.shoulderRotation > 60 ? 45 : (90 - metrics.shoulderRotation) - 45;
-    rotateBone('rightArm', 'z', armAdduction, 0, false); // Use Z-axis for Forward/Back
+    // If Closed (90 deg), arm must be forward (+45 to +60)
+    // Z-axis controls Forward/Back (Flexion)
+    const armAdduction = metrics.shoulderRotation > 60 ? 60 : (90 - metrics.shoulderRotation) - 45;
+    rotateBone('rightArm', 'z', armAdduction, 0, false); // Z-axis controls Forward/Back
 
     // 3. Elbow Flexion
     // Ensure elbow is bent comfortably (approx 90 deg) in Phase 1

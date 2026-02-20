@@ -59,3 +59,13 @@
 - [ ] Deepen Blue Color:
     - [ ] Set base color to Royal Blue (`0x0044cc`)
     - [ ] Add minimal glow (0.15) for "little electricity" without white washout
+- [ ] Fix Flailing Arms:
+    - [ ] Force Shoulder Z (Up/Down) to 0° or negative in Neutral Phase
+    - [ ] Force Shoulder X (Forward/Back) to +45° to bring elbows forward
+    - [ ] Force Elbow Flexion to ~90° to keep hands at chest level
+- [ ] Restore View Angle:
+    - [ ] Separate "Stance Rotation" (internal model rotation) from "View Rotation" (camera/container)
+    - [ ] Ensure manual rotation overrides animation loop
+- [ ] Darken Hologram:
+    - [ ] Reduce Metalness to 0 and increase Roughness to 1.0 (maximum matte)
+    - [ ] Lower base color brightness to Deep Matte Blue (`0x0022aa`)
