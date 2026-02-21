@@ -96,8 +96,23 @@ export default function LiveCoachingOverlay({
           // @ts-ignore
           const message = `Rep ${currentRep}. ${selectedFeedback[0].message}. ${selectedFeedback[1].message}.`;
           const utterance = new SpeechSynthesisUtterance(message);
-          utterance.rate = 1.1;
+          utterance.rate = 0.95; // Match Analysis.tsx rate
           utterance.pitch = 1.0;
+          utterance.volume = 1.0;
+
+          // Select the same female voice as Analysis.tsx
+          const voices = window.speechSynthesis.getVoices();
+          const preferredVoice = voices.find(voice => 
+            voice.name === 'Google US English' ||
+            voice.name === 'Samantha' ||
+            voice.name.includes('Female') ||
+            (voice.name.includes('Google') && voice.lang === 'en-US')
+          ) || voices.find(voice => voice.lang.startsWith('en'));
+          
+          if (preferredVoice) {
+            utterance.voice = preferredVoice;
+          }
+
           window.speechSynthesis.speak(utterance);
         }
         
