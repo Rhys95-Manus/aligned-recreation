@@ -43,28 +43,53 @@ export default function LiveCoachingOverlay({
     ];
   };
 
+  // Trigger feedback cycle whenever currentRep changes
   useEffect(() => {
-    if (isActive && feedbackState === "ready") {
-      // Simulate a rep cycle
+    if (isActive && currentRep > 0) {
       const cycle = async () => {
-        // 1. Analyzing Phase (Simulate processing after a rep)
+        // 1. Analyzing Phase
         setFeedbackState("analyzing");
         await new Promise(r => setTimeout(r, 1500));
 
         // 2. Feedback Phase
-        setCurrentFeedback(generateFeedback());
-        setFeedbackState("feedback");
-        await new Promise(r => setTimeout(r, 4000)); // Show feedback for 4s
+        const feedback = [
+          { type: "positive", message: "Great Hip Rotation", detail: "Your hip velocity peaked at 450°/s" },
+          { type: "correction", message: "Fix Elbow Angle", detail: "Keep elbow at 90° during cocking" }
+        ];
+        // Randomize feedback for variety
+        const positive = [
+          { type: "positive", message: "Great Hip Rotation", detail: "Your hip velocity peaked at 450°/s" },
+          { type: "positive", message: "Solid Base", detail: "Excellent stability through the throw" },
+          { type: "positive", message: "Good Extension", detail: "Full arm extension achieved" }
+        ];
+        const corrections = [
+          { type: "correction", message: "Fix Elbow Angle", detail: "Keep elbow at 90° during cocking" },
+          { type: "correction", message: "Watch Your Head", detail: "Keep head still during release" },
+          { type: "correction", message: "Drive Harder", detail: "Push off the back leg more explosively" }
+        ];
+        
+        const selectedFeedback = [
+          positive[Math.floor(Math.random() * positive.length)],
+          corrections[Math.floor(Math.random() * corrections.length)]
+        ];
 
-        // 3. Ready for next rep
+        // @ts-ignore
+        setCurrentFeedback(selectedFeedback);
+        setFeedbackState("feedback");
+        
+        // Show feedback for 4s
+        await new Promise(r => setTimeout(r, 4000)); 
+
+        // 3. Reset to ready state (waiting for next rep trigger)
         setFeedbackState("ready");
+        
         if (currentRep >= totalReps) {
           onComplete();
         }
       };
       cycle();
     }
-  }, [isActive, currentRep, feedbackState]);
+  }, [currentRep, isActive]);
 
   if (!isActive) return null;
 
