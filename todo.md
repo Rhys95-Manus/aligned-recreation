@@ -90,3 +90,6 @@
     - [ ] Reset Z position to ~4.5 (closer)
     - [ ] Move camera Y position DOWN to ~0.8 to frame feet
     - [ ] Ensure model fills frame without being tiny
+- [ ] Force Arm Rotation (All Axes)
+- [ ] Move Model Up (Y-axis)
+- [ ] Darken Color (Deep Blue)

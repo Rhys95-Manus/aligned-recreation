@@ -96,18 +96,17 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Center the model vertically
         const center = box.getCenter(new THREE.Vector3());
         model.position.x = -center.x * scale;
-        model.position.y = -box.min.y * scale - 1.6; // Shift up so feet are visible
+        // MOVE MODEL UP SIGNIFICANTLY to show feet
+        model.position.y = -box.min.y * scale - 0.5; // Was -1.6, now -0.5 (Higher up)
         model.position.z = -center.z * scale;
 
         // Apply Materials
         // Inner Body (Solid Ghost)
-        // NUCLEAR OPTION: Use MeshBasicMaterial (Self-Illuminated)
-        // This ignores all lights and just shows the color.
-        // Impossible to be white unless color is white.
+        // NUCLEAR OPTION: DARKER BLUE
         const innerMaterial = new THREE.MeshBasicMaterial({
-          color: 0x0022cc, // Pure Royal Blue
+          color: 0x000088, // Deep Navy Blue (Darker)
           transparent: true,
-          opacity: 0.85, // Slightly see-through ghost
+          opacity: 0.9,
           side: THREE.DoubleSide,
           depthWrite: true
         });
@@ -258,20 +257,23 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Shoulder X: Flexion/Extension (Move arm forward/back)
     // Shoulder Y: Internal/External Rotation (Twist)
     
-    // NUCLEAR OPTION: HARD OVERRIDE FOR NEUTRAL PHASE
-    // If we are in Neutral/Closed stance (> 60 deg rotation), force A-Pose.
+    // NUCLEAR OPTION: BRUTE FORCE ARMS DOWN
+    // Applying rotation to ALL axes to find the "down" vector.
+    // One of these WILL put the arm down.
     if (metrics.shoulderRotation > 60) {
-        // INVERTED LOGIC: Try NEGATIVE rotation if positive was lifting up.
-        // Force Right Arm DOWN (X-axis -80 deg)
+        // Right Arm
+        // X: -80 (Down?)
+        // Y: 0 (No twist)
+        // Z: 80 (Forward?)
+        // We are locking all 3 axes to a static "A-Pose"
         rotateBone('rightArm', 'x', -80, 0, false); 
-        // Force Right Arm FORWARD/NEUTRAL (Z-axis ~20 deg)
-        rotateBone('rightArm', 'z', 20, 0, false);
-        // Force Elbow slightly bent (X-axis ~30 deg)
-        rotateBone('rightForearm', 'x', 30, -180, false);
+        rotateBone('rightArm', 'y', 0, 0, false);
+        rotateBone('rightArm', 'z', 10, 0, false);
         
-        // Force Left Arm DOWN too (Mirror)
+        // Left Arm
         rotateBone('leftArm', 'x', -80, 0, false);
-        rotateBone('leftArm', 'z', -20, 0, false);
+        rotateBone('leftArm', 'y', 0, 0, false);
+        rotateBone('leftArm', 'z', -10, 0, false);
     } else {
         // Normal Throwing Motion Logic
         rotateBone('rightArm', 'x', metrics.rightShoulderAngle, 0, false); // Lift
