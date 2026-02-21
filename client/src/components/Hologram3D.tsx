@@ -129,12 +129,12 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           side: THREE.DoubleSide
         });
 
-        // Outer Wireframe (Subtle Digital Skin)
+        // Outer Wireframe (Barely-There Digital Edge)
         const wireframeMaterial = new THREE.MeshBasicMaterial({
           color: 0x00ffff, // Cyan Highlights
           wireframe: true,
           transparent: true,
-          opacity: 0.15, // Very subtle overlay
+          opacity: 0.1, // Just a whisper of structure
           depthTest: true,
           depthWrite: false
         });
