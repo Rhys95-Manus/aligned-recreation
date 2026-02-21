@@ -1,9 +1,34 @@
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
 import { Activity, Video, Square } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+function TimerLogic({ isRecording, setRecordingTime, setCurrentRep }: { isRecording: boolean, setRecordingTime: any, setCurrentRep: any }) {
+  useEffect(() => {
+    if (!isRecording) return;
+    
+    const timer = setInterval(() => {
+      setRecordingTime((prev: number) => prev + 1);
+    }, 1000);
+
+    const repTimer = setInterval(() => {
+      setCurrentRep((prev: number) => {
+        // Only increment if less than 5
+        if (prev < 5) return prev + 1;
+        return prev;
+      });
+    }, 8000); // Increment rep every 8 seconds
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(repTimer);
+    };
+  }, [isRecording, setRecordingTime, setCurrentRep]);
+
+  return null;
+}
 
 export default function Home() {
   const [audioOn, setAudioOn] = useState(true);
@@ -89,6 +114,18 @@ export default function Home() {
       <div className="fixed bottom-6 right-6 bg-white text-black px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 shadow-lg">
         <span>✎</span> Tweak
       </div>
+
+      {/* Timer Logic */}
+      {isRecording && (
+        <div className="hidden">
+          {/* This hidden div ensures the timer logic runs when isRecording is true */}
+          <TimerLogic 
+            isRecording={isRecording} 
+            setRecordingTime={setRecordingTime} 
+            setCurrentRep={setCurrentRep} 
+          />
+        </div>
+      )}
 
       {/* Recording Overlay & Camera Feed Simulation */}
       <AnimatePresence>
