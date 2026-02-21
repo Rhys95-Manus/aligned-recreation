@@ -85,8 +85,8 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     rimLightLeft.lookAt(0, 0, 0);
     scene.add(rimLightLeft);
 
-    // Rim Light Right (Purple/Magenta Edge)
-    const rimLightRight = new THREE.SpotLight(0xff00ff, 4.0); // Magenta rim to highlight the purple body
+    // Rim Light Right (Intense Magenta Edge)
+    const rimLightRight = new THREE.SpotLight(0xff00ff, 6.0); // Strong Magenta rim to pop the core
     rimLightRight.position.set(5, 2, -5);
     rimLightRight.lookAt(0, 0, 0);
     scene.add(rimLightRight);
@@ -117,26 +117,26 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
         // Apply Materials
         // Inner Body (Solid Ghost)
-        // DUAL-LAYER VOLUMETRIC MATERIAL (Pro Sci-Fi Look)
+        // VOLUMETRIC CORE MATERIAL (Rich Purple Mass)
         const innerMaterial = new THREE.MeshStandardMaterial({
-          color: 0x2a004e, // Deep Purple/Blue Base (The "Mass")
-          emissive: 0x110033, // Subtle Purple Glow
-          emissiveIntensity: 0.6, // Just enough to feel alive
-          metalness: 0.8, // High metalness for sci-fi sheen
-          roughness: 0.3, // Smooth surface
+          color: 0x3a006e, // Richer Deep Purple Base
+          emissive: 0x220044, // Stronger Purple Glow
+          emissiveIntensity: 0.8, // More vibrant core
+          metalness: 0.6, // Less metallic to show color better
+          roughness: 0.4, // Catch more light
           transparent: true,
-          opacity: 0.85, // Solid enough to block light but still translucent
+          opacity: 0.9, // Almost solid to be the main focus
           side: THREE.DoubleSide
         });
 
-        // Outer Wireframe (Cyan Shell)
+        // Outer Wireframe (Subtle Digital Skin)
         const wireframeMaterial = new THREE.MeshBasicMaterial({
-          color: 0x00ffff, // Bright Cyan Wireframe
+          color: 0x00ffff, // Cyan Highlights
           wireframe: true,
           transparent: true,
-          opacity: 0.4, // Visible structure on top of the purple body
-          depthTest: true, // Ensure it renders correctly over the body
-          depthWrite: false // Don't block the body behind it
+          opacity: 0.15, // Very subtle overlay
+          depthTest: true,
+          depthWrite: false
         });
 
         model.traverse((child: any) => {
