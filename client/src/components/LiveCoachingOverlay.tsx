@@ -16,6 +16,13 @@ interface LiveCoachingOverlayProps {
   onComplete: () => void;
   // New prop to force trigger feedback from parent
   triggerFeedback?: boolean;
+  // New prop for real biomechanical data
+  metrics?: {
+    hipRotation: number;
+    shoulderRotation: number;
+    rightElbowAngle: number;
+    spineAngle: number;
+  };
 }
 
 export default function LiveCoachingOverlay({
@@ -24,7 +31,8 @@ export default function LiveCoachingOverlay({
   totalReps,
   audioEnabled = true,
   onComplete,
-  triggerFeedback
+  triggerFeedback,
+  metrics
 }: LiveCoachingOverlayProps) {
   const [feedbackState, setFeedbackState] = useState<"analyzing" | "feedback" | "ready">("ready");
   const [currentFeedback, setCurrentFeedback] = useState<FeedbackItem[]>([]);
@@ -42,23 +50,44 @@ export default function LiveCoachingOverlay({
         await new Promise(r => setTimeout(r, 1500));
 
         // 2. Feedback Phase
-        const positive = [
-          { type: "positive", message: "Great Hip Rotation", detail: "Your hip velocity peaked at 450°/s" },
-          { type: "positive", message: "Solid Base", detail: "Excellent stability through the throw" },
-          { type: "positive", message: "Good Extension", detail: "Full arm extension achieved" }
-        ];
-        const corrections = [
-          { type: "correction", message: "Fix Elbow Angle", detail: "Keep elbow at 90° during cocking" },
-          { type: "correction", message: "Watch Your Head", detail: "Keep head still during release" },
-          { type: "correction", message: "Drive Harder", detail: "Push off the back leg more explosively" }
-        ];
+        // Generate dynamic feedback based on real metrics if available
+        let selectedFeedback: FeedbackItem[] = [];
         
-        const selectedFeedback = [
-          positive[Math.floor(Math.random() * positive.length)],
-          corrections[Math.floor(Math.random() * corrections.length)]
-        ];
+        if (metrics) {
+          // Hip Rotation Logic
+          if (metrics.hipRotation > 30) {
+            selectedFeedback.push({ type: "positive", message: "Great Hip Rotation", detail: `You achieved ${metrics.hipRotation.toFixed(1)}° of rotation.` });
+          } else {
+            selectedFeedback.push({ type: "correction", message: "Rotate Hips More", detail: `Only ${metrics.hipRotation.toFixed(1)}° detected. Aim for >30°.` });
+          }
 
-        // @ts-ignore
+          // Elbow Angle Logic
+          if (metrics.rightElbowAngle > 80 && metrics.rightElbowAngle < 110) {
+            selectedFeedback.push({ type: "positive", message: "Perfect Elbow Angle", detail: `Maintained ${metrics.rightElbowAngle.toFixed(1)}° (Ideal: 90°).` });
+          } else {
+            selectedFeedback.push({ type: "correction", message: "Fix Elbow Angle", detail: `Elbow at ${metrics.rightElbowAngle.toFixed(1)}°. Keep it near 90°.` });
+          }
+        } else {
+          // Fallback to random feedback if no metrics provided
+          const positive = [
+            { type: "positive", message: "Great Hip Rotation", detail: "Your hip velocity peaked at 450°/s" },
+            { type: "positive", message: "Solid Base", detail: "Excellent stability through the throw" },
+            { type: "positive", message: "Good Extension", detail: "Full arm extension achieved" }
+          ];
+          const corrections = [
+            { type: "correction", message: "Fix Elbow Angle", detail: "Keep elbow at 90° during cocking" },
+            { type: "correction", message: "Watch Your Head", detail: "Keep head still during release" },
+            { type: "correction", message: "Drive Harder", detail: "Push off the back leg more explosively" }
+          ];
+          
+          selectedFeedback = [
+            // @ts-ignore
+            positive[Math.floor(Math.random() * positive.length)],
+            // @ts-ignore
+            corrections[Math.floor(Math.random() * corrections.length)]
+          ];
+        }
+
         setCurrentFeedback(selectedFeedback);
         setFeedbackState("feedback");
         
