@@ -12,12 +12,14 @@ import Analysis from "./pages/Analysis";
 import Pricing from "./pages/Pricing";
 import SessionHistory from "./pages/SessionHistory";
 import Community from "./pages/Community";
+import Session from "./pages/Session";
 
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/session/:activity"} component={Session} />
       <Route path={"/categories"} component={Categories} />
       <Route path={"/subcategories/:categoryId"} component={Subcategories} />
       <Route path={"/motions/:categoryId/:subcategoryId"} component={Motions} />

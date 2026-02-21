@@ -1,35 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
-import PoseAnalysis from "@/components/PoseAnalysis";
-import { Activity, Video, Square } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-
-// Timer logic moved inside main component for reliability
 
 export default function Home() {
   const [audioOn, setAudioOn] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
-  const [currentRep, setCurrentRep] = useState(1);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [feedbackTrigger, setFeedbackTrigger] = useState(false); // New state to force feedback
   const [, setLocation] = useLocation();
-
-  // Reliable timer logic directly in component
-  useEffect(() => {
-    if (!isRecording) return;
-    
-    const timer = setInterval(() => {
-      setRecordingTime((prev: number) => prev + 1);
-    }, 1000);
-
-    // Rep timer removed - now driven by PoseAnalysis
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, [isRecording]);
 
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-slate-100">
@@ -55,42 +30,44 @@ export default function Home() {
             <Button onClick={() => setLocation("/categories")} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg rounded-xl">
               Get Started
             </Button>
-            <Button 
-              onClick={() => {
-                setIsRecording(true);
-                setRecordingTime(0);
-              }}
-              className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-6 text-lg rounded-xl flex items-center gap-2"
-            >
-              <Video className="w-5 h-5" />
-              Start Recording
-            </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24">
-          <div className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer">
+          <div 
+            className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
+            onClick={() => setLocation("/session/Kettlebell%20Snatch")}
+          >
             <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/SOnnUycYEwqvJYwg.webp" alt="Kettlebell Snatch" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">
               <h3 className="text-2xl font-bold mb-2">Kettlebell Snatch</h3>
               <p className="text-slate-300 text-sm">Optimize your hip drive</p>
             </div>
           </div>
-          <div className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer">
+          <div 
+            className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
+            onClick={() => setLocation("/session/Golf")}
+          >
             <img src="/golf.webp" alt="Golf" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">
               <h3 className="text-2xl font-bold mb-2">Golf</h3>
               <p className="text-slate-300 text-sm">Analyze your golf technique</p>
             </div>
           </div>
-          <div className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer">
+          <div 
+            className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
+            onClick={() => setLocation("/session/Football")}
+          >
             <img src="/football.webp" alt="Football" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">
               <h3 className="text-2xl font-bold mb-2">Football</h3>
               <p className="text-slate-300 text-sm">Master quarterback mechanics</p>
             </div>
           </div>
-          <div className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer">
+          <div 
+            className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
+            onClick={() => setLocation("/session/Kettlebell%20Swing")}
+          >
             <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/fjcdgycFVnPgCPZP.webp" alt="Kettlebell Swing" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">
               <h3 className="text-2xl font-bold mb-2">Kettlebell Swing</h3>
@@ -111,75 +88,7 @@ export default function Home() {
 
 
 
-      {/* Recording Overlay & Camera Feed Simulation */}
-      <AnimatePresence>
-        {isRecording && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center"
-          >
-            {/* Real-Time Pose Analysis & Camera Feed */}
-            <PoseAnalysis 
-              isActive={isRecording}
-              onRepComplete={(feedback: any) => {
-                console.log("Rep Complete:", feedback);
-                setCurrentRep((prev: number) => prev + 1);
-                setFeedbackTrigger(prev => !prev); // Toggle to force feedback update
-              }}
-            />
-            
-            {/* Recording Indicator */}
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-6 py-3 rounded-full flex items-center gap-3 z-50">
-              <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ef4444]" />
-              <span className="text-red-100 font-mono text-lg tracking-widest">
-                REC {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
-              </span>
-            </div>
 
-            {/* Live Coaching Overlay (Active during recording) */}
-            <LiveCoachingOverlay 
-              isActive={true}
-              currentRep={currentRep}
-              totalReps={5}
-              audioEnabled={audioOn}
-              triggerFeedback={feedbackTrigger} // Pass the trigger
-              onComplete={() => {
-                setIsRecording(false);
-                setCurrentRep(1);
-              }}
-            />
-
-            {/* Manual Rep Trigger (Debug) */}
-            <Button 
-              size="sm"
-              className="absolute bottom-32 bg-cyan-600/80 hover:bg-cyan-700 text-white px-6 py-3 rounded-full shadow-lg z-[10000] pointer-events-auto"
-              onClick={() => {
-                if (currentRep < 5) {
-                  setCurrentRep((prev: number) => prev + 1);
-                  setFeedbackTrigger(prev => !prev); // Force feedback on manual trigger too
-                } else {
-                  setIsRecording(false);
-                  setCurrentRep(1);
-                }
-              }}
-            >
-              Force Next Rep (Debug)
-            </Button>
-
-            {/* Stop Button */}
-            <Button 
-              size="lg"
-              className="absolute bottom-12 bg-red-600 hover:bg-red-700 text-white px-12 py-6 text-xl rounded-full shadow-2xl z-50"
-              onClick={() => setIsRecording(false)}
-            >
-              <Square className="w-6 h-6 mr-3 fill-current" />
-              Stop Recording
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
