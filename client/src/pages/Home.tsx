@@ -36,7 +36,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24">
           <div 
             className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
-            onClick={() => setLocation("/session/Kettlebell%20Snatch")}
+            onClick={() => setLocation("/analysis/strength/kettlebell/snatch?motion=Kettlebell%20Snatch")}
           >
             <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/SOnnUycYEwqvJYwg.webp" alt="Kettlebell Snatch" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">
@@ -46,7 +46,7 @@ export default function Home() {
           </div>
           <div 
             className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
-            onClick={() => setLocation("/session/Golf")}
+            onClick={() => setLocation("/analysis/sports/golf/swing?motion=Golf%20Swing")}
           >
             <img src="/golf.webp" alt="Golf" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">
@@ -56,7 +56,7 @@ export default function Home() {
           </div>
           <div 
             className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
-            onClick={() => setLocation("/session/Football")}
+            onClick={() => setLocation("/analysis/sports/football/throw?motion=Football%20Throw")}
           >
             <img src="/football.webp" alt="Football" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">
@@ -66,7 +66,7 @@ export default function Home() {
           </div>
           <div 
             className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
-            onClick={() => setLocation("/session/Kettlebell%20Swing")}
+            onClick={() => setLocation("/analysis/strength/kettlebell/swing?motion=Kettlebell%20Swing")}
           >
             <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/fjcdgycFVnPgCPZP.webp" alt="Kettlebell Swing" className="w-full h-64 object-cover" />
             <div className="p-6 text-center">

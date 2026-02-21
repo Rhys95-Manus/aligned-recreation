@@ -168,15 +168,22 @@ export default function Analysis() {
   const [customReps, setCustomReps] = useState('');
   const [currentCaptureRep, setCurrentCaptureRep] = useState(1); // Current rep being captured (live)
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
+  const [feedbackTrigger, setFeedbackTrigger] = useState(false); // Trigger for live coaching
 
-  // Watch for completion of all reps
+  // Watch for completion of all reps AND trigger feedback
   useEffect(() => {
+    // If a new rep was just added (length increased), trigger feedback
+    if (completedReps.length > 0) {
+      console.log(`🎯 Rep completed. Triggering feedback...`);
+      setFeedbackTrigger(prev => !prev);
+    }
+
     if (completedReps.length > 0 && completedReps.length >= selectedRepsRef.current) {
       console.log(`🎯 useEffect detected all ${selectedRepsRef.current} reps complete. Triggering stopAndScore...`);
       // Small timeout to ensure state is settled
       const timer = setTimeout(() => {
         stopAndScore();
-      }, 100);
+      }, 4000); // Increased delay to allow final feedback to be seen/heard
       return () => clearTimeout(timer);
     }
   }, [completedReps]);
@@ -815,6 +822,10 @@ export default function Analysis() {
               // Use ref here to ensure we have the latest value inside the closure
               // IMPORTANT: We check completedReps.length + 1 because the state update hasn't happened yet
               const totalCompleted = completedReps.length + 1;
+              
+              // Trigger live coaching feedback for the completed rep
+              // We can't call setFeedbackTrigger directly here because it's inside a closure that might not have the latest state setter
+              // However, since we are updating completedReps, we can use a useEffect to watch completedReps and trigger feedback there
               
               if (totalCompleted >= selectedRepsRef.current) {
                 console.log(`🏁 All ${selectedRepsRef.current} reps completed! Auto-stopping...`);
