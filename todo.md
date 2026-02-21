@@ -124,3 +124,4 @@
 - [ ] Reduce wireframe opacity to ~0.15 (Subtle Digital Skin)
 - [ ] Increase core opacity and emissive intensity (Solid Purple Mass)
 - [ ] Boost Magenta rim light to highlight the purple core
+- [ ] Reduce wireframe opacity to 0.1 (Barely-there Digital Edge)
