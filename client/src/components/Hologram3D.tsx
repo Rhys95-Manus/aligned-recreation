@@ -53,11 +53,11 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     scene.background = new THREE.Color(0x0a0e27); // Deep dark blue background
     sceneRef.current = scene;
 
-    // Camera - Full Body Mode (Reset Zoom, Pan Down)
+    // Camera - Full Body Mode (Pan Down to Feet)
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    // Keep Z closer (4.5) but lower Y (0.9) to frame feet better
-    camera.position.set(0, 0.9, 4.5); 
-    camera.lookAt(0, 0.9, 0); // Look lower at torso/hips
+    // Move camera DOWN (Y: 0.5) to look at legs/feet
+    camera.position.set(0, 0.5, 4.5); 
+    camera.lookAt(0, 0.5, 0); // Look at knees
     cameraRef.current = camera;
 
     // Renderer
@@ -70,11 +70,13 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // NUCLEAR OPTION: NO LIGHTS (Self-Emissive Material Only)
-    // This guarantees no white reflections.
-    // Only a tiny ambient light for base visibility if needed.
-    const ambientLight = new THREE.AmbientLight(0x0000ff, 0.2); // Pure blue ambient
-    scene.add(ambientLight);
+    // RESTORED LIGHTING (Standard Blue)
+    // const ambientLight = new THREE.AmbientLight(0x0000aa, 0.4); // Dark blue ambient
+    // scene.add(ambientLight);
+    
+    const mainLight = new THREE.DirectionalLight(0x0044ff, 0.8); // Standard Blue Light
+    mainLight.position.set(2, 2, 5);
+    scene.add(mainLight);
 
     // Load Model
     const loader = new GLTFLoader();
@@ -96,19 +98,22 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Center the model vertically
         const center = box.getCenter(new THREE.Vector3());
         model.position.x = -center.x * scale;
-        // MOVE MODEL UP SIGNIFICANTLY to show feet
-        model.position.y = -box.min.y * scale - 0.5; // Was -1.6, now -0.5 (Higher up)
+        // RESET MODEL TO GROUND (Fix Jumping)
+        model.position.y = -box.min.y * scale - 1.6; // Back to ground level
         model.position.z = -center.z * scale;
 
         // Apply Materials
         // Inner Body (Solid Ghost)
-        // NUCLEAR OPTION: DARKER BLUE
-        const innerMaterial = new THREE.MeshBasicMaterial({
-          color: 0x000088, // Deep Navy Blue (Darker)
+        // RESTORED MATERIAL (Standard Blue Ghost)
+        const innerMaterial = new THREE.MeshStandardMaterial({
+          color: 0x0044ff, // Standard Royal Blue
+          emissive: 0x001188, // Subtle deep glow
+          emissiveIntensity: 0.3,
+          metalness: 0.1, // Low metalness
+          roughness: 0.8, // Matte finish
           transparent: true,
-          opacity: 0.9,
-          side: THREE.DoubleSide,
-          depthWrite: true
+          opacity: 0.85,
+          side: THREE.DoubleSide
         });
 
         // Outer Wireframe (Neon Cyan)
@@ -139,6 +144,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
             // Map standard Mixamo names to our internal map
             // We store the bone reference for animation
             const name = child.name.toLowerCase();
+            console.log('Bone found:', name); // LOG BONES FOR DEBUGGING
             if (name.includes('hips')) bonesRef.current.set('hips', child);
             if (name.includes('spine')) bonesRef.current.set('spine', child);
             if (name.includes('neck') || name.includes('head')) bonesRef.current.set('head', child);

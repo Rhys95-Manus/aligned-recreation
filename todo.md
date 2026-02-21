@@ -93,3 +93,6 @@
 - [ ] Force Arm Rotation (All Axes)
 - [ ] Move Model Up (Y-axis)
 - [ ] Darken Color (Deep Blue)
+- [ ] Log Bone Names (Debug)
+- [ ] Fix Jumping (Reset Y)
+- [ ] Restore Perfect Blue (Standard Material)
