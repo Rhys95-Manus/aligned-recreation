@@ -125,3 +125,8 @@
 - [ ] Increase core opacity and emissive intensity (Solid Purple Mass)
 - [ ] Boost Magenta rim light to highlight the purple core
 - [ ] Reduce wireframe opacity to 0.1 (Barely-there Digital Edge)
+- [ ] Create `LiveCoachingOverlay.tsx` component (Sci-Fi HUD style)
+- [ ] Design "Positive Feedback" state (Green/Cyan highlight)
+- [ ] Design "Correction Cue" state (Red/Magenta highlight)
+- [ ] Implement "Listening/Analyzing" animation state
+- [ ] Build logic to cycle through feedback between reps
