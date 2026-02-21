@@ -121,3 +121,6 @@
 - [ ] Restore Inner Layer: Deep Purple/Blue (0x2a004e) for volume
 - [ ] Restore Outer Layer: Cyan Wireframe (0x00ffff) for contrast
 - [ ] Ensure "Sci-Fi Hologram" depth is achieved
+- [ ] Reduce wireframe opacity to ~0.15 (Subtle Digital Skin)
+- [ ] Increase core opacity and emissive intensity (Solid Purple Mass)
+- [ ] Boost Magenta rim light to highlight the purple core
