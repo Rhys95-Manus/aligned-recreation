@@ -70,23 +70,23 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // HIGH CONTRAST NEON LIGHTING
-    const ambientLight = new THREE.AmbientLight(0x000515, 0.3); // Darker ambient for contrast
+    // VOLUMETRIC LIGHTING SETUP
+    const ambientLight = new THREE.AmbientLight(0x110022, 0.4); // Deep Purple Ambient
     scene.add(ambientLight);
 
-    // Focused Main Light (Front/Top)
-    const mainLight = new THREE.DirectionalLight(0x114488, 1.2); // Dimmer main light to let neon pop
+    // Main Light (Cool Blue/Cyan Mix)
+    const mainLight = new THREE.DirectionalLight(0x4488ff, 1.5);
     mainLight.position.set(0, 5, 5);
     scene.add(mainLight);
 
-    // Intense Rim Light (Back/Left - The "Tron" Edge)
-    const rimLightLeft = new THREE.SpotLight(0x00ffff, 6.0); // Bright Cyan Rim
+    // Rim Light Left (Cyan Edge)
+    const rimLightLeft = new THREE.SpotLight(0x00ffff, 5.0);
     rimLightLeft.position.set(-5, 2, -5);
     rimLightLeft.lookAt(0, 0, 0);
     scene.add(rimLightLeft);
 
-    // Deep Rim Light (Back/Right - The Body Shape)
-    const rimLightRight = new THREE.SpotLight(0x0033cc, 5.0); // Deep Electric Blue Rim
+    // Rim Light Right (Purple/Magenta Edge)
+    const rimLightRight = new THREE.SpotLight(0xff00ff, 4.0); // Magenta rim to highlight the purple body
     rimLightRight.position.set(5, 2, -5);
     rimLightRight.lookAt(0, 0, 0);
     scene.add(rimLightRight);
@@ -117,24 +117,26 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
         // Apply Materials
         // Inner Body (Solid Ghost)
-        // DARK NEON MATERIAL (High Contrast)
+        // DUAL-LAYER VOLUMETRIC MATERIAL (Pro Sci-Fi Look)
         const innerMaterial = new THREE.MeshStandardMaterial({
-          color: 0x001144, // Deep Navy base (Darker than previous, lighter than Midnight)
-          emissive: 0x002288, // Rich Blue glow
-          emissiveIntensity: 0.8, // Balanced glow (not too bright, not too dim)
-          metalness: 0.7,
-          roughness: 0.4,
+          color: 0x2a004e, // Deep Purple/Blue Base (The "Mass")
+          emissive: 0x110033, // Subtle Purple Glow
+          emissiveIntensity: 0.6, // Just enough to feel alive
+          metalness: 0.8, // High metalness for sci-fi sheen
+          roughness: 0.3, // Smooth surface
           transparent: true,
-          opacity: 0.85, // More solid to catch the neon reflections
+          opacity: 0.85, // Solid enough to block light but still translucent
           side: THREE.DoubleSide
         });
 
-        // Outer Wireframe (Intense Neon Cyan)
+        // Outer Wireframe (Cyan Shell)
         const wireframeMaterial = new THREE.MeshBasicMaterial({
-          color: 0x00ffff, // Pure Cyan for maximum pop
+          color: 0x00ffff, // Bright Cyan Wireframe
           wireframe: true,
           transparent: true,
-          opacity: 0.3 // Slightly more transparent to blend with dark body
+          opacity: 0.4, // Visible structure on top of the purple body
+          depthTest: true, // Ensure it renders correctly over the body
+          depthWrite: false // Don't block the body behind it
         });
 
         model.traverse((child: any) => {
