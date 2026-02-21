@@ -115,3 +115,6 @@
 - [ ] Increase emissive intensity to ~1.0 for neon effect
 - [ ] Lighten base color to Deep Electric Blue (between Navy and Ice Blue)
 - [ ] Enhance wireframe visibility for structural pop
+- [ ] Darken base color to Deep Navy (0x001144)
+- [ ] Maintain high-intensity Neon Cyan wireframe (0x00ccff)
+- [ ] Adjust lighting to create high contrast (Dark Body + Bright Edges)
