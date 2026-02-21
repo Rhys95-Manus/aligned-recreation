@@ -14,6 +14,8 @@ interface LiveCoachingOverlayProps {
   totalReps: number;
   audioEnabled?: boolean;
   onComplete: () => void;
+  // New prop to force trigger feedback from parent
+  triggerFeedback?: boolean;
 }
 
 export default function LiveCoachingOverlay({
@@ -21,15 +23,20 @@ export default function LiveCoachingOverlay({
   currentRep,
   totalReps,
   audioEnabled = true,
-  onComplete
+  onComplete,
+  triggerFeedback
 }: LiveCoachingOverlayProps) {
   const [feedbackState, setFeedbackState] = useState<"analyzing" | "feedback" | "ready">("ready");
   const [currentFeedback, setCurrentFeedback] = useState<FeedbackItem[]>([]);
 
-  // Trigger feedback cycle whenever currentRep changes
+  // Trigger feedback cycle whenever triggerFeedback changes
   useEffect(() => {
     if (isActive && currentRep > 0) {
       const cycle = async () => {
+        // Force reset state first to ensure animation plays
+        setFeedbackState("ready");
+        await new Promise(r => setTimeout(r, 100));
+
         // 1. Analyzing Phase
         setFeedbackState("analyzing");
         await new Promise(r => setTimeout(r, 1500));
@@ -77,7 +84,7 @@ export default function LiveCoachingOverlay({
       };
       cycle();
     }
-  }, [currentRep, isActive, audioEnabled, totalReps, onComplete]);
+  }, [triggerFeedback, isActive]); // Only trigger on explicit signal from parent
 
   if (!isActive) return null;
 

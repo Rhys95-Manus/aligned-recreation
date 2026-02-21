@@ -13,6 +13,7 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [currentRep, setCurrentRep] = useState(1);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [feedbackTrigger, setFeedbackTrigger] = useState(false); // New state to force feedback
   const [, setLocation] = useLocation();
 
   // Reliable timer logic directly in component
@@ -125,6 +126,7 @@ export default function Home() {
               onRepComplete={(feedback: any) => {
                 console.log("Rep Complete:", feedback);
                 setCurrentRep((prev: number) => prev + 1);
+                setFeedbackTrigger(prev => !prev); // Toggle to force feedback update
               }}
             />
             
@@ -142,6 +144,7 @@ export default function Home() {
               currentRep={currentRep}
               totalReps={5}
               audioEnabled={audioOn}
+              triggerFeedback={feedbackTrigger} // Pass the trigger
               onComplete={() => {
                 setIsRecording(false);
                 setCurrentRep(1);
@@ -155,6 +158,7 @@ export default function Home() {
               onClick={() => {
                 if (currentRep < 5) {
                   setCurrentRep((prev: number) => prev + 1);
+                  setFeedbackTrigger(prev => !prev); // Force feedback on manual trigger too
                 } else {
                   setIsRecording(false);
                   setCurrentRep(1);
