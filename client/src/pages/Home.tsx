@@ -147,6 +147,22 @@ export default function Home() {
               }}
             />
 
+            {/* Manual Rep Trigger (Debug) */}
+            <Button 
+              size="sm"
+              className="absolute bottom-32 bg-cyan-600/80 hover:bg-cyan-700 text-white px-6 py-3 rounded-full shadow-lg z-[10000] pointer-events-auto"
+              onClick={() => {
+                if (currentRep < 5) {
+                  setCurrentRep((prev: number) => prev + 1);
+                } else {
+                  setIsRecording(false);
+                  setCurrentRep(1);
+                }
+              }}
+            >
+              Force Next Rep (Debug)
+            </Button>
+
             {/* Stop Button */}
             <Button 
               size="lg"
