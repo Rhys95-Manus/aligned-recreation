@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
+import PoseAnalysis from "@/components/PoseAnalysis";
 import { Activity, Video, Square } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -22,16 +23,10 @@ export default function Home() {
       setRecordingTime((prev: number) => prev + 1);
     }, 1000);
 
-    const repTimer = setInterval(() => {
-      setCurrentRep((prev: number) => {
-        if (prev < 5) return prev + 1;
-        return prev;
-      });
-    }, 8000);
+    // Rep timer removed - now driven by PoseAnalysis
 
     return () => {
       clearInterval(timer);
-      clearInterval(repTimer);
     };
   }, [isRecording]);
 
@@ -124,8 +119,14 @@ export default function Home() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center"
           >
-            {/* Simulated Camera Feed Background */}
-            <div className="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2940&auto=format&fit=crop')] bg-cover bg-center grayscale mix-blend-overlay" />
+            {/* Real-Time Pose Analysis & Camera Feed */}
+            <PoseAnalysis 
+              isActive={isRecording}
+              onRepComplete={(feedback: any) => {
+                console.log("Rep Complete:", feedback);
+                setCurrentRep((prev: number) => prev + 1);
+              }}
+            />
             
             {/* Recording Indicator */}
             <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-6 py-3 rounded-full flex items-center gap-3 z-50">
