@@ -78,3 +78,15 @@
 - [ ] Adjust Camera:
     - [ ] Zoom out (increase Z position)
     - [ ] Pan down (decrease Y target) to show feet fully
+- [ ] Fix Arms (Invert Rotation):
+    - [ ] Try -80 degrees on X-axis (instead of +80)
+    - [ ] Force Z-axis to 0
+    - [ ] Clamp arms to sides using different rotation combination
+- [ ] Fix Color (Disable Lights):
+    - [ ] Remove all scene lights except weak ambient
+    - [ ] Use `MeshBasicMaterial` in Pure Blue (`0x0000ff`)
+    - [ ] Ensure material emits its own color (no reflection)
+- [ ] Fix Camera (Reset Zoom):
+    - [ ] Reset Z position to ~4.5 (closer)
+    - [ ] Move camera Y position DOWN to ~0.8 to frame feet
+    - [ ] Ensure model fills frame without being tiny

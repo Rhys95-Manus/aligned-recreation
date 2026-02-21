@@ -53,11 +53,11 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     scene.background = new THREE.Color(0x0a0e27); // Deep dark blue background
     sceneRef.current = scene;
 
-    // Camera - Full Body Mode
+    // Camera - Full Body Mode (Reset Zoom, Pan Down)
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    // Zoom out (Z: 5.5) and lower target (Y: 1.0) to show feet
-    camera.position.set(0, 1.2, 5.5); 
-    camera.lookAt(0, 1.0, 0); // Look at center of body
+    // Keep Z closer (4.5) but lower Y (0.9) to frame feet better
+    camera.position.set(0, 0.9, 4.5); 
+    camera.lookAt(0, 0.9, 0); // Look lower at torso/hips
     cameraRef.current = camera;
 
     // Renderer
@@ -70,26 +70,11 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    // NUCLEAR OPTION: NO LIGHTS (Self-Emissive Material Only)
+    // This guarantees no white reflections.
+    // Only a tiny ambient light for base visibility if needed.
+    const ambientLight = new THREE.AmbientLight(0x0000ff, 0.2); // Pure blue ambient
     scene.add(ambientLight);
-
-    // Extremely dark, moody lighting for deep blue look
-    const mainLight = new THREE.DirectionalLight(0x0000ff, 0.3); // Minimal intensity, pure blue
-    mainLight.position.set(2, 2, 5);
-    scene.add(mainLight);
-
-    // Subtle rim light for definition (Deep Blue)
-    const rimLight = new THREE.SpotLight(0x0000aa, 1.0); // Very low intensity
-    rimLight.position.set(-2, 1, -2);
-    rimLight.lookAt(0, 0, 0);
-    scene.add(rimLight);
-
-    const fillLight = new THREE.PointLight(0x000044, 0.2); // Almost black fill
-    fillLight.position.set(0, -2, 2);
-    scene.add(fillLight);
-    fillLight.position.set(0, -2, 2);
-    scene.add(fillLight);
 
     // Load Model
     const loader = new GLTFLoader();
@@ -116,17 +101,15 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
         // Apply Materials
         // Inner Body (Solid Ghost)
-        const innerMaterial = new THREE.MeshPhysicalMaterial({
-          color: 0x0022aa, // Deep Matte Blue (Darker)
-          emissive: 0x001188, // Very subtle glow
-          emissiveIntensity: 0.1, // Minimal electricity
-          metalness: 0.0, // No metalness (prevents shiny reflections)
-          roughness: 1.0, // Maximum matte (absorbs light)
+        // NUCLEAR OPTION: Use MeshBasicMaterial (Self-Illuminated)
+        // This ignores all lights and just shows the color.
+        // Impossible to be white unless color is white.
+        const innerMaterial = new THREE.MeshBasicMaterial({
+          color: 0x0022cc, // Pure Royal Blue
           transparent: true,
-          opacity: 0.95, // Very solid
-          depthWrite: true, // Ensure proper depth sorting
-          transmission: 0.2,
-          side: THREE.DoubleSide
+          opacity: 0.85, // Slightly see-through ghost
+          side: THREE.DoubleSide,
+          depthWrite: true
         });
 
         // Outer Wireframe (Neon Cyan)
@@ -275,19 +258,28 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Shoulder X: Flexion/Extension (Move arm forward/back)
     // Shoulder Y: Internal/External Rotation (Twist)
     
-    // 1. Lift Arm (Abduction) - UP/DOWN
-    // FORCE ARMS DOWN IN NEUTRAL (Phase 1)
-    // If shoulder rotation is high (Closed/Neutral > 60 deg), force arm DOWN (positive X)
-    // 80-90 degrees down means arm is by side.
-    const armLift = metrics.shoulderRotation > 60 ? 85 : metrics.rightShoulderAngle; 
-    rotateBone('rightArm', 'x', armLift, 0, false); // X-axis controls Up/Down (Abduction)
-    
-    // 2. Horizontal Adduction - FORWARD/BACK
-    // FORCE ARM FORWARD/ACROSS CHEST IN NEUTRAL
-    // If Closed (90 deg), arm must be forward (+45 to +60)
-    // Z-axis controls Forward/Back (Flexion)
-    const armAdduction = metrics.shoulderRotation > 60 ? 60 : (90 - metrics.shoulderRotation) - 45;
-    rotateBone('rightArm', 'z', armAdduction, 0, false); // Z-axis controls Forward/Back
+    // NUCLEAR OPTION: HARD OVERRIDE FOR NEUTRAL PHASE
+    // If we are in Neutral/Closed stance (> 60 deg rotation), force A-Pose.
+    if (metrics.shoulderRotation > 60) {
+        // INVERTED LOGIC: Try NEGATIVE rotation if positive was lifting up.
+        // Force Right Arm DOWN (X-axis -80 deg)
+        rotateBone('rightArm', 'x', -80, 0, false); 
+        // Force Right Arm FORWARD/NEUTRAL (Z-axis ~20 deg)
+        rotateBone('rightArm', 'z', 20, 0, false);
+        // Force Elbow slightly bent (X-axis ~30 deg)
+        rotateBone('rightForearm', 'x', 30, -180, false);
+        
+        // Force Left Arm DOWN too (Mirror)
+        rotateBone('leftArm', 'x', -80, 0, false);
+        rotateBone('leftArm', 'z', -20, 0, false);
+    } else {
+        // Normal Throwing Motion Logic
+        rotateBone('rightArm', 'x', metrics.rightShoulderAngle, 0, false); // Lift
+        // Map Adduction: 90->0 rotation maps to -45->+45 arm angle
+        const armAdduction = (90 - metrics.shoulderRotation) - 45;
+        rotateBone('rightArm', 'z', armAdduction, 0, false);
+        rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
+    }
 
     // 3. Elbow Flexion
     // Ensure elbow is bent comfortably (approx 90 deg) in Phase 1
