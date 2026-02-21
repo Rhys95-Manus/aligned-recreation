@@ -2,12 +2,14 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
-import { Activity } from "lucide-react";
+import { Activity, Video, Square } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [audioOn, setAudioOn] = useState(true);
-  const [isPracticeMode, setIsPracticeMode] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [currentRep, setCurrentRep] = useState(1);
+  const [recordingTime, setRecordingTime] = useState(0);
   const [, setLocation] = useLocation();
 
   return (
@@ -35,11 +37,14 @@ export default function Home() {
               Get Started
             </Button>
             <Button 
-              onClick={() => setIsPracticeMode(true)}
+              onClick={() => {
+                setIsRecording(true);
+                setRecordingTime(0);
+              }}
               className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-6 text-lg rounded-xl flex items-center gap-2"
             >
-              <Activity className="w-5 h-5" />
-              Live Practice
+              <Video className="w-5 h-5" />
+              Start Recording
             </Button>
           </div>
         </div>
@@ -85,13 +90,49 @@ export default function Home() {
         <span>✎</span> Tweak
       </div>
 
-      {/* Live Coaching Overlay */}
-      <LiveCoachingOverlay 
-        isActive={isPracticeMode}
-        currentRep={currentRep}
-        totalReps={5}
-        onComplete={() => setIsPracticeMode(false)}
-      />
+      {/* Recording Overlay & Camera Feed Simulation */}
+      <AnimatePresence>
+        {isRecording && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center"
+          >
+            {/* Simulated Camera Feed Background */}
+            <div className="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2940&auto=format&fit=crop')] bg-cover bg-center grayscale mix-blend-overlay" />
+            
+            {/* Recording Indicator */}
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-6 py-3 rounded-full flex items-center gap-3 z-50">
+              <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ef4444]" />
+              <span className="text-red-100 font-mono text-lg tracking-widest">
+                REC {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+
+            {/* Live Coaching Overlay (Active during recording) */}
+            <LiveCoachingOverlay 
+              isActive={true}
+              currentRep={currentRep}
+              totalReps={5}
+              onComplete={() => {
+                setIsRecording(false);
+                setCurrentRep(1);
+              }}
+            />
+
+            {/* Stop Button */}
+            <Button 
+              size="lg"
+              className="absolute bottom-12 bg-red-600 hover:bg-red-700 text-white px-12 py-6 text-xl rounded-full shadow-2xl z-50"
+              onClick={() => setIsRecording(false)}
+            >
+              <Square className="w-6 h-6 mr-3 fill-current" />
+              Stop Recording
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

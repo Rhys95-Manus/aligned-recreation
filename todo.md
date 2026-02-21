@@ -130,3 +130,6 @@
 - [ ] Design "Correction Cue" state (Red/Magenta highlight)
 - [ ] Implement "Listening/Analyzing" animation state
 - [ ] Build logic to cycle through feedback between reps
+- [ ] Merge Live Coaching logic into `isRecording` state
+- [ ] Create a simulated "Camera Feed" background for the recording view
+- [ ] Ensure feedback overlay appears dynamically *during* the recording session
