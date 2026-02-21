@@ -19,7 +19,6 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
-      <Route path={"/session/:activity"} component={Session} />
       <Route path={"/categories"} component={Categories} />
       <Route path={"/subcategories/:categoryId"} component={Subcategories} />
       <Route path={"/motions/:categoryId/:subcategoryId"} component={Motions} />
