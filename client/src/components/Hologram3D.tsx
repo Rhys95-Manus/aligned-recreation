@@ -70,23 +70,23 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // MOODY DARK LIGHTING
-    const ambientLight = new THREE.AmbientLight(0x000510, 0.3); // Very dark ambient
+    // BALANCED NEON LIGHTING
+    const ambientLight = new THREE.AmbientLight(0x000a22, 0.4); // Deep blue ambient
     scene.add(ambientLight);
 
-    // Dim Main Light (Front/Top)
-    const mainLight = new THREE.DirectionalLight(0x113366, 1.0); // Much dimmer main light
+    // Main Neon Light (Front/Top)
+    const mainLight = new THREE.DirectionalLight(0x2255aa, 1.5); // Moderate intensity
     mainLight.position.set(0, 5, 5);
     scene.add(mainLight);
 
-    // Sharp Rim Light (Back/Left - Definition)
-    const rimLightLeft = new THREE.SpotLight(0x0088ff, 4.0); // Focused blue rim
+    // Bright Neon Rim Light (Back/Left)
+    const rimLightLeft = new THREE.SpotLight(0x00ffff, 5.0); // Cyan neon rim
     rimLightLeft.position.set(-5, 2, -5);
     rimLightLeft.lookAt(0, 0, 0);
     scene.add(rimLightLeft);
 
-    // Subtle Rim Light (Back/Right)
-    const rimLightRight = new THREE.SpotLight(0x002288, 3.0); // Darker blue rim
+    // Deep Neon Rim Light (Back/Right)
+    const rimLightRight = new THREE.SpotLight(0x0044ff, 4.0); // Electric blue rim
     rimLightRight.position.set(5, 2, -5);
     rimLightRight.lookAt(0, 0, 0);
     scene.add(rimLightRight);
@@ -117,24 +117,24 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
         // Apply Materials
         // Inner Body (Solid Ghost)
-        // DARK MIDNIGHT BLUE MATERIAL (Moodier)
+        // DEEP NEON BLUE MATERIAL (Balanced)
         const innerMaterial = new THREE.MeshStandardMaterial({
-          color: 0x001133, // Very Dark Navy base
-          emissive: 0x002266, // Subtle Deep Blue glow
-          emissiveIntensity: 0.6, // Reduced glow for darker look
-          metalness: 0.7, // More metallic/reflective
-          roughness: 0.5, // Slightly rougher to catch light
+          color: 0x002255, // Deep Electric Blue base (Lighter than Navy, Darker than Ice)
+          emissive: 0x0033aa, // Vibrant Blue glow
+          emissiveIntensity: 1.0, // Stronger neon pop
+          metalness: 0.6,
+          roughness: 0.4,
           transparent: true,
-          opacity: 0.8, // More solid/opaque
+          opacity: 0.75,
           side: THREE.DoubleSide
         });
 
-        // Outer Wireframe (Subtle Electric Blue)
+        // Outer Wireframe (Neon Cyan Pop)
         const wireframeMaterial = new THREE.MeshBasicMaterial({
-          color: 0x4488ff, // Electric Blue wireframe
+          color: 0x00ccff, // Bright Neon Cyan
           wireframe: true,
           transparent: true,
-          opacity: 0.25 // More subtle/faint
+          opacity: 0.35 // Visible neon structure
         });
 
         model.traverse((child: any) => {

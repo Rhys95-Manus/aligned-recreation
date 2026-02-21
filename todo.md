@@ -112,3 +112,6 @@
 - [ ] Darken hologram base color to Deep Navy/Midnight Blue
 - [ ] Reduce emissive intensity to minimize bloom
 - [ ] Lower scene lighting for dramatic shadows
+- [ ] Increase emissive intensity to ~1.0 for neon effect
+- [ ] Lighten base color to Deep Electric Blue (between Navy and Ice Blue)
+- [ ] Enhance wireframe visibility for structural pop
