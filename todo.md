@@ -109,3 +109,6 @@
 - [ ] Analyze `ChatGPTImageFeb14,2026,04_24_24PM.png` for color palette
 - [ ] Update Hologram3D.tsx to match the new blue/cyan color scheme
 - [ ] Remove all pink/magenta elements
+- [ ] Darken hologram base color to Deep Navy/Midnight Blue
+- [ ] Reduce emissive intensity to minimize bloom
+- [ ] Lower scene lighting for dramatic shadows
