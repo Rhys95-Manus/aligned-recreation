@@ -118,3 +118,6 @@
 - [ ] Darken base color to Deep Navy (0x001144)
 - [ ] Maintain high-intensity Neon Cyan wireframe (0x00ccff)
 - [ ] Adjust lighting to create high contrast (Dark Body + Bright Edges)
+- [ ] Restore Inner Layer: Deep Purple/Blue (0x2a004e) for volume
+- [ ] Restore Outer Layer: Cyan Wireframe (0x00ffff) for contrast
+- [ ] Ensure "Sci-Fi Hologram" depth is achieved
