@@ -13,6 +13,7 @@ interface LiveCoachingOverlayProps {
   currentRep: number;
   totalReps: number;
   audioEnabled?: boolean;
+  selectedVoice?: string;
   onComplete: () => void;
   // New prop to force trigger feedback from parent
   triggerFeedback?: boolean;
@@ -30,6 +31,7 @@ export default function LiveCoachingOverlay({
   currentRep,
   totalReps,
   audioEnabled = true,
+  selectedVoice = "Google US English",
   onComplete,
   triggerFeedback,
   metrics
@@ -100,14 +102,10 @@ export default function LiveCoachingOverlay({
           utterance.pitch = 1.0;
           utterance.volume = 1.0;
 
-          // Select the same female voice as Analysis.tsx
+          // Select the voice based on user preference
           const voices = window.speechSynthesis.getVoices();
-          const preferredVoice = voices.find(voice => 
-            voice.name === 'Google US English' ||
-            voice.name === 'Samantha' ||
-            voice.name.includes('Female') ||
-            (voice.name.includes('Google') && voice.lang === 'en-US')
-          ) || voices.find(voice => voice.lang.startsWith('en'));
+          const preferredVoice = voices.find(voice => voice.name === selectedVoice) || 
+                                 voices.find(voice => voice.lang.startsWith('en'));
           
           if (preferredVoice) {
             utterance.voice = preferredVoice;
@@ -177,42 +175,40 @@ export default function LiveCoachingOverlay({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="w-full max-w-md px-6"
+            className="w-full max-w-3xl px-6"
           >
-            <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl space-y-6">
+            <div className="bg-black/90 backdrop-blur-xl border-2 border-blue-500/50 rounded-3xl p-8 shadow-2xl space-y-8 transform scale-105 origin-center">
               {/* Header */}
-              <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                <span className="text-sm font-mono text-gray-400">REP {currentRep}/{totalReps}</span>
-                <span className="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white">LIVE COACHING</span>
+              <div className="flex justify-between items-center border-b border-white/10 pb-6">
+                <span className="text-xl font-mono text-gray-300 font-bold">REP {currentRep}/{totalReps}</span>
+                <span className="text-sm font-black bg-blue-600/20 text-blue-400 px-4 py-2 rounded-full uppercase tracking-widest border border-blue-500/30">LIVE COACHING</span>
               </div>
 
-              {/* Feedback Items */}
-              <div className="space-y-4">
+              {/*               {/* Feedback Items */}
+              <div className="space-y-6">
                 {currentFeedback.map((item, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: idx * 0.2 }}
-                    className={`p-4 rounded-xl border-l-4 ${
+                    className={`p-6 rounded-2xl border-l-8 shadow-lg ${
                       item.type === "positive" 
-                        ? "bg-emerald-500/10 border-emerald-500" 
-                        : "bg-rose-500/10 border-rose-500"
+                        ? "bg-emerald-900/40 border-emerald-500" 
+                        : "bg-rose-900/40 border-rose-500"
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      {item.type === "positive" ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" />
-                      ) : (
-                        <AlertCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
-                      )}
+                    <div className="flex items-center gap-5">
+                      <span className="text-5xl filter drop-shadow-lg">
+                        {item.type === "positive" ? "✅" : "⚠️"}
+                      </span>
                       <div>
-                        <h3 className={`font-bold text-lg ${
-                          item.type === "positive" ? "text-emerald-100" : "text-rose-100"
+                        <h3 className={`text-3xl font-black tracking-tight ${
+                          item.type === "positive" ? "text-emerald-400" : "text-rose-400"
                         }`}>
                           {item.message}
                         </h3>
-                        <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                        <p className="text-xl font-medium text-white mt-2 leading-relaxed opacity-90">
                           {item.detail}
                         </p>
                       </div>
