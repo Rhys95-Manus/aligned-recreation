@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
+import { Activity } from "lucide-react";
 
 export default function Home() {
   const [audioOn, setAudioOn] = useState(true);
+  const [isPracticeMode, setIsPracticeMode] = useState(false);
+  const [currentRep, setCurrentRep] = useState(1);
   const [, setLocation] = useLocation();
 
   return (
@@ -26,9 +30,18 @@ export default function Home() {
             Welcome to <span className="text-blue-400">Aligned</span>
           </h1>
           <p className="text-xl text-slate-300 mb-8">Professional feedback on your form</p>
-          <Button onClick={() => setLocation("/categories")} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg rounded-xl">
-            Get Started
-          </Button>
+          <div className="flex gap-4 justify-center">
+            <Button onClick={() => setLocation("/categories")} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg rounded-xl">
+              Get Started
+            </Button>
+            <Button 
+              onClick={() => setIsPracticeMode(true)}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-6 text-lg rounded-xl flex items-center gap-2"
+            >
+              <Activity className="w-5 h-5" />
+              Live Practice
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24">
@@ -71,6 +84,14 @@ export default function Home() {
       <div className="fixed bottom-6 right-6 bg-white text-black px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 shadow-lg">
         <span>✎</span> Tweak
       </div>
+
+      {/* Live Coaching Overlay */}
+      <LiveCoachingOverlay 
+        isActive={isPracticeMode}
+        currentRep={currentRep}
+        totalReps={5}
+        onComplete={() => setIsPracticeMode(false)}
+      />
     </div>
   );
 }
