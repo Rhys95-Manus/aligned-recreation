@@ -70,13 +70,18 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // RESTORED LIGHTING (Standard Blue)
-    // const ambientLight = new THREE.AmbientLight(0x0000aa, 0.4); // Dark blue ambient
-    // scene.add(ambientLight);
+    // VIDEO REFERENCE LIGHTING (Cyan/Electric Blue)
+    const ambientLight = new THREE.AmbientLight(0x002244, 0.5); // Dark cyan/blue ambient
+    scene.add(ambientLight);
     
-    const mainLight = new THREE.DirectionalLight(0x0044ff, 0.8); // Standard Blue Light
-    mainLight.position.set(2, 2, 5);
+    const mainLight = new THREE.DirectionalLight(0x00ffff, 1.0); // Bright Cyan Light
+    mainLight.position.set(0, 2, 5); // Frontal lighting
     scene.add(mainLight);
+    
+    const rimLight = new THREE.SpotLight(0x00ffff, 2.0); // Strong rim light
+    rimLight.position.set(0, 5, -5);
+    rimLight.lookAt(0, 0, 0);
+    scene.add(rimLight);
 
     // Load Model
     const loader = new GLTFLoader();
@@ -104,24 +109,24 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
         // Apply Materials
         // Inner Body (Solid Ghost)
-        // RESTORED MATERIAL (Standard Blue Ghost)
+        // VIDEO REFERENCE MATERIAL (Electric Cyan/Blue)
         const innerMaterial = new THREE.MeshStandardMaterial({
-          color: 0x0044ff, // Standard Royal Blue
-          emissive: 0x001188, // Subtle deep glow
-          emissiveIntensity: 0.3,
-          metalness: 0.1, // Low metalness
-          roughness: 0.8, // Matte finish
+          color: 0x0088ff, // Bright Electric Blue base
+          emissive: 0x0044aa, // Cyan/Blue glow
+          emissiveIntensity: 0.6, // Stronger glow
+          metalness: 0.3,
+          roughness: 0.2, // Shinier, less matte
           transparent: true,
-          opacity: 0.85,
+          opacity: 0.8,
           side: THREE.DoubleSide
         });
 
-        // Outer Wireframe (Neon Cyan)
+        // Outer Wireframe (Bright Cyan)
         const wireframeMaterial = new THREE.MeshBasicMaterial({
-          color: 0x00ffff,
+          color: 0x44ffff, // Very bright cyan
           wireframe: true,
           transparent: true,
-          opacity: 0.4
+          opacity: 0.3
         });
 
         model.traverse((child: any) => {
@@ -263,40 +268,42 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Shoulder X: Flexion/Extension (Move arm forward/back)
     // Shoulder Y: Internal/External Rotation (Twist)
     
-    // NUCLEAR OPTION: BRUTE FORCE ARMS DOWN
-    // Applying rotation to ALL axes to find the "down" vector.
-    // One of these WILL put the arm down.
-    if (metrics.shoulderRotation > 60) {
-        // Right Arm
-        // X: -80 (Down?)
-        // Y: 0 (No twist)
-        // Z: 80 (Forward?)
-        // We are locking all 3 axes to a static "A-Pose"
-        rotateBone('rightArm', 'x', -80, 0, false); 
-        rotateBone('rightArm', 'y', 0, 0, false);
-        rotateBone('rightArm', 'z', 10, 0, false);
-        
-        // Left Arm
-        rotateBone('leftArm', 'x', -80, 0, false);
-        rotateBone('leftArm', 'y', 0, 0, false);
-        rotateBone('leftArm', 'z', -10, 0, false);
-    } else {
-        // Normal Throwing Motion Logic
-        rotateBone('rightArm', 'x', metrics.rightShoulderAngle, 0, false); // Lift
-        // Map Adduction: 90->0 rotation maps to -45->+45 arm angle
-        const armAdduction = (90 - metrics.shoulderRotation) - 45;
-        rotateBone('rightArm', 'z', armAdduction, 0, false);
-        rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
-    }
-
-    // 3. Elbow Flexion
-    // Ensure elbow is bent comfortably (approx 90 deg) in Phase 1
-    rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
-
+    // VIDEO REFERENCE POSE: T-POSE / CHEST LEVEL ARMS
+    // The reference video shows arms extended horizontally at chest level (T-Pose-ish)
+    // in the starting phase, NOT down at sides.
+    
+    // Right Arm (Throwing Arm)
+    // We map metrics to keep arms HIGH and WIDE, never dropping below chest.
+    
+    // Right Arm Lift (Abduction) - Always keep near 90 deg (horizontal)
+    // We use metrics.rightShoulderAngle but clamp it to minimum 80 deg
+    const rightArmLift = Math.max(80, metrics.rightShoulderAngle);
+    rotateBone('rightArm', 'z', rightArmLift, -90, false); // -90 offset for T-pose base
+    
+    // Right Arm Horizontal Adduction (Forward/Back)
+    // Map shoulder rotation to arm position
+    // 90 deg shoulder (Closed) -> Arm back (-20 deg)
+    // 0 deg shoulder (Open) -> Arm forward (+45 deg)
+    const rightArmHorizontal = (90 - metrics.shoulderRotation) - 20;
+    rotateBone('rightArm', 'y', rightArmHorizontal, 0, false);
+    
+    // Right Elbow
+    // Keep elbow bent at 90 deg in early phases
+    rotateBone('rightForearm', 'y', metrics.rightElbowAngle, 0, false); // Flexion on Y usually for Mixamo
+    
     // Left Arm (Non-throwing)
-    rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
-    rotateBone('leftArm', 'x', 20, 0, false); // Slight forward pose
-    rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
+    // Mirror right arm roughly but keep it forward for balance
+    rotateBone('leftArm', 'z', -80, 90, false); // Lifted (negative for left)
+    rotateBone('leftArm', 'y', 45, 0, false); // Forward
+    rotateBone('leftForearm', 'y', -90, 0, false); // Bent
+
+    // 3. Elbow Flexion (Handled above in new logic)
+    // rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
+
+    // Left Arm (Handled above in new logic)
+    // rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
+    // rotateBone('leftArm', 'x', 20, 0, false); // Slight forward pose
+    // rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
 
     // Legs (Stance)
     // Knee Flexion: 180 (straight) to 90 (bent) -> X axis
