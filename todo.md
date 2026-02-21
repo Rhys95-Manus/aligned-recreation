@@ -135,3 +135,6 @@
 - [ ] Ensure feedback overlay appears dynamically *during* the recording session
 - [ ] Implement `useEffect` timer to auto-increment `currentRep` every 5-8 seconds during recording
 - [ ] Ensure `LiveCoachingOverlay` receives the updated rep count and triggers feedback animations
+- [ ] Read `LiveCoachingOverlay.tsx` to check `useEffect` dependencies for `currentRep`
+- [ ] Ensure feedback animation triggers on every rep change
+- [ ] Verify z-index and visibility of the overlay container
