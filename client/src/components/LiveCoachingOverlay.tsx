@@ -82,7 +82,25 @@ export default function LiveCoachingOverlay({
   if (!isActive) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-50">
+    <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-[9999]">
+      {/* Debug / Manual Trigger Controls */}
+      <div className="absolute top-24 right-4 pointer-events-auto bg-black/80 p-4 rounded-lg border border-white/20 text-xs font-mono text-white z-[10000]">
+        <div className="mb-2 font-bold text-cyan-400">DEBUG PANEL</div>
+        <div>State: {feedbackState}</div>
+        <div>Rep: {currentRep}/{totalReps}</div>
+        <div>Audio: {audioEnabled ? "ON" : "OFF"}</div>
+        <button 
+          onClick={() => {
+            console.log("Manual trigger clicked");
+            // Force a state update to trigger effect
+            // In a real app, this would be wired to a parent handler
+            // For now, we rely on the parent's timer or this visual confirmation
+          }}
+          className="mt-2 bg-white/20 hover:bg-white/30 px-2 py-1 rounded w-full"
+        >
+          (Timer Running...)
+        </button>
+      </div>
       <AnimatePresence mode="wait">
         {feedbackState === "analyzing" && (
           <motion.div
