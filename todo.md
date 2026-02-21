@@ -96,3 +96,13 @@
 - [ ] Log Bone Names (Debug)
 - [ ] Fix Jumping (Reset Y)
 - [ ] Restore Perfect Blue (Standard Material)
+- [ ] Revert T-Pose to standard throwing stance (hands at chest/ready)
+- [ ] Change Hologram Color to Deep Dark Cyan/Teal (0x004444 or similar)
+- [ ] Reduce brightness/emissive intensity to avoid "neon" look
+- [ ] Fix syntax error in Hologram3D.tsx
+- [ ] Wake up app and provide shareable link
+- [ ] Revert to last working version (bright cyan)
+- [ ] Provide shareable link for testing
+- [ ] Analyze `ChatGPTImageFeb4,2026,08_59_51PM.png` for color palette
+- [ ] Update Hologram3D.tsx to use Pink/Magenta base with Cyan rim lighting/accents
+- [ ] Adjust lighting to match the dramatic stadium look (blue background lights, pink subject)
