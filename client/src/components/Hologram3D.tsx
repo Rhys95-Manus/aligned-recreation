@@ -70,23 +70,23 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // DUAL-TONE LIGHTING (Pink Main + Cyan Rims)
-    const ambientLight = new THREE.AmbientLight(0x000022, 0.4); // Deep dark blue ambient
+    // COLD BLUE LIGHTING (Reference: ChatGPTImageFeb14)
+    const ambientLight = new THREE.AmbientLight(0x001133, 0.5); // Deep navy ambient
     scene.add(ambientLight);
 
-    // Pink Main Light (Front/Top)
-    const mainLight = new THREE.DirectionalLight(0xff0066, 2.5); 
+    // Main Blue Light (Front/Top)
+    const mainLight = new THREE.DirectionalLight(0x3f68b5, 2.0); 
     mainLight.position.set(0, 5, 5);
     scene.add(mainLight);
 
-    // Cyan Rim Light (Back/Left - for the cool edge effect)
-    const rimLightLeft = new THREE.SpotLight(0x00ffff, 8.0);
+    // Bright Cyan Rim Light (Back/Left)
+    const rimLightLeft = new THREE.SpotLight(0x8fc1f0, 6.0);
     rimLightLeft.position.set(-5, 2, -5);
     rimLightLeft.lookAt(0, 0, 0);
     scene.add(rimLightLeft);
 
-    // Blue Rim Light (Back/Right)
-    const rimLightRight = new THREE.SpotLight(0x0044ff, 8.0);
+    // Deep Blue Rim Light (Back/Right)
+    const rimLightRight = new THREE.SpotLight(0x0044ff, 6.0);
     rimLightRight.position.set(5, 2, -5);
     rimLightRight.lookAt(0, 0, 0);
     scene.add(rimLightRight);
@@ -117,24 +117,24 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
         // Apply Materials
         // Inner Body (Solid Ghost)
-        // PINK/MAGENTA MATERIAL (Dual-Tone)
+        // ELECTRIC BLUE MATERIAL (Reference: ChatGPTImageFeb14)
         const innerMaterial = new THREE.MeshStandardMaterial({
-          color: 0xff0044, // Deep Red/Pink base
-          emissive: 0xff0088, // Magenta glow
-          emissiveIntensity: 1.5, // Strong glow
-          metalness: 0.6,
-          roughness: 0.3,
+          color: 0x3f68b5, // Mid-tone Blue base
+          emissive: 0x0044aa, // Deep Blue glow
+          emissiveIntensity: 1.2, // Moderate glow
+          metalness: 0.5,
+          roughness: 0.4,
           transparent: true,
-          opacity: 0.7,
+          opacity: 0.6, // Slightly more transparent ghost look
           side: THREE.DoubleSide
         });
 
-        // Outer Wireframe (Pink/Magenta)
+        // Outer Wireframe (Bright Cyan/Blue)
         const wireframeMaterial = new THREE.MeshBasicMaterial({
-          color: 0xff0066, // Vibrant Pink/Magenta
+          color: 0x8fc1f0, // Bright Ice Blue/Cyan highlights
           wireframe: true,
           transparent: true,
-          opacity: 0.3
+          opacity: 0.4 // Visible wireframe structure
         });
 
         model.traverse((child: any) => {
