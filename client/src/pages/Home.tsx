@@ -5,7 +5,16 @@ import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
 import { Activity, Video, Square } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-function TimerLogic({ isRecording, setRecordingTime, setCurrentRep }: { isRecording: boolean, setRecordingTime: any, setCurrentRep: any }) {
+// Timer logic moved inside main component for reliability
+
+export default function Home() {
+  const [audioOn, setAudioOn] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [currentRep, setCurrentRep] = useState(1);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [, setLocation] = useLocation();
+
+  // Reliable timer logic directly in component
   useEffect(() => {
     if (!isRecording) return;
     
@@ -15,27 +24,16 @@ function TimerLogic({ isRecording, setRecordingTime, setCurrentRep }: { isRecord
 
     const repTimer = setInterval(() => {
       setCurrentRep((prev: number) => {
-        // Only increment if less than 5
         if (prev < 5) return prev + 1;
         return prev;
       });
-    }, 8000); // Increment rep every 8 seconds
+    }, 8000);
 
     return () => {
       clearInterval(timer);
       clearInterval(repTimer);
     };
-  }, [isRecording, setRecordingTime, setCurrentRep]);
-
-  return null;
-}
-
-export default function Home() {
-  const [audioOn, setAudioOn] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
-  const [currentRep, setCurrentRep] = useState(1);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [, setLocation] = useLocation();
+  }, [isRecording]);
 
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-slate-100">
@@ -115,17 +113,7 @@ export default function Home() {
         <span>✎</span> Tweak
       </div>
 
-      {/* Timer Logic */}
-      {isRecording && (
-        <div className="hidden">
-          {/* This hidden div ensures the timer logic runs when isRecording is true */}
-          <TimerLogic 
-            isRecording={isRecording} 
-            setRecordingTime={setRecordingTime} 
-            setCurrentRep={setCurrentRep} 
-          />
-        </div>
-      )}
+
 
       {/* Recording Overlay & Camera Feed Simulation */}
       <AnimatePresence>
@@ -152,6 +140,7 @@ export default function Home() {
               isActive={true}
               currentRep={currentRep}
               totalReps={5}
+              audioEnabled={audioOn}
               onComplete={() => {
                 setIsRecording(false);
                 setCurrentRep(1);

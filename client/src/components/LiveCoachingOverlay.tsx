@@ -12,6 +12,7 @@ interface LiveCoachingOverlayProps {
   isActive: boolean;
   currentRep: number;
   totalReps: number;
+  audioEnabled?: boolean;
   onComplete: () => void;
 }
 
@@ -19,29 +20,11 @@ export default function LiveCoachingOverlay({
   isActive,
   currentRep,
   totalReps,
+  audioEnabled = true,
   onComplete
 }: LiveCoachingOverlayProps) {
   const [feedbackState, setFeedbackState] = useState<"analyzing" | "feedback" | "ready">("ready");
   const [currentFeedback, setCurrentFeedback] = useState<FeedbackItem[]>([]);
-
-  // Mock feedback data generator
-  const generateFeedback = () => {
-    const positive = [
-      { type: "positive", message: "Great Hip Rotation", detail: "Your hip velocity peaked at 450°/s" },
-      { type: "positive", message: "Solid Base", detail: "Excellent stability through the throw" },
-      { type: "positive", message: "Good Extension", detail: "Full arm extension achieved" }
-    ];
-    const corrections = [
-      { type: "correction", message: "Fix Elbow Angle", detail: "Keep elbow at 90° during cocking" },
-      { type: "correction", message: "Watch Your Head", detail: "Keep head still during release" },
-      { type: "correction", message: "Drive Harder", detail: "Push off the back leg more explosively" }
-    ];
-
-    return [
-      positive[Math.floor(Math.random() * positive.length)] as FeedbackItem,
-      corrections[Math.floor(Math.random() * corrections.length)] as FeedbackItem
-    ];
-  };
 
   // Trigger feedback cycle whenever currentRep changes
   useEffect(() => {
@@ -52,11 +35,6 @@ export default function LiveCoachingOverlay({
         await new Promise(r => setTimeout(r, 1500));
 
         // 2. Feedback Phase
-        const feedback = [
-          { type: "positive", message: "Great Hip Rotation", detail: "Your hip velocity peaked at 450°/s" },
-          { type: "correction", message: "Fix Elbow Angle", detail: "Keep elbow at 90° during cocking" }
-        ];
-        // Randomize feedback for variety
         const positive = [
           { type: "positive", message: "Great Hip Rotation", detail: "Your hip velocity peaked at 450°/s" },
           { type: "positive", message: "Solid Base", detail: "Excellent stability through the throw" },
@@ -77,6 +55,16 @@ export default function LiveCoachingOverlay({
         setCurrentFeedback(selectedFeedback);
         setFeedbackState("feedback");
         
+        // Audio Feedback
+        if (audioEnabled) {
+          // @ts-ignore
+          const message = `Rep ${currentRep}. ${selectedFeedback[0].message}. ${selectedFeedback[1].message}.`;
+          const utterance = new SpeechSynthesisUtterance(message);
+          utterance.rate = 1.1;
+          utterance.pitch = 1.0;
+          window.speechSynthesis.speak(utterance);
+        }
+        
         // Show feedback for 4s
         await new Promise(r => setTimeout(r, 4000)); 
 
@@ -89,7 +77,7 @@ export default function LiveCoachingOverlay({
       };
       cycle();
     }
-  }, [currentRep, isActive]);
+  }, [currentRep, isActive, audioEnabled, totalReps, onComplete]);
 
   if (!isActive) return null;
 
