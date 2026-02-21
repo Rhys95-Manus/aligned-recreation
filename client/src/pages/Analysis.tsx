@@ -8,6 +8,7 @@ import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribu
 import { detectRepBoundaries } from "@/utils/repDetection";
 import Replay from "./Replay";
 import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
+import { useAudio } from "@/contexts/AudioContext";
 
 // Detailed analysis data structure
 interface DetailedAnalysisData {
@@ -228,21 +229,13 @@ export default function Analysis() {
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   
   // Voice feedback
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const { audioEnabled, selectedVoice } = useAudio();
   
   useEffect(() => {
     // Load total points from localStorage
     const saved = localStorage.getItem('totalPoints');
     if (saved) {
       setTotalPoints(parseInt(saved, 10));
-    }
-    
-    // Ensure voices are loaded
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-      };
     }
     
     return () => {
@@ -305,20 +298,16 @@ export default function Analysis() {
   };
   
   const speak = (text: string) => {
-    if (voiceEnabled && 'speechSynthesis' in window) {
+    if (audioEnabled && 'speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
       
-      // Select a female voice - matching the original website
+      // Use selected voice from context
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(voice => 
-        voice.name === 'Google US English' ||
-        voice.name === 'Samantha' ||
-        voice.name.includes('Female') ||
-        (voice.name.includes('Google') && voice.lang === 'en-US')
-      ) || voices.find(voice => voice.lang.startsWith('en'));
+      const preferredVoice = voices.find(voice => voice.name === selectedVoice) || 
+                             voices.find(voice => voice.lang.startsWith('en'));
       
       if (preferredVoice) {
         utterance.voice = preferredVoice;
@@ -1483,7 +1472,8 @@ export default function Analysis() {
                   isActive={sessionState === 'capturing'}
                   currentRep={currentCaptureRep - 1} // Show feedback for the COMPLETED rep
                   totalReps={selectedReps}
-                  audioEnabled={voiceEnabled}
+                  audioEnabled={audioEnabled}
+                  selectedVoice={selectedVoice}
                   triggerFeedback={feedbackTrigger}
                   metrics={{
                     hipRotation: hipRotation,
