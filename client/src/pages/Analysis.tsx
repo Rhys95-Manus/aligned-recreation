@@ -7,6 +7,7 @@ import { getProfessionalReference, calculateMetricScore, getComparisonText } fro
 import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribution, formatSpineAngle, formatRotationAngle } from "@/utils/rotationCalculations";
 import { detectRepBoundaries } from "@/utils/repDetection";
 import Replay from "./Replay";
+import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
 
 // Detailed analysis data structure
 interface DetailedAnalysisData {
@@ -183,7 +184,7 @@ export default function Analysis() {
       // Small timeout to ensure state is settled
       const timer = setTimeout(() => {
         stopAndScore();
-      }, 4000); // Increased delay to allow final feedback to be seen/heard
+      }, 500); // Reduced delay for instant transition
       return () => clearTimeout(timer);
     }
   }, [completedReps]);
@@ -1477,7 +1478,23 @@ export default function Analysis() {
                   </div>
                 )}
 
-            {/* Visual Feedback Overlay Removed */}
+                {/* Live Coaching Overlay */}
+                <LiveCoachingOverlay 
+                  isActive={sessionState === 'capturing'}
+                  currentRep={currentCaptureRep - 1} // Show feedback for the COMPLETED rep
+                  totalReps={selectedReps}
+                  audioEnabled={voiceEnabled}
+                  triggerFeedback={feedbackTrigger}
+                  metrics={{
+                    hipRotation: hipRotation,
+                    shoulderRotation: shoulderRotation,
+                    rightElbowAngle: rightElbowAngle,
+                    spineAngle: spineAngle
+                  }}
+                  onComplete={() => {
+                    // Optional: Handle completion of all feedback
+                  }}
+                />
               </div>
 
               {/* Rep Selector - Only show when camera is active and ready to capture */}
