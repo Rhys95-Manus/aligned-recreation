@@ -133,3 +133,5 @@
 - [ ] Merge Live Coaching logic into `isRecording` state
 - [ ] Create a simulated "Camera Feed" background for the recording view
 - [ ] Ensure feedback overlay appears dynamically *during* the recording session
+- [ ] Implement `useEffect` timer to auto-increment `currentRep` every 5-8 seconds during recording
+- [ ] Ensure `LiveCoachingOverlay` receives the updated rep count and triggers feedback animations
