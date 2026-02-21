@@ -70,23 +70,23 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // COLD BLUE LIGHTING (Reference: ChatGPTImageFeb14)
-    const ambientLight = new THREE.AmbientLight(0x001133, 0.5); // Deep navy ambient
+    // MOODY DARK LIGHTING
+    const ambientLight = new THREE.AmbientLight(0x000510, 0.3); // Very dark ambient
     scene.add(ambientLight);
 
-    // Main Blue Light (Front/Top)
-    const mainLight = new THREE.DirectionalLight(0x3f68b5, 2.0); 
+    // Dim Main Light (Front/Top)
+    const mainLight = new THREE.DirectionalLight(0x113366, 1.0); // Much dimmer main light
     mainLight.position.set(0, 5, 5);
     scene.add(mainLight);
 
-    // Bright Cyan Rim Light (Back/Left)
-    const rimLightLeft = new THREE.SpotLight(0x8fc1f0, 6.0);
+    // Sharp Rim Light (Back/Left - Definition)
+    const rimLightLeft = new THREE.SpotLight(0x0088ff, 4.0); // Focused blue rim
     rimLightLeft.position.set(-5, 2, -5);
     rimLightLeft.lookAt(0, 0, 0);
     scene.add(rimLightLeft);
 
-    // Deep Blue Rim Light (Back/Right)
-    const rimLightRight = new THREE.SpotLight(0x0044ff, 6.0);
+    // Subtle Rim Light (Back/Right)
+    const rimLightRight = new THREE.SpotLight(0x002288, 3.0); // Darker blue rim
     rimLightRight.position.set(5, 2, -5);
     rimLightRight.lookAt(0, 0, 0);
     scene.add(rimLightRight);
@@ -117,24 +117,24 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
         // Apply Materials
         // Inner Body (Solid Ghost)
-        // ELECTRIC BLUE MATERIAL (Reference: ChatGPTImageFeb14)
+        // DARK MIDNIGHT BLUE MATERIAL (Moodier)
         const innerMaterial = new THREE.MeshStandardMaterial({
-          color: 0x3f68b5, // Mid-tone Blue base
-          emissive: 0x0044aa, // Deep Blue glow
-          emissiveIntensity: 1.2, // Moderate glow
-          metalness: 0.5,
-          roughness: 0.4,
+          color: 0x001133, // Very Dark Navy base
+          emissive: 0x002266, // Subtle Deep Blue glow
+          emissiveIntensity: 0.6, // Reduced glow for darker look
+          metalness: 0.7, // More metallic/reflective
+          roughness: 0.5, // Slightly rougher to catch light
           transparent: true,
-          opacity: 0.6, // Slightly more transparent ghost look
+          opacity: 0.8, // More solid/opaque
           side: THREE.DoubleSide
         });
 
-        // Outer Wireframe (Bright Cyan/Blue)
+        // Outer Wireframe (Subtle Electric Blue)
         const wireframeMaterial = new THREE.MeshBasicMaterial({
-          color: 0x8fc1f0, // Bright Ice Blue/Cyan highlights
+          color: 0x4488ff, // Electric Blue wireframe
           wireframe: true,
           transparent: true,
-          opacity: 0.4 // Visible wireframe structure
+          opacity: 0.25 // More subtle/faint
         });
 
         model.traverse((child: any) => {
