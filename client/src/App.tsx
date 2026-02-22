@@ -14,6 +14,7 @@ import Pricing from "./pages/Pricing";
 import SessionHistory from "./pages/SessionHistory";
 import Community from "./pages/Community";
 import Session from "./pages/Session";
+import AudioSettings from "./pages/AudioSettings";
 
 
 function Router() {
@@ -27,6 +28,7 @@ function Router() {
       <Route path={"/pricing"} component={Pricing} />
       <Route path={"/history"} component={SessionHistory} />
       <Route path={"/community"} component={Community} />
+      <Route path={"/settings/audio"} component={AudioSettings} />
   
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

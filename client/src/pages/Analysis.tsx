@@ -229,7 +229,7 @@ export default function Analysis() {
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   
   // Voice feedback
-  const { audioEnabled, selectedVoice } = useAudio();
+  // const { audioEnabled, selectedVoice } = useAudio(); // Moved to top level for volume access
   
   useEffect(() => {
     // Load total points from localStorage
@@ -297,12 +297,14 @@ export default function Analysis() {
     return angle;
   };
   
+  const { audioEnabled, selectedVoice, volume } = useAudio();
+
   const speak = (text: string) => {
     if (audioEnabled && 'speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
-      utterance.volume = 1.0;
+      utterance.volume = volume;
       
       // Use selected voice from context
       const voices = window.speechSynthesis.getVoices();
@@ -1474,6 +1476,7 @@ export default function Analysis() {
                   totalReps={selectedReps}
                   audioEnabled={audioEnabled}
                   selectedVoice={selectedVoice}
+                  volume={volume}
                   triggerFeedback={feedbackTrigger}
                   metrics={{
                     hipRotation: hipRotation,

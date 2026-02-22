@@ -14,6 +14,7 @@ interface LiveCoachingOverlayProps {
   totalReps: number;
   audioEnabled?: boolean;
   selectedVoice?: string;
+  volume?: number;
   onComplete: () => void;
   // New prop to force trigger feedback from parent
   triggerFeedback?: boolean;
@@ -32,6 +33,7 @@ export default function LiveCoachingOverlay({
   totalReps,
   audioEnabled = true,
   selectedVoice = "Google US English",
+  volume = 1.0,
   onComplete,
   triggerFeedback,
   metrics
@@ -100,7 +102,7 @@ export default function LiveCoachingOverlay({
           const utterance = new SpeechSynthesisUtterance(message);
           utterance.rate = 0.95; // Match Analysis.tsx rate
           utterance.pitch = 1.0;
-          utterance.volume = 1.0;
+          utterance.volume = volume;
 
           // Select the voice based on user preference
           const voices = window.speechSynthesis.getVoices();

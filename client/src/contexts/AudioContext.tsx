@@ -6,6 +6,8 @@ interface AudioContextType {
   selectedVoice: string;
   setSelectedVoice: (voice: string) => void;
   availableVoices: SpeechSynthesisVoice[];
+  volume: number;
+  setVolume: (vol: number) => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -14,6 +16,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [selectedVoice, setSelectedVoice] = useState("Google US English");
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [volume, setVolume] = useState(1.0);
 
   useEffect(() => {
     const loadVoices = () => {
@@ -35,7 +38,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       toggleAudio, 
       selectedVoice, 
       setSelectedVoice,
-      availableVoices 
+      availableVoices,
+      volume,
+      setVolume
     }}>
       {children}
     </AudioContext.Provider>
