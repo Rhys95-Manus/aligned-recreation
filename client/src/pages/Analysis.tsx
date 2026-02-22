@@ -171,6 +171,7 @@ export default function Analysis() {
   const [currentCaptureRep, setCurrentCaptureRep] = useState(1); // Current rep being captured (live)
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
   const [feedbackTrigger, setFeedbackTrigger] = useState(false); // Trigger for live coaching
+  const [liveCoachingEnabled, setLiveCoachingEnabled] = useState(true); // Toggle for live coaching feature
 
   // Watch for completion of all reps AND trigger feedback
   useEffect(() => {
@@ -1419,6 +1420,22 @@ export default function Analysis() {
           <div className="flex flex-col lg:flex-row gap-4 mb-4">
             {/* Video Feed - Takes up 80% width on large screens */}
             <div className="lg:w-[80%] bg-[#1a1f2e] rounded-lg p-4">
+              {/* Live Coaching Toggle */}
+              <div className="flex justify-end mb-2">
+                <div 
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                    liveCoachingEnabled 
+                      ? 'bg-blue-600/20 border-blue-500/50 text-blue-400' 
+                      : 'bg-slate-800/80 border-slate-700 text-slate-400'
+                  }`}
+                  onClick={() => setLiveCoachingEnabled(!liveCoachingEnabled)}
+                >
+                  <div className={`w-2 h-2 rounded-full transition-colors ${liveCoachingEnabled ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-slate-500'}`} />
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                    Live Coaching: {liveCoachingEnabled ? 'ON' : 'OFF'}
+                  </span>
+                </div>
+              </div>
               <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', maxHeight: '500px' }}>
                 <video
                   ref={videoRef}
@@ -1470,24 +1487,26 @@ export default function Analysis() {
                 )}
 
                 {/* Live Coaching Overlay */}
-                <LiveCoachingOverlay 
-                  isActive={sessionState === 'capturing'}
-                  currentRep={currentCaptureRep - 1} // Show feedback for the COMPLETED rep
-                  totalReps={selectedReps}
-                  audioEnabled={audioEnabled}
-                  selectedVoice={selectedVoice}
-                  volume={volume}
-                  triggerFeedback={feedbackTrigger}
-                  metrics={{
-                    hipRotation: hipRotation,
-                    shoulderRotation: shoulderRotation,
-                    rightElbowAngle: rightElbowAngle,
-                    spineAngle: spineAngle
-                  }}
-                  onComplete={() => {
-                    // Optional: Handle completion of all feedback
-                  }}
-                />
+                {liveCoachingEnabled && (
+                  <LiveCoachingOverlay 
+                    isActive={sessionState === 'capturing'}
+                    currentRep={currentCaptureRep - 1} // Show feedback for the COMPLETED rep
+                    totalReps={selectedReps}
+                    audioEnabled={audioEnabled}
+                    selectedVoice={selectedVoice}
+                    volume={volume}
+                    triggerFeedback={feedbackTrigger}
+                    metrics={{
+                      hipRotation: hipRotation,
+                      shoulderRotation: shoulderRotation,
+                      rightElbowAngle: rightElbowAngle,
+                      spineAngle: spineAngle
+                    }}
+                    onComplete={() => {
+                      // Optional: Handle completion of all feedback
+                    }}
+                  />
+                )}
               </div>
 
               {/* Rep Selector - Only show when camera is active and ready to capture */}
