@@ -210,6 +210,15 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     if (videoUrl && videoRef.current) {
       videoRef.current.playbackRate = playbackSpeed;
       
+      // Calculate ACTUAL FPS based on video duration and total frames captured
+      // This prevents drift if the webcam recorded at 24fps or 15fps instead of 30
+      const videoDuration = videoRef.current.duration;
+      const totalFrames = recordedFrames.length;
+      // Default to 30 if duration is invalid (e.g. Infinity or 0)
+      const calculatedFPS = (videoDuration > 0 && totalFrames > 0) 
+        ? totalFrames / videoDuration 
+        : 30;
+      
       // Calculate start frame for current rep
       let startFrame = 0;
       if (repBoundaries.length > 0) {
@@ -229,7 +238,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       }
       
       // Sync video to start of rep if we just started playing or changed reps
-      const startTime = startFrame / 30;
+      const startTime = startFrame / calculatedFPS;
       
       // Check if we need to seek (if current time is far from start time)
       const needsSeek = videoRef.current && Math.abs(videoRef.current.currentTime - startTime) > 0.1;
@@ -253,8 +262,9 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
          videoRef.current.play().catch(e => console.error("Video play failed:", e));
       }
       
-      // Create a closure to capture startFrame
+      // Create a closure to capture startFrame and FPS
       const currentStartFrame = startFrame;
+      const currentFPS = calculatedFPS;
 
       const updateFrameFromVideo = () => {
         if (!videoRef.current || !isPlaying) return;
@@ -266,7 +276,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         // Typically video rendering lags behind the JS clock by ~3-5 frames (100-160ms)
         const SYNC_OFFSET_FRAMES = 4; 
         
-        const absoluteFrameIndex = Math.floor(currentTime * 30);
+        const absoluteFrameIndex = Math.floor(currentTime * currentFPS);
         const relativeFrameIndex = absoluteFrameIndex - currentStartFrame - SYNC_OFFSET_FRAMES;
         
         if (relativeFrameIndex >= 0 && relativeFrameIndex < currentRepFrames.length) {
