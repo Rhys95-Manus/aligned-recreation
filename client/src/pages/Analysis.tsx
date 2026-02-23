@@ -229,6 +229,11 @@ export default function Analysis() {
   const [totalPoints, setTotalPoints] = useState(0);
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   
+  // Video recording
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
+  
   // Voice feedback
   // const { audioEnabled, selectedVoice } = useAudio(); // Moved to top level for volume access
   
@@ -265,19 +270,47 @@ export default function Analysis() {
         const newCount = countdown - 1;
         setCountdown(newCount);
         
-        // Speak the countdown number
-        if (newCount > 0) {
-          speak(newCount.toString());
-        } else {
-          // Countdown finished, start capturing
-          speak("Perform your motion now!");
-          isCapturingRef.current = true;
-          recordedFramesRef.current = []; // Clear previous recording
-          captureStartTimeRef.current = Date.now(); // Record start time
-          setSessionState('capturing');
-          console.log('▶️ Countdown complete - starting capture');
-          console.log('🎥 Frame recording started');
-        }
+          // Speak the countdown number
+          if (newCount > 0) {
+            speak(newCount.toString());
+          } else {
+            // Countdown finished, start capturing
+            speak("Perform your motion now!");
+            isCapturingRef.current = true;
+            recordedFramesRef.current = []; // Clear previous recording
+            captureStartTimeRef.current = Date.now(); // Record start time
+            setSessionState('capturing');
+            
+            // Start video recording
+            if (stream) {
+              try {
+                recordedChunksRef.current = [];
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                
+                mediaRecorder.ondataavailable = (event) => {
+                  if (event.data.size > 0) {
+                    recordedChunksRef.current.push(event.data);
+                  }
+                };
+                
+                mediaRecorder.onstop = () => {
+                  const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+                  const url = URL.createObjectURL(blob);
+                  setRecordedVideoUrl(url);
+                  console.log('🎥 Video recording saved:', url);
+                };
+                
+                mediaRecorder.start();
+                mediaRecorderRef.current = mediaRecorder;
+                console.log('🎥 MediaRecorder started');
+              } catch (e) {
+                console.error('❌ Failed to start MediaRecorder:', e);
+              }
+            }
+            
+            console.log('▶️ Countdown complete - starting capture');
+            console.log('🎥 Frame recording started');
+          }
       }, 1000);
       
       return () => clearTimeout(timer);
@@ -1125,6 +1158,13 @@ export default function Analysis() {
     console.log('🛑 stopAndScore function called! sessionState:', sessionState);
     isCapturingRef.current = false; // Stop peak tracking
     console.log('⏹️ Stopped capture - isCapturingRef set to:', isCapturingRef.current);
+    
+    // Stop video recording
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      console.log('🎥 MediaRecorder stopped');
+    }
+    
     // speak("Here's your detailed analysis"); // Removed to prevent double speech
     
     // Get professional reference for this motion
@@ -1392,6 +1432,7 @@ export default function Analysis() {
           onBack={() => setShowDetailedAnalysis(false)}
           detailedAnalysis={detailedAnalysis}
           selectedReps={selectedReps}
+          videoUrl={recordedVideoUrl}
         />
       </>
     );
