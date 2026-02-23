@@ -230,11 +230,28 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       
       // Sync video to start of rep if we just started playing or changed reps
       const startTime = startFrame / 30;
-      if (videoRef.current && Math.abs(videoRef.current.currentTime - startTime) > 0.5 && currentFrameIndex === 0) {
+      
+      // Check if we need to seek (if current time is far from start time)
+      const needsSeek = videoRef.current && Math.abs(videoRef.current.currentTime - startTime) > 0.1;
+      
+      if (needsSeek) {
+         // Pause and seek first
+         videoRef.current.pause();
          videoRef.current.currentTime = startTime;
+         
+         // Wait for seek to complete before playing
+         const handleSeeked = () => {
+           if (videoRef.current && isPlaying) {
+             videoRef.current.play().catch(e => console.error("Video play failed:", e));
+             videoRef.current.removeEventListener('seeked', handleSeeked);
+           }
+         };
+         
+         videoRef.current.addEventListener('seeked', handleSeeked);
+      } else {
+         // Already at correct time, just play
+         videoRef.current.play().catch(e => console.error("Video play failed:", e));
       }
-
-      videoRef.current.play().catch(e => console.error("Video play failed:", e));
       
       // Create a closure to capture startFrame
       const currentStartFrame = startFrame;
@@ -264,6 +281,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           }
         } else {
            // Video is before the start of this rep (seeking...)
+           // Force frame index to 0 while seeking/waiting
+           setCurrentFrameIndex(0);
            animationFrameRef.current = requestAnimationFrame(updateFrameFromVideo);
         }
       };
