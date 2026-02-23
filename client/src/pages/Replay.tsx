@@ -209,34 +209,62 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     // If we have a video, let the video drive the playback
     if (videoUrl && videoRef.current) {
       videoRef.current.playbackRate = playbackSpeed;
+      
+      // Calculate start frame for current rep
+      let startFrame = 0;
+      if (repBoundaries.length > 0) {
+        const boundary = repBoundaries.find((b: any) => b.repNumber === currentRep);
+        if (boundary) {
+          startFrame = boundary.startFrame;
+        }
+      } else if (manualBoundaries[currentRep]) {
+        startFrame = manualBoundaries[currentRep].start;
+      } else {
+        // Fallback: Estimate start frame based on previous reps length if no boundaries
+        const firstFrame = currentRepFrames[0];
+        const indexInFull = recordedFrames.indexOf(firstFrame);
+        if (indexInFull !== -1) {
+          startFrame = indexInFull;
+        }
+      }
+      
+      // Sync video to start of rep if we just started playing or changed reps
+      const startTime = startFrame / 30;
+      if (videoRef.current && Math.abs(videoRef.current.currentTime - startTime) > 0.5 && currentFrameIndex === 0) {
+         videoRef.current.currentTime = startTime;
+      }
+
       videoRef.current.play().catch(e => console.error("Video play failed:", e));
       
+      // Create a closure to capture startFrame
+      const currentStartFrame = startFrame;
+
       const updateFrameFromVideo = () => {
         if (!videoRef.current || !isPlaying) return;
         
         const currentTime = videoRef.current.currentTime;
-        // Assuming 30fps recording, calculate frame index
-        const frameIndex = Math.floor(currentTime * 30);
+        // Calculate frame index relative to the START of this rep
+        const absoluteFrameIndex = Math.floor(currentTime * 30);
+        const relativeFrameIndex = absoluteFrameIndex - currentStartFrame;
         
-        if (frameIndex < currentRepFrames.length) {
-          setCurrentFrameIndex(frameIndex);
+        if (relativeFrameIndex >= 0 && relativeFrameIndex < currentRepFrames.length) {
+          setCurrentFrameIndex(relativeFrameIndex);
           animationFrameRef.current = requestAnimationFrame(updateFrameFromVideo);
-        } else {
-          // End of video/rep
+        } else if (relativeFrameIndex >= currentRepFrames.length) {
+          // End of this rep
           if (currentRep < selectedReps) {
             finishCurrentRep();
             setCurrentRep(r => r + 1);
-            // Reset video to 0 for next rep (if we had separate video segments, but here we assume one continuous video or just loop)
-            // For now, let's just loop the current video segment logic if needed, 
-            // but since we have one video file, we might need to handle rep segments differently.
-            // Simplified: Just stop at end for now to ensure stability.
-            setIsPlaying(false);
-            setShowRepSummary(true);
+            setCurrentFrameIndex(0); // Reset for next rep
+            // Video will be seeked in next effect cycle
           } else {
             finishCurrentRep();
             setIsPlaying(false);
             setShowRepSummary(true);
           }
+        } else {
+           // Video is before the start of this rep (seeking...)
+           animationFrameRef.current = requestAnimationFrame(updateFrameFromVideo);
         }
       };
       
