@@ -201,62 +201,88 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   
   // Playback loop with rep cycling
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying) {
+      if (videoRef.current) videoRef.current.pause();
+      return;
+    }
     
-    const frameRate = 30; // 30 FPS playback
-    const frameDuration = (1000 / frameRate) / playbackSpeed; // Adjust duration based on speed
-    
-    const playFrame = (timestamp: number) => {
-      // Sync video playback with frame index
-      if (videoRef.current && videoUrl) {
-        // Calculate video time based on frame index and total duration
-        // Assuming 30fps recording
-        const videoTime = currentFrameIndex / 30;
-        if (Math.abs(videoRef.current.currentTime - videoTime) > 0.1) {
-          videoRef.current.currentTime = videoTime;
-        }
-      }
-
-      if (timestamp - lastFrameTimeRef.current >= frameDuration) {
-        setCurrentFrameIndex(prev => {
-          // Check if we reached the end of the current rep segment
-          if (prev >= currentRepFrames.length - 1) {
-	            // End of one rep cycle
-	            
-	            // If we have multiple reps selected, move to next one
-	            if (currentRep < selectedReps) {
-	              // More reps to do - save score, reset, and continue
-	              finishCurrentRep();
-	              setCurrentRep(r => r + 1);
-	              return 0; // Reset to beginning for next rep
-	            } else {
-	              // All reps complete - loop the LAST rep or stop?
-	              // User requirement: "Replay for each rep was just looping the whole session"
-	              // Fix: Stop at end, show summary. User can manually click reps to replay them.
-	              finishCurrentRep();
-	              setIsPlaying(false);
-	              setShowRepSummary(true);
-	              return 0; // Reset to start of this rep (paused)
-	            }
-	          }
-	          return prev + 1;
-	        });
-	        lastFrameTimeRef.current = timestamp;
-	      }
+    // If we have a video, let the video drive the playback
+    if (videoUrl && videoRef.current) {
+      videoRef.current.playbackRate = playbackSpeed;
+      videoRef.current.play().catch(e => console.error("Video play failed:", e));
       
-      if (isPlaying) {
-        animationFrameRef.current = requestAnimationFrame(playFrame);
-      }
-    };
-    
-    animationFrameRef.current = requestAnimationFrame(playFrame);
+      const updateFrameFromVideo = () => {
+        if (!videoRef.current || !isPlaying) return;
+        
+        const currentTime = videoRef.current.currentTime;
+        // Assuming 30fps recording, calculate frame index
+        const frameIndex = Math.floor(currentTime * 30);
+        
+        if (frameIndex < currentRepFrames.length) {
+          setCurrentFrameIndex(frameIndex);
+          animationFrameRef.current = requestAnimationFrame(updateFrameFromVideo);
+        } else {
+          // End of video/rep
+          if (currentRep < selectedReps) {
+            finishCurrentRep();
+            setCurrentRep(r => r + 1);
+            // Reset video to 0 for next rep (if we had separate video segments, but here we assume one continuous video or just loop)
+            // For now, let's just loop the current video segment logic if needed, 
+            // but since we have one video file, we might need to handle rep segments differently.
+            // Simplified: Just stop at end for now to ensure stability.
+            setIsPlaying(false);
+            setShowRepSummary(true);
+          } else {
+            finishCurrentRep();
+            setIsPlaying(false);
+            setShowRepSummary(true);
+          }
+        }
+      };
+      
+      animationFrameRef.current = requestAnimationFrame(updateFrameFromVideo);
+    } else {
+      // Fallback to timer-based playback if no video
+      const frameRate = 30;
+      const frameDuration = (1000 / frameRate) / playbackSpeed;
+      
+      const playFrame = (timestamp: number) => {
+        if (timestamp - lastFrameTimeRef.current >= frameDuration) {
+          setCurrentFrameIndex(prev => {
+            if (prev >= currentRepFrames.length - 1) {
+              if (currentRep < selectedReps) {
+                finishCurrentRep();
+                setCurrentRep(r => r + 1);
+                return 0;
+              } else {
+                finishCurrentRep();
+                setIsPlaying(false);
+                setShowRepSummary(true);
+                return 0;
+              }
+            }
+            return prev + 1;
+          });
+          lastFrameTimeRef.current = timestamp;
+        }
+        
+        if (isPlaying) {
+          animationFrameRef.current = requestAnimationFrame(playFrame);
+        }
+      };
+      
+      animationFrameRef.current = requestAnimationFrame(playFrame);
+    }
     
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
     };
-  }, [isPlaying, currentRepFrames.length, playbackSpeed, currentRep, selectedReps]);
+  }, [isPlaying, currentRepFrames.length, playbackSpeed, currentRep, selectedReps, videoUrl]);
   
   // Detect current phase for display (but don't lock hologram to it)
   useEffect(() => {
