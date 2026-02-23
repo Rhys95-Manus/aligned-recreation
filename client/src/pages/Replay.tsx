@@ -261,8 +261,13 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         
         const currentTime = videoRef.current.currentTime;
         // Calculate frame index relative to the START of this rep
+        // Apply a small offset (delay) to the skeleton to match video rendering latency
+        // If skeleton is ahead, we need to subtract frames from the calculated index
+        // Typically video rendering lags behind the JS clock by ~3-5 frames (100-160ms)
+        const SYNC_OFFSET_FRAMES = 4; 
+        
         const absoluteFrameIndex = Math.floor(currentTime * 30);
-        const relativeFrameIndex = absoluteFrameIndex - currentStartFrame;
+        const relativeFrameIndex = absoluteFrameIndex - currentStartFrame - SYNC_OFFSET_FRAMES;
         
         if (relativeFrameIndex >= 0 && relativeFrameIndex < currentRepFrames.length) {
           setCurrentFrameIndex(relativeFrameIndex);
