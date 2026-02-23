@@ -41,10 +41,12 @@ interface ReplayProps {
   onBack: () => void;
   detailedAnalysis?: any; // Optional detailed analysis data
   selectedReps?: number; // Number of reps user selected for workout mode
+  videoUrl?: string | null; // URL of the recorded video
 }
 
-export default function Replay({ recordedFrames, professionalReference, motionName, onBack, detailedAnalysis, selectedReps = 1 }: ReplayProps) {
+export default function Replay({ recordedFrames, professionalReference, motionName, onBack, detailedAnalysis, selectedReps = 1, videoUrl }: ReplayProps) {
   const userCanvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const proCanvasRef = useRef<HTMLCanvasElement>(null);
   const hologramContainerRef = useRef<HTMLDivElement>(null);
   const [use3DHologram, setUse3DHologram] = useState(true); // Toggle between 2D and 3D rendering
@@ -205,10 +207,20 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     const frameDuration = (1000 / frameRate) / playbackSpeed; // Adjust duration based on speed
     
     const playFrame = (timestamp: number) => {
-	      if (timestamp - lastFrameTimeRef.current >= frameDuration) {
-	        setCurrentFrameIndex(prev => {
-	          // Check if we reached the end of the current rep segment
-	          if (prev >= currentRepFrames.length - 1) {
+      // Sync video playback with frame index
+      if (videoRef.current && videoUrl) {
+        // Calculate video time based on frame index and total duration
+        // Assuming 30fps recording
+        const videoTime = currentFrameIndex / 30;
+        if (Math.abs(videoRef.current.currentTime - videoTime) > 0.1) {
+          videoRef.current.currentTime = videoTime;
+        }
+      }
+
+      if (timestamp - lastFrameTimeRef.current >= frameDuration) {
+        setCurrentFrameIndex(prev => {
+          // Check if we reached the end of the current rep segment
+          if (prev >= currentRepFrames.length - 1) {
 	            // End of one rep cycle
 	            
 	            // If we have multiple reps selected, move to next one
@@ -625,11 +637,20 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           <div className="bg-[#1a1f2e] rounded-lg p-4">
             <h2 className="text-xl font-bold mb-2 text-green-400">Your Motion</h2>
             <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
+              {videoUrl ? (
+                <video
+                  ref={videoRef}
+                  src={videoUrl}
+                  className="absolute inset-0 w-full h-full object-contain"
+                  muted
+                  playsInline
+                />
+              ) : null}
               <canvas
                 ref={userCanvasRef}
                 width={640}
                 height={480}
-                className="w-full h-full"
+                className="absolute inset-0 w-full h-full object-contain"
               />
             </div>
           </div>
