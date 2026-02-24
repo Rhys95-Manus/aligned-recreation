@@ -83,6 +83,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   // Video Export State
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [exportFormat, setExportFormat] = useState<'landscape' | 'vertical'>('landscape');
   const exportCanvasRef = useRef<HTMLCanvasElement>(null);
   
   // Manual Timeline Editor State
@@ -662,9 +663,14 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Set canvas size to HD (1920x1080) for high quality export
-    canvas.width = 1920;
-    canvas.height = 1080;
+    // Set canvas size based on format
+    if (exportFormat === 'vertical') {
+      canvas.width = 1080;
+      canvas.height = 1920;
+    } else {
+      canvas.width = 1920;
+      canvas.height = 1080;
+    }
     
     // Create MediaRecorder
     const stream = canvas.captureStream(30); // 30 FPS
@@ -684,6 +690,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       const file = new File([blob], filename, { type: 'video/webm' });
 
       // Try to use the native share sheet first (works on mobile)
+      let shared = false;
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
@@ -691,12 +698,20 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
             title: 'My Aligned Session',
             text: `Check out my ${motionName} form analysis on Aligned!`,
           });
+          shared = true;
         } catch (error) {
           console.error('Error sharing:', error);
-          // Fallback to download if sharing fails (e.g. user cancelled)
-          downloadVideo(blob, filename);
+          // If user cancelled share, we don't necessarily need to download, 
+          // but if it failed for other reasons, we might want to.
+          // For now, let's only download if it wasn't a user cancellation (AbortError)
+          if ((error as Error).name !== 'AbortError') {
+             downloadVideo(blob, filename);
+          }
+          shared = true; // Treated as handled
         }
-      } else {
+      } 
+      
+      if (!shared) {
         // Fallback for desktop or unsupported browsers
         downloadVideo(blob, filename);
       }
@@ -720,6 +735,9 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     
     // Frame-by-frame rendering loop
     const totalFrames = recordedFrames.length;
+    const outroFrames = 60; // 2 seconds at 30fps
+    const totalExportFrames = totalFrames + outroFrames;
+    
     const videoElement = videoRef.current;
     const originalTime = videoElement.currentTime;
     
@@ -729,14 +747,64 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     
     // Helper to draw a single frame
     const drawFrame = async (frameIndex: number) => {
-      if (frameIndex >= totalFrames) {
+      if (frameIndex >= totalExportFrames) {
         mediaRecorder.stop();
         // Restore original state
         videoElement.currentTime = originalTime;
         return;
       }
       
-      setExportProgress(Math.round((frameIndex / totalFrames) * 100));
+      setExportProgress(Math.round((frameIndex / totalExportFrames) * 100));
+      
+      // Check if we are in the outro phase
+      if (frameIndex >= totalFrames) {
+        // Outro Animation
+        const outroProgress = (frameIndex - totalFrames) / outroFrames;
+        
+        // Black background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Load logo image
+        const logoImg = new Image();
+        logoImg.src = '/aligned-logo-transparent.png';
+        
+        if (logoImg.complete) {
+           // Fade in and scale up effect
+           ctx.globalAlpha = Math.min(1, outroProgress * 2); // Fade in over first half
+           
+           const scale = 0.8 + (outroProgress * 0.2); // Scale from 0.8 to 1.0
+           const logoW = (exportFormat === 'vertical' ? 800 : 600) * scale;
+           const logoH = (logoW / 3.5); // Approx aspect ratio
+           
+           const centerX = canvas.width / 2;
+           const centerY = canvas.height / 2;
+           
+           ctx.drawImage(
+             logoImg, 
+             centerX - logoW/2, 
+             centerY - logoH/2, 
+             logoW, 
+             logoH
+           );
+           
+           // Reset alpha
+           ctx.globalAlpha = 1.0;
+           
+           // "Analyzed by" text
+           ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, outroProgress * 3)})`;
+           ctx.font = '30px Inter, sans-serif';
+           ctx.textAlign = 'center';
+           ctx.fillText('Analyzed by', centerX, centerY - logoH/2 - 40);
+           ctx.textAlign = 'left'; // Reset
+        }
+        
+        // Continue to next frame immediately (no seek needed)
+        requestAnimationFrame(() => drawFrame(frameIndex + 1));
+        return;
+      }
+      
+      // Normal Video Frame Rendering
       
       // 1. Seek video to correct time
       const time = frameIndex / calculatedFPS;
@@ -755,43 +823,54 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // 3. Draw User Video (Left Side)
-      // Maintain aspect ratio, fit within left half (960x1080)
-      const videoAspect = videoElement.videoWidth / videoElement.videoHeight;
-      let drawWidth = 960;
-      let drawHeight = 960 / videoAspect;
+      // Layout Configuration
+      let userX = 0, userY = 0, userW = 0, userH = 0;
+      let holoX = 0, holoY = 0, holoW = 0, holoH = 0;
       
-      if (drawHeight > 1080) {
-        drawHeight = 1080;
-        drawWidth = 1080 * videoAspect;
+      if (exportFormat === 'vertical') {
+        // Vertical Stack: User Top, Hologram Bottom
+        userX = 0; userY = 0; userW = 1080; userH = 960;
+        holoX = 0; holoY = 960; holoW = 1080; holoH = 960;
+      } else {
+        // Landscape Side-by-Side: User Left, Hologram Right
+        userX = 0; userY = 0; userW = 960; userH = 1080;
+        holoX = 960; holoY = 0; holoW = 960; holoH = 1080;
+      }
+
+      // 3. Draw User Video
+      const videoAspect = videoElement.videoWidth / videoElement.videoHeight;
+      let drawWidth = userW;
+      let drawHeight = userW / videoAspect;
+      
+      if (drawHeight > userH) {
+        drawHeight = userH;
+        drawWidth = userH * videoAspect;
       }
       
-      const xOffset = (960 - drawWidth) / 2;
-      const yOffset = (1080 - drawHeight) / 2;
+      const xOffset = userX + (userW - drawWidth) / 2;
+      const yOffset = userY + (userH - drawHeight) / 2;
       
       ctx.save();
-      // Apply mirror effect if needed (same as display)
+      // Apply mirror effect
       ctx.translate(xOffset + drawWidth, yOffset);
-      ctx.scale(-1, 1); // Mirror horizontally
+      ctx.scale(-1, 1); 
       ctx.drawImage(videoElement, 0, 0, drawWidth, drawHeight);
       ctx.restore();
       
-      // 4. Draw Skeleton Overlay on User Video
+      // 4. Draw Skeleton Overlay
       const frame = recordedFrames[frameIndex];
       if (frame && frame.landmarks) {
         ctx.save();
-        ctx.translate(xOffset + drawWidth, yOffset); // Match video transform
-        ctx.scale(-1, 1); // Mirror skeleton too
+        ctx.translate(xOffset + drawWidth, yOffset);
+        ctx.scale(-1, 1);
         
-        // Draw connections
         drawConnectors(ctx, frame.landmarks, POSE_CONNECTIONS, {
           color: '#00ff00',
           lineWidth: 4
         });
         
-        // Draw landmarks
         frame.landmarks.forEach((lm: any, i: number) => {
-          if (i >= 11) { // Skip face
+          if (i >= 11) {
             ctx.beginPath();
             ctx.arc(lm.x * drawWidth, lm.y * drawHeight, 6, 0, 2 * Math.PI);
             ctx.fillStyle = '#00ff00';
@@ -801,22 +880,13 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         ctx.restore();
       }
       
-      // 5. Draw Hologram (Right Side)
-      // We need to render the hologram to the proCanvas first, then draw it here
-      // Or reuse the logic. For simplicity, we'll assume proCanvasRef has the current frame rendered
-      // BUT since we are iterating faster/slower than real-time, we must manually render the hologram frame
+      // 5. Draw Hologram
       const proFrame = professionalFrames[Math.min(frameIndex, professionalFrames.length - 1)];
       if (proFrame) {
-        const holoX = 960; // Start at middle
-        const holoY = 0;
-        const holoWidth = 960;
-        const holoHeight = 1080;
-        
-        // Draw background for hologram side
+        // Draw background for hologram
         ctx.fillStyle = '#050810';
-        ctx.fillRect(holoX, holoY, holoWidth, holoHeight);
+        ctx.fillRect(holoX, holoY, holoW, holoH);
         
-        // Draw Hologram Logic (Simplified from main render)
         ctx.save();
         ctx.translate(holoX, holoY);
         
@@ -850,8 +920,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           const end = rotatedLandmarks[endIdx];
           if (start && end) {
             ctx.beginPath();
-            ctx.moveTo(start.x * holoWidth, start.y * holoHeight);
-            ctx.lineTo(end.x * holoWidth, end.y * holoHeight);
+            ctx.moveTo(start.x * holoW, start.y * holoH);
+            ctx.lineTo(end.x * holoW, end.y * holoH);
             ctx.strokeStyle = `rgba(0, 255, 255, 0.8)`;
             ctx.lineWidth = 4;
             ctx.stroke();
@@ -861,7 +931,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         // Draw landmarks
         rotatedLandmarks.forEach((lm: any) => {
            ctx.beginPath();
-           ctx.arc(lm.x * holoWidth, lm.y * holoHeight, 6, 0, 2 * Math.PI);
+           ctx.arc(lm.x * holoW, lm.y * holoH, 6, 0, 2 * Math.PI);
            ctx.fillStyle = `rgba(255, 0, 255, 0.8)`;
            ctx.fill();
         });
@@ -870,17 +940,34 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       }
       
       // 6. Draw Branding / Overlay Text
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 40px Inter, sans-serif';
-      ctx.fillText('Aligned', 50, 60);
+      // Load logo image if not already loaded (we'll use a simple text fallback if image isn't ready, but ideally pre-load)
+      const logoImg = new Image();
+      logoImg.src = '/aligned-logo-transparent.png';
       
+      if (logoImg.complete) {
+         const logoW = 200;
+         const logoH = 60; // approx aspect ratio
+         ctx.drawImage(logoImg, 50, 30, logoW, logoH);
+      } else {
+         ctx.fillStyle = 'white';
+         ctx.font = 'bold 40px Inter, sans-serif';
+         ctx.fillText('Aligned', 50, 60);
+      }
+      
+      ctx.fillStyle = 'white';
       ctx.font = '30px Inter, sans-serif';
       ctx.fillText(motionName, 50, 110);
       
       ctx.fillStyle = '#888';
       ctx.font = '24px Inter, sans-serif';
-      ctx.fillText('User', 480 - 30, 1050);
-      ctx.fillText('Pro Reference', 1440 - 80, 1050);
+      
+      if (exportFormat === 'vertical') {
+        ctx.fillText('User', userX + userW/2 - 30, userY + userH - 30);
+        ctx.fillText('Pro Reference', holoX + holoW/2 - 80, holoY + holoH - 30);
+      } else {
+        ctx.fillText('User', userX + userW/2 - 30, userY + userH - 30);
+        ctx.fillText('Pro Reference', holoX + holoW/2 - 80, holoY + holoH - 30);
+      }
       
       // Process next frame
       requestAnimationFrame(() => drawFrame(frameIndex + 1));
@@ -940,6 +1027,24 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
             <Button onClick={handleSaveSession} className="bg-green-600 hover:bg-green-700 text-sm md:text-base">
               💾 Save Session
             </Button>
+            <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
+              <Button 
+                onClick={() => setExportFormat('landscape')}
+                variant={exportFormat === 'landscape' ? 'default' : 'ghost'}
+                size="sm"
+                className={exportFormat === 'landscape' ? 'bg-blue-600' : 'text-gray-400'}
+              >
+                16:9
+              </Button>
+              <Button 
+                onClick={() => setExportFormat('vertical')}
+                variant={exportFormat === 'vertical' ? 'default' : 'ghost'}
+                size="sm"
+                className={exportFormat === 'vertical' ? 'bg-blue-600' : 'text-gray-400'}
+              >
+                9:16
+              </Button>
+            </div>
             <Button 
               onClick={handleExportVideo} 
               disabled={isExporting}
