@@ -9,7 +9,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-slate-100">
       <header className="bg-[#050810] flex items-center justify-between px-4 md:px-8 py-4 md:py-6 border-b border-slate-800/50">
-        <div className="text-lg md:text-xl font-semibold cursor-pointer" onClick={() => setLocation("/")}>Aligned</div>
+        <div className="cursor-pointer" onClick={() => setLocation("/")}>
+          <img src="/aligned-logo-transparent.png" alt="Aligned" className="h-6 md:h-8 object-contain" />
+        </div>
         <div className="flex gap-2 md:gap-3 flex-wrap justify-end">
           <Button variant="outline" onClick={() => setAudioOn(!audioOn)} className="!border-2 !border-emerald-600 !bg-emerald-600/30 text-white hover:!bg-emerald-600/50 rounded-full px-3 md:px-5 text-sm md:text-base">
             Audio: {audioOn ? "On" : "Off"}
@@ -22,8 +24,8 @@ export default function Home() {
 
       <main className="max-w-[1400px] mx-auto px-8 py-16">
         <div className="text-center mb-16">
-          <h1 className="text-6xl font-bold mb-4">
-            Welcome to <span className="text-blue-400">Aligned</span>
+          <h1 className="text-6xl font-bold mb-4 flex items-center justify-center gap-4">
+            Welcome to <img src="/aligned-logo-transparent.png" alt="Aligned" className="h-16 object-contain inline-block" />
           </h1>
           <p className="text-xl text-slate-300 mb-8">Professional feedback on your form</p>
           <div className="flex gap-4 justify-center">
