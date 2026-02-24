@@ -3,14 +3,7 @@ import { Volume2, VolumeX, Menu, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAudio } from "@/contexts/AudioContext";
 import AudioSettingsModal from "./AudioSettingsModal";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 
 export default function Header() {
   const { audioEnabled, toggleAudio, selectedVoice, setSelectedVoice, availableVoices } = useAudio();

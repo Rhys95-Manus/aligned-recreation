@@ -221,27 +221,38 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       
       // Calculate start frame for current rep
       let startFrame = 0;
+      let endFrame = recordedFrames.length - 1;
+      
       if (repBoundaries.length > 0) {
         const boundary = repBoundaries.find((b: any) => b.repNumber === currentRep);
         if (boundary) {
           startFrame = boundary.startFrame;
+          endFrame = boundary.endFrame;
         }
       } else if (manualBoundaries[currentRep]) {
         startFrame = manualBoundaries[currentRep].start;
+        endFrame = manualBoundaries[currentRep].end;
       } else {
         // Fallback: Estimate start frame based on previous reps length if no boundaries
         const firstFrame = currentRepFrames[0];
         const indexInFull = recordedFrames.indexOf(firstFrame);
         if (indexInFull !== -1) {
           startFrame = indexInFull;
+          endFrame = startFrame + currentRepFrames.length - 1;
         }
       }
       
       // Sync video to start of rep if we just started playing or changed reps
       const startTime = startFrame / calculatedFPS;
+      const endTime = endFrame / calculatedFPS;
       
-      // Check if we need to seek (if current time is far from start time)
-      const needsSeek = videoRef.current && Math.abs(videoRef.current.currentTime - startTime) > 0.1;
+      // Check if we need to seek (if current time is far from start time AND we are not already inside the rep range)
+      // We only force seek if we are OUTSIDE the rep range or just starting playback from a stopped state
+      const currentTime = videoRef.current.currentTime;
+      const isInsideRep = currentTime >= startTime && currentTime <= endTime;
+      
+      // Only seek if we are outside the rep range (e.g. switched reps) or if we are at the very beginning and just hit play
+      const needsSeek = !isInsideRep || (Math.abs(currentTime - startTime) < 0.1 && !isPlaying);
       
       if (needsSeek) {
          // Pause and seek first
@@ -258,7 +269,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
          
          videoRef.current.addEventListener('seeked', handleSeeked);
       } else {
-         // Already at correct time, just play
+         // Already at correct time or inside the rep, just play
          videoRef.current.play().catch(e => console.error("Video play failed:", e));
       }
       
