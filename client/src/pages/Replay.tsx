@@ -678,18 +678,42 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       if (e.data.size > 0) chunks.push(e.data);
     };
     
-    mediaRecorder.onstop = () => {
+    mediaRecorder.onstop = async () => {
       const blob = new Blob(chunks, { type: 'video/webm' });
+      const filename = `aligned-session-${motionName}-${new Date().toISOString().slice(0,10)}.webm`;
+      const file = new File([blob], filename, { type: 'video/webm' });
+
+      // Try to use the native share sheet first (works on mobile)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'My Aligned Session',
+            text: `Check out my ${motionName} form analysis on Aligned!`,
+          });
+        } catch (error) {
+          console.error('Error sharing:', error);
+          // Fallback to download if sharing fails (e.g. user cancelled)
+          downloadVideo(blob, filename);
+        }
+      } else {
+        // Fallback for desktop or unsupported browsers
+        downloadVideo(blob, filename);
+      }
+
+      setIsExporting(false);
+      setExportProgress(0);
+    };
+
+    const downloadVideo = (blob: Blob, filename: string) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `aligned-session-${motionName}-${new Date().toISOString().slice(0,10)}.webm`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setIsExporting(false);
-      setExportProgress(0);
     };
     
     mediaRecorder.start();
@@ -923,14 +947,14 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
             >
               {isExporting ? (
                 <>
-                  <span className="relative z-10">Exporting {exportProgress}%...</span>
+                  <span className="relative z-10">Processing {exportProgress}%...</span>
                   <div 
                     className="absolute inset-0 bg-blue-500 transition-all duration-100" 
                     style={{ width: `${exportProgress}%` }}
                   />
                 </>
               ) : (
-                <>📤 Export Video</>
+                <>📤 Share Video</>
               )}
             </Button>
             <Button onClick={() => window.location.href = '/history'} variant="outline" className="!border-2 !border-purple-400 !text-purple-400 hover:bg-purple-400/10 text-sm md:text-base">
