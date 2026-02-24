@@ -80,6 +80,11 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   }>>([]); // Scores for each completed rep
   const [showRepSummary, setShowRepSummary] = useState(false); // Show summary at end of all reps
   
+  // Video Export State
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const exportCanvasRef = useRef<HTMLCanvasElement>(null);
+  
   // Manual Timeline Editor State
   const [manualBoundaries, setManualBoundaries] = useState<Record<number, { start: number, end: number }>>({});
   
@@ -642,6 +647,224 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       setShowSaveConfirmation(false);
     }, 5000);
   };
+
+  const handleExportVideo = async () => {
+    if (!videoRef.current || !exportCanvasRef.current || isExporting) return;
+    
+    setIsExporting(true);
+    setExportProgress(0);
+    
+    // Pause playback during export
+    setIsPlaying(false);
+    videoRef.current.pause();
+    
+    const canvas = exportCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Set canvas size to HD (1920x1080) for high quality export
+    canvas.width = 1920;
+    canvas.height = 1080;
+    
+    // Create MediaRecorder
+    const stream = canvas.captureStream(30); // 30 FPS
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: 'video/webm;codecs=vp9',
+      videoBitsPerSecond: 5000000 // 5 Mbps
+    });
+    
+    const chunks: Blob[] = [];
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+    
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `aligned-session-${motionName}-${new Date().toISOString().slice(0,10)}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setIsExporting(false);
+      setExportProgress(0);
+    };
+    
+    mediaRecorder.start();
+    
+    // Frame-by-frame rendering loop
+    const totalFrames = recordedFrames.length;
+    const videoElement = videoRef.current;
+    const originalTime = videoElement.currentTime;
+    
+    // Calculate FPS
+    const videoDuration = videoElement.duration;
+    const calculatedFPS = (videoDuration > 0 && totalFrames > 0) ? totalFrames / videoDuration : 30;
+    
+    // Helper to draw a single frame
+    const drawFrame = async (frameIndex: number) => {
+      if (frameIndex >= totalFrames) {
+        mediaRecorder.stop();
+        // Restore original state
+        videoElement.currentTime = originalTime;
+        return;
+      }
+      
+      setExportProgress(Math.round((frameIndex / totalFrames) * 100));
+      
+      // 1. Seek video to correct time
+      const time = frameIndex / calculatedFPS;
+      videoElement.currentTime = time;
+      
+      // Wait for seek to complete
+      await new Promise<void>(resolve => {
+        const onSeeked = () => {
+          videoElement.removeEventListener('seeked', onSeeked);
+          resolve();
+        };
+        videoElement.addEventListener('seeked', onSeeked);
+      });
+      
+      // 2. Clear canvas
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 3. Draw User Video (Left Side)
+      // Maintain aspect ratio, fit within left half (960x1080)
+      const videoAspect = videoElement.videoWidth / videoElement.videoHeight;
+      let drawWidth = 960;
+      let drawHeight = 960 / videoAspect;
+      
+      if (drawHeight > 1080) {
+        drawHeight = 1080;
+        drawWidth = 1080 * videoAspect;
+      }
+      
+      const xOffset = (960 - drawWidth) / 2;
+      const yOffset = (1080 - drawHeight) / 2;
+      
+      ctx.save();
+      // Apply mirror effect if needed (same as display)
+      ctx.translate(xOffset + drawWidth, yOffset);
+      ctx.scale(-1, 1); // Mirror horizontally
+      ctx.drawImage(videoElement, 0, 0, drawWidth, drawHeight);
+      ctx.restore();
+      
+      // 4. Draw Skeleton Overlay on User Video
+      const frame = recordedFrames[frameIndex];
+      if (frame && frame.landmarks) {
+        ctx.save();
+        ctx.translate(xOffset + drawWidth, yOffset); // Match video transform
+        ctx.scale(-1, 1); // Mirror skeleton too
+        
+        // Draw connections
+        drawConnectors(ctx, frame.landmarks, POSE_CONNECTIONS, {
+          color: '#00ff00',
+          lineWidth: 4
+        });
+        
+        // Draw landmarks
+        frame.landmarks.forEach((lm: any, i: number) => {
+          if (i >= 11) { // Skip face
+            ctx.beginPath();
+            ctx.arc(lm.x * drawWidth, lm.y * drawHeight, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = '#00ff00';
+            ctx.fill();
+          }
+        });
+        ctx.restore();
+      }
+      
+      // 5. Draw Hologram (Right Side)
+      // We need to render the hologram to the proCanvas first, then draw it here
+      // Or reuse the logic. For simplicity, we'll assume proCanvasRef has the current frame rendered
+      // BUT since we are iterating faster/slower than real-time, we must manually render the hologram frame
+      const proFrame = professionalFrames[Math.min(frameIndex, professionalFrames.length - 1)];
+      if (proFrame) {
+        const holoX = 960; // Start at middle
+        const holoY = 0;
+        const holoWidth = 960;
+        const holoHeight = 1080;
+        
+        // Draw background for hologram side
+        ctx.fillStyle = '#050810';
+        ctx.fillRect(holoX, holoY, holoWidth, holoHeight);
+        
+        // Draw Hologram Logic (Simplified from main render)
+        ctx.save();
+        ctx.translate(holoX, holoY);
+        
+        // Calculate body center
+        const leftHip = proFrame.landmarks[23];
+        const rightHip = proFrame.landmarks[24];
+        const bodyCenterX = (leftHip.x + rightHip.x) / 2;
+        const bodyCenterZ = (leftHip.z + rightHip.z) / 2;
+        
+        // Rotation
+        const rotationRad = ((rotationAngle + 180) * Math.PI) / 180;
+        const cosTheta = Math.cos(rotationRad);
+        const sinTheta = Math.sin(rotationRad);
+        
+        const rotatedLandmarks = proFrame.landmarks.map((lm: any) => {
+          const relX = lm.x - bodyCenterX;
+          const relZ = lm.z - bodyCenterZ;
+          const rotatedX = relX * cosTheta + relZ * sinTheta;
+          const rotatedZ = -relX * sinTheta + relZ * cosTheta;
+          return { ...lm, x: rotatedX + bodyCenterX, z: rotatedZ + bodyCenterZ };
+        });
+        
+        // Draw connections
+        const connections = [
+          [11, 13], [13, 15], [12, 14], [14, 16], [11, 12], [11, 23], [12, 24],
+          [23, 24], [23, 25], [25, 27], [24, 26], [26, 28]
+        ];
+        
+        connections.forEach(([startIdx, endIdx]) => {
+          const start = rotatedLandmarks[startIdx];
+          const end = rotatedLandmarks[endIdx];
+          if (start && end) {
+            ctx.beginPath();
+            ctx.moveTo(start.x * holoWidth, start.y * holoHeight);
+            ctx.lineTo(end.x * holoWidth, end.y * holoHeight);
+            ctx.strokeStyle = `rgba(0, 255, 255, 0.8)`;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+          }
+        });
+        
+        // Draw landmarks
+        rotatedLandmarks.forEach((lm: any) => {
+           ctx.beginPath();
+           ctx.arc(lm.x * holoWidth, lm.y * holoHeight, 6, 0, 2 * Math.PI);
+           ctx.fillStyle = `rgba(255, 0, 255, 0.8)`;
+           ctx.fill();
+        });
+        
+        ctx.restore();
+      }
+      
+      // 6. Draw Branding / Overlay Text
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 40px Inter, sans-serif';
+      ctx.fillText('Aligned', 50, 60);
+      
+      ctx.font = '30px Inter, sans-serif';
+      ctx.fillText(motionName, 50, 110);
+      
+      ctx.fillStyle = '#888';
+      ctx.font = '24px Inter, sans-serif';
+      ctx.fillText('User', 480 - 30, 1050);
+      ctx.fillText('Pro Reference', 1440 - 80, 1050);
+      
+      // Process next frame
+      requestAnimationFrame(() => drawFrame(frameIndex + 1));
+    };
+    
+    // Start processing
+    drawFrame(0);
+  };
   
   const currentMetrics = currentRepFrames[currentFrameIndex]?.metrics;
   const currentVisibility = currentRepFrames[currentFrameIndex]?.visibility;
@@ -681,6 +904,9 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Hidden Canvas for Export */}
+        <canvas ref={exportCanvasRef} className="hidden" />
+        
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
           <div className="flex gap-2 md:gap-3 flex-wrap">
@@ -689,6 +915,23 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
             </Button>
             <Button onClick={handleSaveSession} className="bg-green-600 hover:bg-green-700 text-sm md:text-base">
               💾 Save Session
+            </Button>
+            <Button 
+              onClick={handleExportVideo} 
+              disabled={isExporting}
+              className="bg-blue-600 hover:bg-blue-700 text-sm md:text-base relative overflow-hidden"
+            >
+              {isExporting ? (
+                <>
+                  <span className="relative z-10">Exporting {exportProgress}%...</span>
+                  <div 
+                    className="absolute inset-0 bg-blue-500 transition-all duration-100" 
+                    style={{ width: `${exportProgress}%` }}
+                  />
+                </>
+              ) : (
+                <>📤 Export Video</>
+              )}
             </Button>
             <Button onClick={() => window.location.href = '/history'} variant="outline" className="!border-2 !border-purple-400 !text-purple-400 hover:bg-purple-400/10 text-sm md:text-base">
               📊 History
