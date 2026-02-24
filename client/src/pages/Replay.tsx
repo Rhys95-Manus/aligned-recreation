@@ -767,7 +767,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         
         // Load logo image
         const logoImg = new Image();
-        logoImg.src = '/aligned-logo-transparent.png';
+        logoImg.src = '/aligned-logo-v2.png';
         
         if (logoImg.complete) {
            // Fade in and scale up effect
@@ -942,7 +942,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       // 6. Draw Branding / Overlay Text
       // Load logo image if not already loaded (we'll use a simple text fallback if image isn't ready, but ideally pre-load)
       const logoImg = new Image();
-      logoImg.src = '/aligned-logo-transparent.png';
+      logoImg.src = '/aligned-logo-v2.png';
       
       if (logoImg.complete) {
          const logoW = 200;
