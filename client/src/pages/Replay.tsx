@@ -251,8 +251,11 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       const currentTime = videoRef.current.currentTime;
       const isInsideRep = currentTime >= startTime && currentTime <= endTime;
       
-      // Only seek if we are outside the rep range (e.g. switched reps) or if we are at the very beginning and just hit play
-      const needsSeek = !isInsideRep || (Math.abs(currentTime - startTime) < 0.1 && !isPlaying);
+      // Only seek if we are outside the rep range (e.g. switched reps)
+      // We REMOVED the check for "beginning and just hit play" because it was forcing a reset to start
+      // when the user scrubbed to a point near the start but not exactly 0.
+      // Now we trust that if isInsideRep is true, we should just play from there.
+      const needsSeek = !isInsideRep;
       
       if (needsSeek) {
          // Pause and seek first
@@ -576,6 +579,37 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     const newIndex = parseInt(e.target.value);
     setCurrentFrameIndex(newIndex);
     setIsPlaying(false);
+    
+    // Immediately seek video to the scrubbed position
+    if (videoRef.current && videoUrl) {
+      const videoDuration = videoRef.current.duration;
+      const totalFrames = recordedFrames.length;
+      const calculatedFPS = (videoDuration > 0 && totalFrames > 0) 
+        ? totalFrames / videoDuration 
+        : 30;
+        
+      // Calculate start frame for current rep to determine absolute frame index
+      let startFrame = 0;
+      if (repBoundaries.length > 0) {
+        const boundary = repBoundaries.find((b: any) => b.repNumber === currentRep);
+        if (boundary) startFrame = boundary.startFrame;
+      } else if (manualBoundaries[currentRep]) {
+        startFrame = manualBoundaries[currentRep].start;
+      } else {
+        // Fallback logic matching the playback loop
+        const firstFrame = currentRepFrames[0];
+        const indexInFull = recordedFrames.indexOf(firstFrame);
+        if (indexInFull !== -1) startFrame = indexInFull;
+      }
+      
+      // Calculate absolute frame index (start of rep + relative index)
+      const absoluteFrameIndex = startFrame + newIndex;
+      const newTime = absoluteFrameIndex / calculatedFPS;
+      
+      if (isFinite(newTime)) {
+        videoRef.current.currentTime = newTime;
+      }
+    }
   };
   
   const handleSaveSession = () => {
