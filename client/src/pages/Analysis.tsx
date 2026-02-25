@@ -792,10 +792,9 @@ export default function Analysis() {
             
             // START CONDITION:
             // 1. Must transition from neutral to execution
-            // // START CONDITION:
-            // 1. Must transition from neutral to execution
-            // REMOVED COOL-DOWN: We rely on posture returning to neutral.
-            if (previousState === 'neutral' && newState === 'execution') {
+            // 2. Must be at least 45 frames (1.5s) since the last rep ended (COOLDOWN)
+            // This prevents double-counting if the user wobbles while returning to neutral
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 45) {
               // Add EXTENDED PRE-ROLL BUFFER: Start the rep 60 frames (2.0s) BEFORE the movement actually begins
               // This captures the "Setup" / "Ready" phase even if detection is slightly late
               const preRollFrames = 60;
