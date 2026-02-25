@@ -825,7 +825,7 @@ export default function Analysis() {
             }
 
             if (newState === 'neutral' && 
-                (neutralHoldCounter.current || 0) >= 25 && // MOBILE FIX: Require 25 frames (~0.8s) of neutral hold (snappier response)
+                (neutralHoldCounter.current || 0) >= 15 && // MOBILE FIX: Require 15 frames (~0.5s) of neutral hold (near instant)
                 repDurationFrames > 36 && // Min duration 1.2s
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
