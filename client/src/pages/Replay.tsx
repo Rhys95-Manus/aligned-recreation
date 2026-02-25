@@ -749,7 +749,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     
     // Frame-by-frame rendering loop
     const totalFrames = recordedFrames.length;
-    const outroFrames = 60; // 2 seconds at 30fps
+    const outroFrames = 90; // INCREASED to 3 seconds (90 frames) to ensure it's not cut off
     const totalExportFrames = totalFrames + outroFrames;
     
     const videoElement = videoRef.current;
@@ -759,12 +759,19 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     const videoDuration = videoElement.duration;
     const calculatedFPS = (videoDuration > 0 && totalFrames > 0) ? totalFrames / videoDuration : 30;
     
+    // Pre-load logo for outro
+    const outroLogoImg = new Image();
+    outroLogoImg.src = '/aligned-logo-v2.png';
+    
     // Helper to draw a single frame
     const drawFrame = async (frameIndex: number) => {
       if (frameIndex >= totalExportFrames) {
-        mediaRecorder.stop();
-        // Restore original state
-        videoElement.currentTime = originalTime;
+        // Ensure we capture the last frame before stopping
+        setTimeout(() => {
+          mediaRecorder.stop();
+          // Restore original state
+          videoElement.currentTime = originalTime;
+        }, 500); // Small buffer to ensure last chunk is flushed
         return;
       }
       
@@ -779,11 +786,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Load logo image
-        const logoImg = new Image();
-        logoImg.src = '/aligned-logo-v2.png';
-        
-        if (logoImg.complete) {
+        // Use pre-loaded logo image
+        if (outroLogoImg.complete) {
            // Fade in and scale up effect
            ctx.globalAlpha = Math.min(1, outroProgress * 2); // Fade in over first half
            
@@ -795,7 +799,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
            const centerY = canvas.height / 2;
            
            ctx.drawImage(
-             logoImg, 
+             outroLogoImg, 
              centerX - logoW/2, 
              centerY - logoH/2, 
              logoW, 
@@ -807,10 +811,16 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
            
            // "Analyzed by" text
            ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, outroProgress * 3)})`;
-           ctx.font = '30px Inter, sans-serif';
+           ctx.font = 'bold 40px Inter, sans-serif'; // Increased font size
            ctx.textAlign = 'center';
-           ctx.fillText('Analyzed by', centerX, centerY - logoH/2 - 40);
+           ctx.fillText('Analyzed by', centerX, centerY - logoH/2 - 50);
            ctx.textAlign = 'left'; // Reset
+        } else {
+           // Fallback text if logo fails
+           ctx.fillStyle = 'white';
+           ctx.font = 'bold 60px Inter, sans-serif';
+           ctx.textAlign = 'center';
+           ctx.fillText('Aligned', canvas.width/2, canvas.height/2);
         }
         
         // Continue to next frame immediately (no seek needed)
@@ -875,82 +885,97 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       const frame = recordedFrames[frameIndex];
       if (frame && frame.landmarks) {
         ctx.save();
+        // MATCH VIDEO TRANSFORM:
+        // The video is drawn with: translate(xOffset + drawWidth, yOffset) then scale(-1, 1)
+        // This means x=0 in local space is at xOffset+drawWidth in canvas space, and x increases to the LEFT.
+        // So a point at x=0.5 * drawWidth should be drawn at:
+        // Canvas X = (xOffset + drawWidth) - (0.5 * drawWidth) = xOffset + 0.5*drawWidth. Correct.
+        
         ctx.translate(xOffset + drawWidth, yOffset);
         ctx.scale(-1, 1);
         
-        drawConnectors(ctx, frame.landmarks, POSE_CONNECTIONS, {
-          color: '#00ff00',
-          lineWidth: 4
-        });
-        
-        frame.landmarks.forEach((lm: any, i: number) => {
-          if (i >= 11) {
-            ctx.beginPath();
-            ctx.arc(lm.x * drawWidth, lm.y * drawHeight, 6, 0, 2 * Math.PI);
-            ctx.fillStyle = '#00ff00';
-            ctx.fill();
-          }
-        });
-        ctx.restore();
-      }
-      
-      // 5. Draw Hologram
-      const proFrame = professionalFrames[Math.min(frameIndex, professionalFrames.length - 1)];
-      if (proFrame) {
-        // Draw background for hologram
-        ctx.fillStyle = '#050810';
-        ctx.fillRect(holoX, holoY, holoW, holoH);
-        
-        ctx.save();
-        ctx.translate(holoX, holoY);
-        
-        // Calculate body center
-        const leftHip = proFrame.landmarks[23];
-        const rightHip = proFrame.landmarks[24];
-        const bodyCenterX = (leftHip.x + rightHip.x) / 2;
-        const bodyCenterZ = (leftHip.z + rightHip.z) / 2;
-        
-        // Rotation
-        const rotationRad = ((rotationAngle + 180) * Math.PI) / 180;
-        const cosTheta = Math.cos(rotationRad);
-        const sinTheta = Math.sin(rotationRad);
-        
-        const rotatedLandmarks = proFrame.landmarks.map((lm: any) => {
-          const relX = lm.x - bodyCenterX;
-          const relZ = lm.z - bodyCenterZ;
-          const rotatedX = relX * cosTheta + relZ * sinTheta;
-          const rotatedZ = -relX * sinTheta + relZ * cosTheta;
-          return { ...lm, x: rotatedX + bodyCenterX, z: rotatedZ + bodyCenterZ };
-        });
-        
         // Draw connections
-        const connections = [
-          [11, 13], [13, 15], [12, 14], [14, 16], [11, 12], [11, 23], [12, 24],
-          [23, 24], [23, 25], [25, 27], [24, 26], [26, 28]
-        ];
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 4; // Thicker lines for visibility
         
-        connections.forEach(([startIdx, endIdx]) => {
-          const start = rotatedLandmarks[startIdx];
-          const end = rotatedLandmarks[endIdx];
-          if (start && end) {
+        POSE_CONNECTIONS.forEach(([start, end]) => {
+          const startPoint = frame.landmarks[start];
+          const endPoint = frame.landmarks[end];
+          
+          // Use slightly lower visibility threshold for export to ensure continuity
+          if (startPoint && endPoint && 
+              (startPoint.visibility ?? 0) > 0.3 && (endPoint.visibility ?? 0) > 0.3) {
             ctx.beginPath();
-            ctx.moveTo(start.x * holoW, start.y * holoH);
-            ctx.lineTo(end.x * holoW, end.y * holoH);
-            ctx.strokeStyle = `rgba(0, 255, 255, 0.8)`;
-            ctx.lineWidth = 4;
+            ctx.moveTo(startPoint.x * drawWidth, startPoint.y * drawHeight);
+            ctx.lineTo(endPoint.x * drawWidth, endPoint.y * drawHeight);
             ctx.stroke();
           }
         });
         
         // Draw landmarks
-        rotatedLandmarks.forEach((lm: any) => {
-           ctx.beginPath();
-           ctx.arc(lm.x * holoW, lm.y * holoH, 6, 0, 2 * Math.PI);
-           ctx.fillStyle = `rgba(255, 0, 255, 0.8)`;
-           ctx.fill();
+        ctx.fillStyle = '#00ff00';
+        frame.landmarks.forEach((landmark: any, i: number) => {
+          // Skip face landmarks (0-10)
+          if (i >= 11 && (landmark.visibility ?? 0) > 0.3) {
+            ctx.beginPath();
+            ctx.arc(landmark.x * drawWidth, landmark.y * drawHeight, 6, 0, 2 * Math.PI);
+            ctx.fill();
+          }
         });
         
         ctx.restore();
+      }
+      
+      // 5. Draw 3D Hologram (Right Side / Bottom)
+      // We capture the actual 3D canvas content
+      
+      // Fill background first
+      ctx.fillStyle = '#0a0e27'; // Deep dark blue matching Hologram3D background
+      ctx.fillRect(holoX, holoY, holoW, holoH);
+      
+      // Find the 3D canvas
+      // We need to find the canvas inside the Hologram3D component
+      // Since we can't easily access the ref from here, we'll query for it
+      // This assumes the Hologram3D component is mounted and visible during export
+      const hologramCanvas = document.querySelector('canvas[data-engine="three.js r173"]') as HTMLCanvasElement || 
+                             document.querySelector('.relative.bg-black canvas') as HTMLCanvasElement;
+      
+      if (hologramCanvas) {
+        // Draw the 3D canvas content
+        // We need to maintain aspect ratio
+        const holoAspect = hologramCanvas.width / hologramCanvas.height;
+        let drawHoloW = holoW;
+        let drawHoloH = holoW / holoAspect;
+        
+        // Fit within the box
+        if (drawHoloH > holoH) {
+          drawHoloH = holoH;
+          drawHoloW = holoH * holoAspect;
+        }
+        
+        // Center it
+        const holoOffsetX = holoX + (holoW - drawHoloW) / 2;
+        const holoOffsetY = holoY + (holoH - drawHoloH) / 2;
+        
+        ctx.drawImage(hologramCanvas, holoOffsetX, holoOffsetY, drawHoloW, drawHoloH);
+      } else {
+        // Fallback if 3D canvas not found (shouldn't happen if visible)
+        // Draw a placeholder
+        ctx.fillStyle = '#1a1f2e';
+        ctx.fillRect(holoX, holoY, holoW, holoH);
+        ctx.fillStyle = '#4ECDC4';
+        ctx.font = '40px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Hologram View', holoX + holoW/2, holoY + holoH/2);
+        
+        // Try to draw the 2D skeleton as a backup
+        const proFrame = professionalFrames[Math.min(frameIndex, professionalFrames.length - 1)];
+        if (proFrame) {
+           ctx.save();
+           ctx.translate(holoX, holoY);
+           // ... (simplified 2D drawing code could go here if needed)
+           ctx.restore();
+        }
       }
       
       // 6. Draw Branding / Overlay Text
