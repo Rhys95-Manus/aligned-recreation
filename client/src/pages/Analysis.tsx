@@ -767,7 +767,8 @@ export default function Analysis() {
             // Neutral: Relaxed thresholds to ensure reps are registered even if user isn't perfectly still
             // totalChange < 100: Allows for ~33 degrees of variance per joint (hips, shoulders, elbow)
             // totalVelocity < 3.0: Ensures user has actually stopped moving
-            if ((totalChange < 100 && totalVelocity < 8.0) || (totalVelocity < 3.0)) {
+            // MOBILE FIX: Increased thresholds to prevent premature stopping due to camera noise
+            if ((totalChange < 180 && totalVelocity < 12.0) || (totalVelocity < 6.0)) {
               newState = 'neutral';
             } 
             // Execution: Significant deviation from baseline OR high velocity
@@ -824,8 +825,8 @@ export default function Analysis() {
             }
 
             if (newState === 'neutral' && 
-                (neutralHoldCounter.current || 0) >= 10 && // Require 10 frames of neutral hold
-                repDurationFrames > 36 && // Min duration 1.2s
+                (neutralHoldCounter.current || 0) >= 45 && // MOBILE FIX: Require 45 frames (1.5s) of neutral hold to ensure follow-through is complete
+                repDurationFrames > 45 && // Min duration 1.5s
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
               // NO BACKDATING:
