@@ -83,7 +83,10 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   // Video Export State
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
-  const [exportFormat, setExportFormat] = useState<'landscape' | 'vertical'>('landscape');
+  // Default to vertical on mobile devices, landscape on desktop
+  const [exportFormat, setExportFormat] = useState<'landscape' | 'vertical'>(
+    window.innerWidth < 768 ? 'vertical' : 'landscape'
+  );
   const exportCanvasRef = useRef<HTMLCanvasElement>(null);
   
   // Manual Timeline Editor State
@@ -689,9 +692,14 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       const filename = `aligned-session-${motionName}-${new Date().toISOString().slice(0,10)}.webm`;
       const file = new File([blob], filename, { type: 'video/webm' });
 
-      // Try to use the native share sheet first (works on mobile)
+      // Share or Download Logic
+      // Check if we are on a mobile device (touch capable and small screen)
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+      
       let shared = false;
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      
+      // Only attempt native share on mobile devices where it's reliable for social apps
+      if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
@@ -701,18 +709,15 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
           shared = true;
         } catch (error) {
           console.error('Error sharing:', error);
-          // If user cancelled share, we don't necessarily need to download, 
-          // but if it failed for other reasons, we might want to.
-          // For now, let's only download if it wasn't a user cancellation (AbortError)
-          if ((error as Error).name !== 'AbortError') {
-             downloadVideo(blob, filename);
+          // If user cancelled share (AbortError), we consider it "handled" and don't force download
+          if ((error as Error).name === 'AbortError') {
+             shared = true; 
           }
-          shared = true; // Treated as handled
         }
       } 
       
+      // If not shared (desktop, unsupported, or share failed non-cancellably), force download
       if (!shared) {
-        // Fallback for desktop or unsupported browsers
         downloadVideo(blob, filename);
       }
 
