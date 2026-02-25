@@ -744,16 +744,19 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     mediaRecorder.start();
     
     // Frame-by-frame rendering loop
-    const totalFrames = recordedFrames.length;
+    // EXPORT ONLY CURRENT REP (or all frames if single rep mode)
+    const framesToExport = currentRepFrames;
+    const totalFrames = framesToExport.length;
     const outroFrames = 90; // INCREASED to 3 seconds (90 frames) to ensure it's not cut off
     const totalExportFrames = totalFrames + outroFrames;
     
     const videoElement = videoRef.current;
     const originalTime = videoElement.currentTime;
     
-    // Calculate FPS
+    // Calculate FPS based on FULL recording to ensure correct timing
     const videoDuration = videoElement.duration;
-    const calculatedFPS = (videoDuration > 0 && totalFrames > 0) ? totalFrames / videoDuration : 30;
+    const fullTotalFrames = recordedFrames.length;
+    const calculatedFPS = (videoDuration > 0 && fullTotalFrames > 0) ? fullTotalFrames / videoDuration : 30;
     
     // Pre-load logo for outro
     const outroLogoImg = new Image();
@@ -827,10 +830,24 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       // Normal Video Frame Rendering
       
       // 1. Seek video to correct time
-      const time = frameIndex / calculatedFPS;
+      // We need to find the GLOBAL frame index to calculate the correct time in the video
+      const currentFrame = framesToExport[frameIndex];
+      const globalFrameIndex = recordedFrames.indexOf(currentFrame);
+      
+      // Fallback to local index if not found (shouldn't happen)
+      const effectiveIndex = globalFrameIndex !== -1 ? globalFrameIndex : frameIndex;
+      
+      const time = effectiveIndex / calculatedFPS;
       videoElement.currentTime = time;
       
       // Update the UI state to trigger Hologram update
+      // We must pass the RELATIVE index within the rep for the UI to show the correct metrics for this rep?
+      // No, setCurrentFrameIndex expects an index into `professionalFrames`?
+      // Wait, `currentFrameIndex` is used to index `professionalFrames` in the render loop:
+      // `const proFrame = professionalFrames[Math.min(currentFrameIndex, professionalFrames.length - 1)];`
+      // `professionalFrames` is generated based on `currentRepFrames.length`.
+      // So `currentFrameIndex` should be 0..currentRepFrames.length-1.
+      // So passing `frameIndex` (which is 0..totalFrames-1) is CORRECT for `currentRepFrames`.
       setCurrentFrameIndex(frameIndex);
       
       // Wait for seek to complete AND for React/Three.js to update
@@ -875,24 +892,18 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       const yOffset = userY + (userH - drawHeight) / 2;
       
       ctx.save();
-      // Apply mirror effect
-      ctx.translate(xOffset + drawWidth, yOffset);
-      ctx.scale(-1, 1); 
+      // NO MIRROR for export (Observer View)
+      // We draw normally so text/logos on shirt are readable and it matches standard video playback
+      ctx.translate(xOffset, yOffset);
       ctx.drawImage(videoElement, 0, 0, drawWidth, drawHeight);
       ctx.restore();
       
       // 4. Draw Skeleton Overlay
-      const frame = recordedFrames[frameIndex];
+      const frame = framesToExport[frameIndex];
       if (frame && frame.landmarks) {
         ctx.save();
-        // MATCH VIDEO TRANSFORM:
-        // The video is drawn with: translate(xOffset + drawWidth, yOffset) then scale(-1, 1)
-        // This means x=0 in local space is at xOffset+drawWidth in canvas space, and x increases to the LEFT.
-        // So a point at x=0.5 * drawWidth should be drawn at:
-        // Canvas X = (xOffset + drawWidth) - (0.5 * drawWidth) = xOffset + 0.5*drawWidth. Correct.
-        
-        ctx.translate(xOffset + drawWidth, yOffset);
-        ctx.scale(-1, 1);
+        // MATCH VIDEO TRANSFORM (No Mirror)
+        ctx.translate(xOffset, yOffset);
         
         // Draw connections
         ctx.strokeStyle = '#00ff00';
@@ -935,10 +946,9 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       
       // Find the 3D canvas
       // We need to find the canvas inside the Hologram3D component
-      // Since we can't easily access the ref from here, we'll query for it
-      // This assumes the Hologram3D component is mounted and visible during export
-      const hologramCanvas = document.querySelector('canvas[data-engine="three.js r173"]') as HTMLCanvasElement || 
-                             document.querySelector('.relative.bg-black canvas') as HTMLCanvasElement;
+      // We use a specific ID that we'll add to Hologram3D
+      const hologramCanvas = document.getElementById('hologram-3d-canvas') as HTMLCanvasElement ||
+                             document.querySelector('canvas[data-engine^="three.js"]') as HTMLCanvasElement;
       
       if (hologramCanvas) {
         // Draw the 3D canvas content
@@ -1623,6 +1633,14 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                   className="w-full py-6 text-lg"
                 >
                   ⬇️ Download File
+                </Button>
+
+                <Button 
+                  onClick={() => alert("Cloud storage integration (Google Drive/Dropbox) coming soon!")}
+                  variant="secondary"
+                  className="w-full py-4 text-md bg-slate-800 hover:bg-slate-700"
+                >
+                  ☁️ Save to Cloud
                 </Button>
                 
                 <Button 

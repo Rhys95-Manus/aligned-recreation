@@ -825,7 +825,7 @@ export default function Analysis() {
             }
 
             if (newState === 'neutral' && 
-                (neutralHoldCounter.current || 0) >= 30 && // TUNED: Require 30 frames (~1.0s) of neutral hold (balanced)
+                (neutralHoldCounter.current || 0) >= 20 && // TUNED: Require 20 frames (~0.66s) of neutral hold (slightly faster)
                 repDurationFrames > 36 && // Min duration 1.2s
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
