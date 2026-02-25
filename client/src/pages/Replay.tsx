@@ -782,8 +782,8 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         // Outro Animation
         const outroProgress = (frameIndex - totalFrames) / outroFrames;
         
-        // Black background
-        ctx.fillStyle = '#000000';
+        // Background
+        ctx.fillStyle = '#0a0e27'; // Match home screen / hologram background
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // Use pre-loaded logo image
@@ -834,17 +834,21 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       const time = frameIndex / calculatedFPS;
       videoElement.currentTime = time;
       
-      // Wait for seek to complete
+      // Update the UI state to trigger Hologram update
+      setCurrentFrameIndex(frameIndex);
+      
+      // Wait for seek to complete AND for React/Three.js to update
       await new Promise<void>(resolve => {
         const onSeeked = () => {
           videoElement.removeEventListener('seeked', onSeeked);
-          resolve();
+          // Add a small delay to allow React to render the Hologram update
+          setTimeout(resolve, 100); 
         };
         videoElement.addEventListener('seeked', onSeeked);
       });
       
       // 2. Clear canvas
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = '#0a0e27'; // Match home screen / hologram background
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // Layout Configuration
