@@ -171,7 +171,7 @@ export default function Analysis() {
   const [currentCaptureRep, setCurrentCaptureRep] = useState(1); // Current rep being captured (live)
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
   const [feedbackTrigger, setFeedbackTrigger] = useState(false); // Trigger for live coaching
-  const [liveCoachingEnabled, setLiveCoachingEnabled] = useState(true); // Toggle for live coaching feature
+  const [liveCoachingEnabled, setLiveCoachingEnabled] = useState(false); // Toggle for live coaching feature
 
   // Watch for completion of all reps AND trigger feedback
   useEffect(() => {
