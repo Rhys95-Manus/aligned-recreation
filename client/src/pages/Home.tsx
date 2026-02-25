@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { useLocation } from "wouter";
+import { useAudio } from "@/contexts/AudioContext";
 
 export default function Home() {
-  const [audioOn, setAudioOn] = useState(true);
+  const { audioEnabled, toggleAudio } = useAudio();
   const [, setLocation] = useLocation();
 
   return (
@@ -13,8 +13,8 @@ export default function Home() {
           <img src="/aligned-logo-v2.png" alt="Aligned" className="h-14 md:h-16 object-contain" />
         </div>
         <div className="flex gap-2 md:gap-3 flex-wrap justify-end">
-          <Button variant="outline" onClick={() => setAudioOn(!audioOn)} className="!border-2 !border-emerald-600 !bg-emerald-600/30 text-white hover:!bg-emerald-600/50 rounded-full px-3 md:px-5 text-sm md:text-base">
-            Audio: {audioOn ? "On" : "Off"}
+          <Button variant="outline" onClick={toggleAudio} className="!border-2 !border-emerald-600 !bg-emerald-600/30 text-white hover:!bg-emerald-600/50 rounded-full px-3 md:px-5 text-sm md:text-base">
+            Audio: {audioEnabled ? "On" : "Off"}
           </Button>
           <Button variant="outline" onClick={() => setLocation("/community")} className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-3 md:px-5 text-sm md:text-base">Community</Button>
           <Button variant="outline" onClick={() => setLocation("/history")} className="!border-2 !border-purple-400 bg-transparent !text-purple-400 hover:bg-purple-400/10 rounded-full px-3 md:px-5 text-sm md:text-base">📊 History</Button>
@@ -24,8 +24,8 @@ export default function Home() {
 
       <main className="max-w-[1400px] mx-auto px-8 py-16">
         <div className="text-center mb-16">
-          <h1 className="text-6xl font-bold mb-4 flex items-center justify-center gap-0">
-            Welcome to <img src="/aligned-logo-v2.png" alt="Aligned" className="h-40 object-contain inline-block translate-y-4 -ml-2" />
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 flex flex-col md:flex-row items-center justify-center gap-0 md:gap-0">
+            <span>Welcome to</span> <img src="/aligned-logo-v2.png" alt="Aligned" className="h-32 md:h-40 object-contain inline-block translate-y-2 md:translate-y-4 -mt-4 md:-mt-0 md:-ml-2" />
           </h1>
           <p className="text-xl text-slate-300 mb-8">Professional feedback on your form</p>
           <div className="flex gap-4 justify-center">
