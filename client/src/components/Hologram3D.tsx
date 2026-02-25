@@ -67,6 +67,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
+    renderer.domElement.id = 'hologram-3d-canvas'; // ID for export capture
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
