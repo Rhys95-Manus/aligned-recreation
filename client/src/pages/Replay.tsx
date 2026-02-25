@@ -83,6 +83,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
   // Video Export State
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [exportResult, setExportResult] = useState<{ blob: Blob, filename: string } | null>(null); // Store result for manual sharing
   // Default to vertical on mobile devices, landscape on desktop
   const [exportFormat, setExportFormat] = useState<'landscape' | 'vertical'>(
     window.innerWidth < 768 ? 'vertical' : 'landscape'
@@ -652,6 +653,39 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     }, 5000);
   };
 
+  const downloadVideo = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const shareVideo = async () => {
+    if (!exportResult) return;
+    
+    const { blob, filename } = exportResult;
+    const file = new File([blob], filename, { type: blob.type });
+    
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'My Aligned Session',
+          text: `Check out my ${motionName} form analysis on Aligned!`,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // Fallback to download if share not supported
+      downloadVideo(blob, filename);
+    }
+  };
+
   const handleExportVideo = async () => {
     if (!videoRef.current || !exportCanvasRef.current || isExporting) return;
     
@@ -699,52 +733,14 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       const blob = new Blob(chunks, { type: mimeType });
       const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
       const filename = `aligned-session-${motionName}-${new Date().toISOString().slice(0,10)}.${ext}`;
-      const file = new File([blob], filename, { type: mimeType });
-
-      // Share or Download Logic
-      // Check if we are on a mobile device (touch capable and small screen)
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
       
-      let shared = false;
-      
-      // Only attempt native share on mobile devices where it's reliable for social apps
-      if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: 'My Aligned Session',
-            text: `Check out my ${motionName} form analysis on Aligned!`,
-          });
-          shared = true;
-        } catch (error) {
-          console.error('Error sharing:', error);
-          // If user cancelled share (AbortError), we consider it "handled" and don't force download
-          if ((error as Error).name === 'AbortError') {
-             shared = true; 
-          }
-        }
-      } 
-      
-      // If not shared (desktop, unsupported, or share failed non-cancellably), force download
-      if (!shared) {
-        downloadVideo(blob, filename);
-      }
-
+      // Store result and show dialog instead of auto-action
+      // This ensures we have a user gesture for sharing
+      setExportResult({ blob, filename });
       setIsExporting(false);
       setExportProgress(0);
     };
 
-    const downloadVideo = (blob: Blob, filename: string) => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    };
-    
     mediaRecorder.start();
     
     // Frame-by-frame rendering loop
@@ -1602,6 +1598,45 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
         )}
         
         {/* Rep Summary Modal */}
+        {/* Export Result Dialog */}
+        {exportResult && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#1a1f2e] rounded-2xl p-8 max-w-md w-full border border-blue-500/30 shadow-2xl">
+              <h2 className="text-2xl font-bold text-center mb-2">Video Ready! 🎬</h2>
+              <p className="text-gray-400 text-center mb-6">Your session analysis has been exported.</p>
+              
+              <div className="flex flex-col gap-3">
+                <Button 
+                  onClick={shareVideo}
+                  className="w-full bg-blue-600 hover:bg-blue-700 py-6 text-lg"
+                >
+                  📤 Share Video
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    if (exportResult) {
+                      downloadVideo(exportResult.blob, exportResult.filename);
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full py-6 text-lg"
+                >
+                  ⬇️ Download File
+                </Button>
+                
+                <Button 
+                  onClick={() => setExportResult(null)}
+                  variant="ghost"
+                  className="w-full mt-2"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showRepSummary && selectedReps > 1 && repScores.length > 0 && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-[#1a1f2e] rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
