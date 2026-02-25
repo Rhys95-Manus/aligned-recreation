@@ -11,8 +11,8 @@ export default function Header() {
 
   return (
     <header className="bg-[#050810] flex items-center justify-between px-4 md:px-8 py-4 md:py-6 border-b border-slate-800/50">
-      <div className="text-lg md:text-xl font-semibold cursor-pointer" onClick={() => setLocation("/")}>
-        Aligned
+      <div className="cursor-pointer" onClick={() => setLocation("/")}>
+        <img src="/aligned-logo-v2.png" alt="Aligned" className="h-10 md:h-12 object-contain" />
       </div>
       <div className="flex gap-2 md:gap-3 flex-wrap justify-end">
         <AudioSettingsModal />
