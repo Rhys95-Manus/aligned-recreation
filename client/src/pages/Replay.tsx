@@ -675,10 +675,18 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       canvas.height = 1080;
     }
     
-    // Create MediaRecorder
+    // Create MediaRecorder with best supported MIME type
     const stream = canvas.captureStream(30); // 30 FPS
+    
+    let mimeType = 'video/webm;codecs=vp9';
+    if (MediaRecorder.isTypeSupported('video/mp4')) {
+      mimeType = 'video/mp4';
+    } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+      mimeType = 'video/webm;codecs=h264'; // Better compatibility than VP9
+    }
+    
     const mediaRecorder = new MediaRecorder(stream, {
-      mimeType: 'video/webm;codecs=vp9',
+      mimeType,
       videoBitsPerSecond: 5000000 // 5 Mbps
     });
     
@@ -688,9 +696,10 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     };
     
     mediaRecorder.onstop = async () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      const filename = `aligned-session-${motionName}-${new Date().toISOString().slice(0,10)}.webm`;
-      const file = new File([blob], filename, { type: 'video/webm' });
+      const blob = new Blob(chunks, { type: mimeType });
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+      const filename = `aligned-session-${motionName}-${new Date().toISOString().slice(0,10)}.${ext}`;
+      const file = new File([blob], filename, { type: mimeType });
 
       // Share or Download Logic
       // Check if we are on a mobile device (touch capable and small screen)
