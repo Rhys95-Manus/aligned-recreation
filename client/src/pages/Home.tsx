@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useAudio } from "@/contexts/AudioContext";
+import AudioSettingsModal from "@/components/AudioSettingsModal";
 
 export default function Home() {
   const { audioEnabled, toggleAudio } = useAudio();
@@ -13,9 +14,7 @@ export default function Home() {
           <img src="/aligned-logo-v2.png" alt="Aligned" className="h-14 md:h-16 object-contain" />
         </div>
         <div className="flex gap-2 md:gap-3 flex-wrap justify-end">
-          <Button variant="outline" onClick={toggleAudio} className="!border-2 !border-emerald-600 !bg-emerald-600/30 text-white hover:!bg-emerald-600/50 rounded-full px-3 md:px-5 text-sm md:text-base">
-            Audio: {audioEnabled ? "On" : "Off"}
-          </Button>
+          <AudioSettingsModal />
           <Button variant="outline" onClick={() => setLocation("/community")} className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-3 md:px-5 text-sm md:text-base">Community</Button>
           <Button variant="outline" onClick={() => setLocation("/history")} className="!border-2 !border-purple-400 bg-transparent !text-purple-400 hover:bg-purple-400/10 rounded-full px-3 md:px-5 text-sm md:text-base">📊 History</Button>
           <Button variant="outline" onClick={() => setLocation("/pricing")} className="!border-2 !border-cyan-400 bg-transparent !text-cyan-400 hover:bg-cyan-400/10 rounded-full px-3 md:px-5 text-sm md:text-base">Pricing</Button>
