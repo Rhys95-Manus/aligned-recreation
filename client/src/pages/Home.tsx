@@ -24,7 +24,7 @@ export default function Home() {
 
       <main className="max-w-[1400px] mx-auto px-8 py-16">
         <div className="text-center mb-16">
-          <h1 className="text-6xl font-bold mb-4 flex items-center justify-center gap-2">
+          <h1 className="text-6xl font-bold mb-4 flex items-center justify-center gap-0">
             Welcome to <img src="/aligned-logo-v2.png" alt="Aligned" className="h-40 object-contain inline-block translate-y-4" />
           </h1>
           <p className="text-xl text-slate-300 mb-8">Professional feedback on your form</p>
