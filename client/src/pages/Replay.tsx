@@ -744,8 +744,26 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     mediaRecorder.start();
     
     // Frame-by-frame rendering loop
-    // EXPORT ONLY CURRENT REP (or all frames if single rep mode)
-    const framesToExport = currentRepFrames;
+    // EXPORT STRATEGY:
+    // If multiple reps exist, stitch them together (cut out filler).
+    // If only 1 rep or no boundaries, export the current view.
+    let framesToExport = currentRepFrames;
+    
+    if (detailedAnalysis?.repBoundaries && detailedAnalysis.repBoundaries.length > 1) {
+      // Stitch all reps together
+      framesToExport = detailedAnalysis.repBoundaries.flatMap((boundary: any) => {
+        const start = Math.max(0, boundary.startFrame);
+        const end = Math.min(recordedFrames.length - 1, boundary.endFrame);
+        if (start <= end) {
+          return recordedFrames.slice(start, end + 1);
+        }
+        return [];
+      });
+      console.log(`🎬 Stitching ${detailedAnalysis.repBoundaries.length} reps for export (${framesToExport.length} frames)`);
+    } else {
+      console.log(`🎬 Exporting single rep (${framesToExport.length} frames)`);
+    }
+
     const totalFrames = framesToExport.length;
     const outroFrames = 90; // INCREASED to 3 seconds (90 frames) to ensure it's not cut off
     const totalExportFrames = totalFrames + outroFrames;
