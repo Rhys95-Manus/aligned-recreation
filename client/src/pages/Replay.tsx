@@ -744,24 +744,33 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     mediaRecorder.start();
     
     // Frame-by-frame rendering loop
-    // EXPORT STRATEGY:
-    // If multiple reps exist, stitch them together (cut out filler).
-    // If only 1 rep or no boundaries, export the current view.
+    // EXPORT STRATEGY: BEST REP ONLY
+    // Find the rep with the highest score and export only that one.
     let framesToExport = currentRepFrames;
+    let bestRepScore = 0;
     
-    if (detailedAnalysis?.repBoundaries && detailedAnalysis.repBoundaries.length > 1) {
-      // Stitch all reps together
-      framesToExport = detailedAnalysis.repBoundaries.flatMap((boundary: any) => {
-        const start = Math.max(0, boundary.startFrame);
-        const end = Math.min(recordedFrames.length - 1, boundary.endFrame);
-        if (start <= end) {
-          return recordedFrames.slice(start, end + 1);
-        }
-        return [];
+    if (detailedAnalysis?.repScores && detailedAnalysis.repScores.length > 0) {
+      // Find best rep
+      const bestRep = detailedAnalysis.repScores.reduce((prev: any, current: any) => {
+        return (prev.score > current.score) ? prev : current;
       });
-      console.log(`🎬 Stitching ${detailedAnalysis.repBoundaries.length} reps for export (${framesToExport.length} frames)`);
+      
+      bestRepScore = bestRep.score;
+      console.log(`🏆 Best Rep: ${bestRep.repNumber} (Score: ${bestRepScore})`);
+      
+      // Find boundary for best rep
+      if (detailedAnalysis.repBoundaries) {
+        const boundary = detailedAnalysis.repBoundaries.find((b: any) => b.repNumber === bestRep.repNumber);
+        if (boundary) {
+          const start = Math.max(0, boundary.startFrame);
+          const end = Math.min(recordedFrames.length - 1, boundary.endFrame);
+          if (start <= end) {
+            framesToExport = recordedFrames.slice(start, end + 1);
+          }
+        }
+      }
     } else {
-      console.log(`🎬 Exporting single rep (${framesToExport.length} frames)`);
+      console.log(`🎬 Exporting current rep (no scores found)`);
     }
 
     const totalFrames = framesToExport.length;
@@ -1024,6 +1033,22 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
       ctx.fillStyle = 'white';
       ctx.font = '30px Inter, sans-serif';
       ctx.fillText(motionName, 50, 110);
+      
+      // Draw Score Badge if applicable
+      if (bestRepScore >= 80) {
+        const text = bestRepScore >= 95 ? "✨ Perfect Alignment!" : "🌟 Great Alignment!";
+        const color = bestRepScore >= 95 ? "#4ECDC4" : "#FFD166"; // Cyan or Gold
+        
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = color;
+        ctx.font = 'bold italic 40px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        // Draw at bottom center
+        ctx.fillText(text, canvas.width / 2, canvas.height - 50);
+        ctx.restore();
+      }
       
       ctx.fillStyle = '#888';
       ctx.font = '24px Inter, sans-serif';
