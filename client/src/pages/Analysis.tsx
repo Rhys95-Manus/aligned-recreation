@@ -239,6 +239,10 @@ export default function Analysis() {
     },
   });
 
+  // Ref to track completedReps inside onResults closure (avoids stale state)
+  const completedRepsRef = useRef<number[]>([]);
+  useEffect(() => { completedRepsRef.current = completedReps; }, [completedReps]);
+
   // Watch for completion of all reps AND trigger feedback
   useEffect(() => {
     // If a new rep was just added (length increased), trigger feedback
@@ -249,10 +253,10 @@ export default function Analysis() {
 
     if (completedReps.length > 0 && completedReps.length >= selectedRepsRef.current) {
       console.log(`🎯 useEffect detected all ${selectedRepsRef.current} reps complete. Triggering stopAndScore...`);
-      // Minimal delay - state is already settled from the rep detection
+      // Small timeout to ensure state is settled
       const timer = setTimeout(() => {
         stopAndScore();
-      }, 100);
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [completedReps]);
@@ -320,9 +324,13 @@ export default function Analysis() {
     };
   }, [stream]);
   
-  // Note: stopAndScore is called from the completedReps useEffect.
-  // The sessionState === 'complete' check was removed to avoid double-calling stopAndScore
-  // which caused delays from redundant processing.
+  // Auto-stop navigation effect (backup path when sessionState is set to 'complete' inside onResults)
+  useEffect(() => {
+    if (sessionState === 'complete') {
+      console.log('🏁 Session complete detected via useEffect - triggering stopAndScore');
+      stopAndScore();
+    }
+  }, [sessionState]);
 
   // Countdown timer effect
   useEffect(() => {
@@ -740,7 +748,8 @@ export default function Analysis() {
         
         // HARD KILL SWITCH: Stop recording immediately if we've reached the target reps
         // This prevents "walking over to camera" from being recorded
-        if (completedReps.length >= selectedRepsRef.current) {
+        // Uses completedRepsRef (not completedReps) to avoid stale closure inside onResults
+        if (completedRepsRef.current.length >= selectedRepsRef.current) {
           console.log('🛑 Hard kill switch triggered: Target reps reached. Stopping frame recording.');
           isCapturingRef.current = false;
           setSessionState('complete');
@@ -906,9 +915,9 @@ export default function Analysis() {
               setCompletedReps(prev => [...prev, currentCaptureRep]);
               
               // Check if this was the final rep
-              // Use ref here to ensure we have the latest value inside the closure
-              // IMPORTANT: We check completedReps.length + 1 because the state update hasn't happened yet
-              const totalCompleted = completedReps.length + 1;
+              // Use completedRepsRef (not completedReps) to get the latest value inside the stale closure
+              // +1 because setCompletedReps above hasn't propagated yet
+              const totalCompleted = completedRepsRef.current.length + 1;
               
               // Trigger live coaching feedback for the completed rep
               // We can't call setFeedbackTrigger directly here because it's inside a closure that might not have the latest state setter
@@ -1168,7 +1177,9 @@ export default function Analysis() {
         setTimeout(() => {
           setPoseInitialized(true);
           setSessionState('ready');
-          speak("Video capture is ready. Press start capture when ready");
+          // Mute voice commands during speech to prevent self-triggering
+          if (voiceCommand.mute) voiceCommand.mute(5000);
+          speak("Video capture is ready. You may begin when ready");
         }, 1500);
       }
     } catch (error) {
@@ -1195,9 +1206,15 @@ export default function Analysis() {
     setSessionState('countdown');
     setCurrentCaptureRep(1); // Reset rep counter
     setCompletedReps([]); // Clear completed reps
+    completedRepsRef.current = []; // Also reset the ref immediately
     captureMotionState.current = 'neutral'; // Reset motion state
     captureBaselineMetrics.current = null; // Clear baseline
+    captureRepStartFrame.current = 0; // Reset rep start frame
+    capturedRepBoundaries.current = []; // Clear rep boundaries
+    neutralHoldCounter.current = 0; // Reset neutral hold counter
     console.log('⏱️ Starting 5-second countdown');
+    // Mute voice commands during countdown speech to prevent self-triggering
+    if (voiceCommand.mute) voiceCommand.mute(7000); // 5s countdown + 2s buffer
     speak("Get ready. Starting in 5 seconds");
   };
 

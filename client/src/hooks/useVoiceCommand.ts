@@ -60,6 +60,8 @@ export type VoiceCommandState = {
   stopListening: () => void;
   /** Toggle listening on/off */
   toggleListening: () => void;
+  /** Temporarily mute command processing (e.g., while app is speaking) */
+  mute: (durationMs?: number) => void;
 };
 
 /**
@@ -71,6 +73,7 @@ export type VoiceCommandState = {
  * - `isListening` state does NOT flicker during auto-restarts (uses shouldBeListening ref)
  * - All callbacks are accessed via refs to avoid stale closure issues
  * - Debounces command triggers to prevent double-fires
+ * - `mute()` temporarily ignores commands (prevents app speech from self-triggering)
  */
 export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
   const { commands, enabled, lang = "en-US", onCommandRecognized, onError } = config;
@@ -88,6 +91,8 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
   const isActuallyListeningRef = useRef(false);
   const lastCommandTimeRef = useRef(0);
   const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mutedUntilRef = useRef(0); // Timestamp until which commands are ignored
+  const muteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep ALL refs in sync every render - no stale closures
   useEffect(() => { commandsRef.current = commands; }, [commands]);
@@ -118,8 +123,15 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const now = Date.now();
+      
       // Debounce: ignore commands within 2s of last trigger
       if (now - lastCommandTimeRef.current < 2000) return;
+      
+      // Mute check: ignore commands while the app is speaking
+      if (now < mutedUntilRef.current) {
+        console.log('🔇 Voice command ignored (muted - app is speaking)');
+        return;
+      }
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
@@ -233,6 +245,22 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
     }
   }, [startListening, stopListening]);
 
+  /**
+   * Temporarily mute command processing for the given duration.
+   * The recognizer stays active (no restart flicker), but all results are ignored.
+   * Default: 4000ms (enough for most TTS utterances)
+   */
+  const mute = useCallback((durationMs = 4000) => {
+    mutedUntilRef.current = Date.now() + durationMs;
+    console.log(`🔇 Voice commands muted for ${durationMs}ms`);
+    
+    // Clear any existing mute timer
+    if (muteTimerRef.current) clearTimeout(muteTimerRef.current);
+    muteTimerRef.current = setTimeout(() => {
+      console.log('🔊 Voice commands unmuted');
+    }, durationMs);
+  }, []);
+
   // Start/stop based on enabled prop
   useEffect(() => {
     if (enabled && isSupported) {
@@ -246,6 +274,9 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
       if (recognitionRef.current) {
         recognitionRef.current = null;
       }
+      if (muteTimerRef.current) {
+        clearTimeout(muteTimerRef.current);
+      }
     };
   }, [enabled, isSupported, startListening, stopListening]);
 
@@ -257,5 +288,6 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
     startListening,
     stopListening,
     toggleListening,
+    mute,
   };
 }
