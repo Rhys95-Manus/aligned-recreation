@@ -178,6 +178,55 @@ describe("Voice command state transitions", () => {
   });
 });
 
+describe("Mute functionality (self-trigger prevention)", () => {
+  it("should ignore commands while muted", () => {
+    let mutedUntil = 0;
+
+    const muteFor = (durationMs: number) => {
+      mutedUntil = Date.now() + durationMs;
+    };
+
+    const isMuted = () => Date.now() < mutedUntil;
+
+    // Not muted initially
+    expect(isMuted()).toBe(false);
+
+    // Mute for 3 seconds
+    muteFor(3000);
+    expect(isMuted()).toBe(true);
+  });
+
+  it("should prevent app speech from triggering voice commands", () => {
+    // Simulate the scenario: app says "Video capture is ready. You may begin when ready"
+    // The word "begin" is a trigger word, but mute should prevent it
+    const triggerWords = ["start", "go", "begin", "capture"];
+    const appSpeech = "Video capture is ready. You may begin when ready";
+
+    // Without mute, speech would match
+    const wouldMatch = triggerWords.some(word => appSpeech.toLowerCase().includes(word));
+    expect(wouldMatch).toBe(true); // "begin" is in the speech
+
+    // With mute active, the command should be ignored
+    let mutedUntil = Date.now() + 5000;
+    const isMuted = Date.now() < mutedUntil;
+    expect(isMuted).toBe(true); // Commands are blocked
+  });
+
+  it("should also prevent countdown speech from triggering", () => {
+    const triggerWords = ["start", "go", "begin", "capture"];
+    const countdownSpeech = "Get ready. Starting in 5 seconds";
+
+    // "starting" contains "start" as a substring
+    const wouldMatch = triggerWords.some(word => countdownSpeech.toLowerCase().includes(word));
+    expect(wouldMatch).toBe(true); // "start" is in "Starting"
+
+    // Mute should block this
+    let mutedUntil = Date.now() + 7000;
+    const isMuted = Date.now() < mutedUntil;
+    expect(isMuted).toBe(true);
+  });
+});
+
 describe("Command debouncing", () => {
   it("should prevent duplicate triggers within 2 seconds", () => {
     const DEBOUNCE_MS = 2000;

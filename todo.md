@@ -169,3 +169,7 @@
 - [x] Remove stop/finish/done voice commands (auto-stop works well, not needed)
 - [x] Fix auto-stop delay regression (reduced to 100ms, removed duplicate stopAndScore call)
 - [x] Fix glitching text under start capture button (use voiceEnabled not isListening for stable rendering)
+
+## Bug Fixes (Round 2)
+- [x] Fix auto-stop rep counter off-by-one (added completedRepsRef, restored sessionState complete useEffect, reset refs in startCapture, restored 500ms delay)
+- [x] Fix app's own speech triggering voice command (added mute() to useVoiceCommand, changed speech text to avoid trigger words, mute during countdown)
