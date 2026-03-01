@@ -10,7 +10,6 @@ import Replay from "./Replay";
 import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
 import VoiceCommandOverlay from "@/components/VoiceCommandOverlay";
 import { useAudio } from "@/contexts/AudioContext";
-import { useCloudStorage } from "@/hooks/useCloudStorage";
 
 // Detailed analysis data structure
 interface DetailedAnalysisData {
@@ -239,11 +238,12 @@ export default function Analysis() {
   // Voice feedback
   // const { audioEnabled, selectedVoice } = useAudio(); // Moved to top level for volume access
   
-  const cloudStorage = useCloudStorage();
-  
   useEffect(() => {
-    // Load total points from cloud or localStorage
-    setTotalPoints(cloudStorage.totalPoints);
+    // Load total points from localStorage (original working approach)
+    const saved = localStorage.getItem('totalPoints');
+    if (saved) {
+      setTotalPoints(parseInt(saved, 10));
+    }
     
     return () => {
       // Cleanup camera on unmount
@@ -1368,7 +1368,7 @@ export default function Analysis() {
     const points = analysis.overallScore;
     const newTotal = totalPoints + points;
     setTotalPoints(newTotal);
-    cloudStorage.addPoints(points).catch(console.error);
+    localStorage.setItem('totalPoints', newTotal.toString());
     
     // REMOVED SPEECH: Replay page will handle the announcement
     // speak("Here is your detailed analysis"); 
@@ -1464,6 +1464,11 @@ export default function Analysis() {
             <div className="lg:w-[80%] bg-[#1a1f2e] rounded-lg p-4">
               {/* Toggles Row */}
               <div className="flex justify-end gap-2 mb-2 flex-wrap">
+                <VoiceCommandOverlay
+                  buttonSelector="[data-analysis-button]"
+                  sessionState={sessionState}
+                  cameraActive={cameraActive}
+                />
                 <div 
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                     liveCoachingEnabled 
@@ -1612,11 +1617,7 @@ export default function Analysis() {
               >
                 {getButtonText()}
               </Button>
-              <VoiceCommandOverlay
-                buttonSelector="[data-analysis-button]"
-                sessionState={sessionState}
-                cameraActive={cameraActive}
-              />
+
             </div>
 
             {/* Detection Status - Takes up 20% width on large screens */}
