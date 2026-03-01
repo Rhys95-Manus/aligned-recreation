@@ -176,3 +176,6 @@
 
 ## Bug Fixes (Round 3)
 - [x] Fix auto-stop not triggering after rep completion (reverted completedRepsRef back to original completedReps.length - the stale closure was the correct design)
+
+## Bug Fixes (Round 4)
+- [x] Fix persistent auto-stop bug: auto-disable voice recognition during capture/countdown to free CPU for pose detection (enabled prop driven by sessionState)
