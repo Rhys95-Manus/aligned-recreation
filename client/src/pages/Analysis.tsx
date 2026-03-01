@@ -226,7 +226,8 @@ export default function Analysis() {
   // Enable voice listening even before camera is active so user can say "start" to begin
   const voiceCommand = useVoiceCommand({
     commands: voiceCommands,
-    enabled: voiceEnabled,
+    // Auto-disable during capture/countdown to free CPU for pose detection
+    enabled: voiceEnabled && sessionState !== 'capturing' && sessionState !== 'countdown',
     onCommandRecognized: (cmd) => {
       console.log(`\u{1F3A4} Voice command recognized: "${cmd}"`);
     },
