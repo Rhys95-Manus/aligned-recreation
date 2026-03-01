@@ -155,3 +155,11 @@
 - [x] Update SessionHistory.tsx to load from cloud with auth banner
 - [x] Write vitest tests for sessions and settings (11 tests passing)
 - [x] All TypeScript compiles clean (tsc --noEmit passes)
+
+## Voice-Activated Start
+- [x] Create useVoiceCommand hook using Web Speech API
+- [x] Integrate voice trigger into Analysis page (say "Start" to begin capture)
+- [x] Add visual feedback for voice listening state (microphone indicator)
+- [x] Ensure voice command works alongside manual button (both paths supported)
+- [x] Handle browser compatibility (fallback when Speech API unavailable)
+- [x] Write tests for voice command integration (13 tests passing)
