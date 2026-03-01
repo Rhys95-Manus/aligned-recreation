@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1772329155184,
+      "tag": "0000_sharp_mysterio",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1772329610951,
+      "tag": "0001_fresh_longshot",
+      "breakpoints": true
+    }
+  ]
+}

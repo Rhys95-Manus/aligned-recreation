@@ -9,6 +9,7 @@ import { detectRepBoundaries } from "@/utils/repDetection";
 import Replay from "./Replay";
 import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
 import { useAudio } from "@/contexts/AudioContext";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 
 // Detailed analysis data structure
 interface DetailedAnalysisData {
@@ -237,12 +238,11 @@ export default function Analysis() {
   // Voice feedback
   // const { audioEnabled, selectedVoice } = useAudio(); // Moved to top level for volume access
   
+  const cloudStorage = useCloudStorage();
+  
   useEffect(() => {
-    // Load total points from localStorage
-    const saved = localStorage.getItem('totalPoints');
-    if (saved) {
-      setTotalPoints(parseInt(saved, 10));
-    }
+    // Load total points from cloud or localStorage
+    setTotalPoints(cloudStorage.totalPoints);
     
     return () => {
       // Cleanup camera on unmount
@@ -1367,7 +1367,7 @@ export default function Analysis() {
     const points = analysis.overallScore;
     const newTotal = totalPoints + points;
     setTotalPoints(newTotal);
-    localStorage.setItem('totalPoints', newTotal.toString());
+    cloudStorage.addPoints(points).catch(console.error);
     
     // REMOVED SPEECH: Replay page will handle the announcement
     // speak("Here is your detailed analysis"); 
