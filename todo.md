@@ -179,3 +179,9 @@
 
 ## Bug Fixes (Round 4)
 - [x] Fix persistent auto-stop bug: restored exact working Analysis.tsx from pre-voice checkpoint, surgically re-added voice code with zero changes to auto-stop logic
+
+## Bug Fixes (Round 5 - Clean Room)
+- [x] Fully revert Analysis.tsx to exact pre-voice working version (8815b37) — verified byte-for-byte identical
+- [x] Move voice commands to standalone VoiceCommandOverlay component (uses DOM click, zero hooks/state/refs in Analysis.tsx)
+- [x] Fix speech text: changed to "You may now proceed when ready" (no trigger words)
+- [x] Verify auto-stop code: diff shows only 5 lines changed (import, data-attr, component render, speech text, flex-wrap)

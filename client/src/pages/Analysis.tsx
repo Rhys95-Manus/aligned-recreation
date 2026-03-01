@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Pose, Results } from "@mediapipe/pose";
 import { getProfessionalReference, calculateMetricScore, getComparisonText } from "@/data/professionalReferences";
@@ -8,9 +8,9 @@ import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribu
 import { detectRepBoundaries } from "@/utils/repDetection";
 import Replay from "./Replay";
 import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
+import VoiceCommandOverlay from "@/components/VoiceCommandOverlay";
 import { useAudio } from "@/contexts/AudioContext";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
-import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 
 // Detailed analysis data structure
 interface DetailedAnalysisData {
@@ -174,67 +174,6 @@ export default function Analysis() {
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
   const [feedbackTrigger, setFeedbackTrigger] = useState(false); // Trigger for live coaching
   const [liveCoachingEnabled, setLiveCoachingEnabled] = useState(false); // Toggle for live coaching feature
-
-  // Voice command state
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [voiceCommandFeedback, setVoiceCommandFeedback] = useState<string | null>(null);
-  const voiceFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Refs for voice command callbacks (avoid stale closures)
-  const sessionStateRef = useRef(sessionState);
-  const cameraActiveRef = useRef(cameraActive);
-  const poseInitializedRef = useRef(poseInitialized);
-  const startVideoRef = useRef<() => void>(() => {});
-  const startCaptureRef = useRef<() => void>(() => {});
-  useEffect(() => { sessionStateRef.current = sessionState; }, [sessionState]);
-  useEffect(() => { cameraActiveRef.current = cameraActive; }, [cameraActive]);
-  useEffect(() => { poseInitializedRef.current = poseInitialized; }, [poseInitialized]);
-
-  const showVoiceFeedback = useCallback((msg: string) => {
-    setVoiceCommandFeedback(msg);
-    if (voiceFeedbackTimeoutRef.current) clearTimeout(voiceFeedbackTimeoutRef.current);
-    voiceFeedbackTimeoutRef.current = setTimeout(() => setVoiceCommandFeedback(null), 2500);
-  }, []);
-
-  // Voice command handler - uses refs so it NEVER has stale closures
-  const handleVoiceStart = useCallback(() => {
-    const state = sessionStateRef.current;
-    const camActive = cameraActiveRef.current;
-    const poseReady = poseInitializedRef.current;
-    console.log(`\u{1F3A4} Voice start handler called. state=${state}, camActive=${camActive}, poseReady=${poseReady}`);
-    if (!camActive) {
-      showVoiceFeedback('Starting camera...');
-      startVideoRef.current();
-    } else if ((state === 'ready' || state === 'idle') && poseReady) {
-      showVoiceFeedback('Voice command: Start!');
-      startCaptureRef.current();
-    } else {
-      showVoiceFeedback('Not ready yet...');
-    }
-  }, [showVoiceFeedback]);
-
-  const voiceCommands = useMemo(() => ({
-    'start': handleVoiceStart,
-    'go': handleVoiceStart,
-    'begin': handleVoiceStart,
-    'capture': handleVoiceStart,
-  }), [handleVoiceStart]);
-
-  const voiceCommand = useVoiceCommand({
-    commands: voiceCommands,
-    // Auto-disable during capture/countdown to avoid interfering with pose detection
-    enabled: voiceEnabled && sessionState !== 'capturing' && sessionState !== 'countdown',
-    onCommandRecognized: (cmd) => {
-      console.log(`\u{1F3A4} Voice command recognized: "${cmd}"`);
-    },
-    onError: (err) => {
-      console.warn('\u{1F3A4} Voice recognition error:', err);
-      if (err.includes('permission denied')) {
-        showVoiceFeedback('Mic access denied');
-        setVoiceEnabled(false);
-      }
-    },
-  });
 
   // Watch for completion of all reps AND trigger feedback
   useEffect(() => {
@@ -1169,8 +1108,7 @@ export default function Analysis() {
         setTimeout(() => {
           setPoseInitialized(true);
           setSessionState('ready');
-          // Changed speech text to avoid trigger words that activate voice commands
-          speak("Video capture is ready. You may begin when ready");
+          speak("Video capture is ready. You may now proceed when ready");
         }, 1500);
       }
     } catch (error) {
@@ -1180,8 +1118,6 @@ export default function Analysis() {
   };
   
   const startCapture = () => {
-    // Mute voice commands during countdown speech to prevent self-triggering
-    if (voiceCommand.mute) voiceCommand.mute(7000);
     // Reset peak values at start of capture
     peakHipRotation.current = 0;
     peakRightElbowAngle.current = 0;
@@ -1204,10 +1140,6 @@ export default function Analysis() {
     console.log('⏱️ Starting 5-second countdown');
     speak("Get ready. Starting in 5 seconds");
   };
-
-  // Keep voice command refs in sync with latest function definitions
-  startVideoRef.current = startVideo;
-  startCaptureRef.current = startCapture;
   
   // Helper function to get drill recommendation for a metric
   const getDrillForMetric = (metricTitle: string): string => {
@@ -1530,29 +1462,8 @@ export default function Analysis() {
           <div className="flex flex-col lg:flex-row gap-4 mb-4">
             {/* Video Feed - Takes up 80% width on large screens */}
             <div className="lg:w-[80%] bg-[#1a1f2e] rounded-lg p-4">
-              {/* Live Coaching & Voice Command Toggles */}
+              {/* Toggles Row */}
               <div className="flex justify-end gap-2 mb-2 flex-wrap">
-                {/* Voice Command Toggle */}
-                <div 
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                    voiceEnabled 
-                      ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-400' 
-                      : 'bg-slate-800/80 border-slate-700 text-slate-400'
-                  }`}
-                  onClick={() => setVoiceEnabled(!voiceEnabled)}
-                  title={voiceCommand.isSupported ? 'Toggle voice commands (say "Start" to begin capture)' : 'Voice commands not supported in this browser'}
-                >
-                  {voiceCommand.isListening ? (
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
-                  ) : (
-                    <div className={`w-2 h-2 rounded-full transition-colors ${voiceEnabled ? 'bg-emerald-400' : 'bg-slate-500'}`} />
-                  )}
-                  <span className="text-xs font-bold uppercase tracking-wider">
-                    {!voiceCommand.isSupported ? 'Voice: N/A' : voiceCommand.isListening ? 'Listening...' : `Voice: ${voiceEnabled ? 'ON' : 'OFF'}`}
-                  </span>
-                </div>
-
-                {/* Live Coaching Toggle */}
                 <div 
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                     liveCoachingEnabled 
@@ -1585,37 +1496,6 @@ export default function Analysis() {
                     <p className="text-xl">Camera not started</p>
                   </div>
                 )}
-                {/* Voice Command Feedback Overlay */}
-                {voiceCommandFeedback && (
-                  <div className="absolute top-4 left-4 z-20 bg-emerald-600/90 backdrop-blur-sm rounded-lg px-4 py-2 text-white font-bold text-sm animate-in fade-in slide-in-from-top-2 duration-300 shadow-lg">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="12" y1="19" x2="12" y2="23" />
-                        <line x1="8" y1="23" x2="16" y2="23" />
-                      </svg>
-                      {voiceCommandFeedback}
-                    </div>
-                  </div>
-                )}
-
-                {/* Voice Listening Indicator */}
-                {voiceEnabled && voiceCommand.isListening && !voiceCommandFeedback && cameraActive && sessionState !== 'capturing' && sessionState !== 'countdown' && (
-                  <div className="absolute top-4 left-4 z-20 bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-2 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-                    <div className="relative">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="12" y1="19" x2="12" y2="23" />
-                        <line x1="8" y1="23" x2="16" y2="23" />
-                      </svg>
-                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
-                    </div>
-                    Say &quot;Start&quot; to begin
-                  </div>
-                )}
-
                 {/* Countdown Overlay */}
                 {sessionState === 'countdown' && countdown > 0 && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -1725,27 +1605,18 @@ export default function Analysis() {
 
               {/* Control Button */}
               <Button
+                data-analysis-button
                 onClick={handleButtonClick}
                 className={getButtonClass()}
                 disabled={(cameraActive && !poseInitialized) || sessionState === 'countdown'}
               >
                 {getButtonText()}
               </Button>
-
-              {/* Voice Command Hint */}
-              {voiceEnabled && sessionState !== 'capturing' && sessionState !== 'countdown' && sessionState !== 'complete' && (
-                <div className="mt-2 text-center" style={{ minHeight: '1.5rem' }}>
-                  <p className="text-xs text-emerald-400/80">
-                    <span className="inline-flex items-center gap-1">
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                      </svg>
-                      Say &quot;Start&quot;, &quot;Go&quot;, &quot;Begin&quot;, or &quot;Capture&quot; to start hands-free
-                    </span>
-                  </p>
-                </div>
-              )}
+              <VoiceCommandOverlay
+                buttonSelector="[data-analysis-button]"
+                sessionState={sessionState}
+                cameraActive={cameraActive}
+              />
             </div>
 
             {/* Detection Status - Takes up 20% width on large screens */}
