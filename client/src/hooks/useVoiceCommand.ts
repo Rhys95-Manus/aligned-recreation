@@ -65,10 +65,12 @@ export type VoiceCommandState = {
 /**
  * Hook that provides voice command recognition using the Web Speech API.
  * Listens continuously for keyword commands and triggers callbacks.
- * 
- * Supported commands are matched case-insensitively against the transcript.
- * The recognizer restarts automatically after each result to maintain
- * continuous listening.
+ *
+ * Key design decisions:
+ * - Uses `continuous = true` so the recognizer stays open longer
+ * - `isListening` state does NOT flicker during auto-restarts (uses shouldBeListening ref)
+ * - All callbacks are accessed via refs to avoid stale closure issues
+ * - Debounces command triggers to prevent double-fires
  */
 export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
   const { commands, enabled, lang = "en-US", onCommandRecognized, onError } = config;
@@ -80,17 +82,18 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const commandsRef = useRef(commands);
   const enabledRef = useRef(enabled);
-  const shouldRestartRef = useRef(false);
-  const isListeningRef = useRef(false);
+  const onCommandRecognizedRef = useRef(onCommandRecognized);
+  const onErrorRef = useRef(onError);
+  const shouldBeListeningRef = useRef(false);
+  const isActuallyListeningRef = useRef(false);
+  const lastCommandTimeRef = useRef(0);
+  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep refs in sync
-  useEffect(() => {
-    commandsRef.current = commands;
-  }, [commands]);
-
-  useEffect(() => {
-    enabledRef.current = enabled;
-  }, [enabled]);
+  // Keep ALL refs in sync every render - no stale closures
+  useEffect(() => { commandsRef.current = commands; }, [commands]);
+  useEffect(() => { enabledRef.current = enabled; }, [enabled]);
+  useEffect(() => { onCommandRecognizedRef.current = onCommandRecognized; }, [onCommandRecognized]);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
 
   const isSupported =
     typeof window !== "undefined" &&
@@ -103,39 +106,35 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
       window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
 
-    recognition.continuous = false; // We restart manually for reliability
+    recognition.continuous = true; // Stay open - more reliable than manual restart
     recognition.interimResults = true; // Get partial results for faster response
     recognition.lang = lang;
     recognition.maxAlternatives = 3; // Check multiple interpretations
 
     recognition.onstart = () => {
-      isListeningRef.current = true;
+      isActuallyListeningRef.current = true;
       setIsListening(true);
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      // Check all results (including interim) for command matches
+      const now = Date.now();
+      // Debounce: ignore commands within 2s of last trigger
+      if (now - lastCommandTimeRef.current < 2000) return;
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
-        
-        // Check all alternatives for a match
+
         for (let j = 0; j < result.length; j++) {
           const transcript = result[j].transcript.trim().toLowerCase();
           setLastTranscript(transcript);
 
-          // Check each registered command
+          // Check each registered command via ref (always fresh)
           for (const [keyword, callback] of Object.entries(commandsRef.current)) {
             if (transcript.includes(keyword.toLowerCase())) {
+              lastCommandTimeRef.current = now;
               setLastCommand(keyword);
-              onCommandRecognized?.(keyword);
+              onCommandRecognizedRef.current?.(keyword);
               callback();
-
-              // Stop and restart to avoid duplicate triggers
-              try {
-                recognition.stop();
-              } catch {
-                // Ignore stop errors
-              }
               return;
             }
           }
@@ -144,55 +143,60 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      // "no-speech" and "aborted" are normal operational states, not real errors
+      // "no-speech" and "aborted" are normal operational states
       if (event.error === "no-speech" || event.error === "aborted") {
         return;
       }
 
-      // "not-allowed" means the user denied microphone permission
       if (event.error === "not-allowed") {
-        onError?.("Microphone permission denied. Please allow microphone access for voice commands.");
-        shouldRestartRef.current = false;
-        isListeningRef.current = false;
+        onErrorRef.current?.("Microphone permission denied. Please allow microphone access for voice commands.");
+        shouldBeListeningRef.current = false;
+        isActuallyListeningRef.current = false;
         setIsListening(false);
         return;
       }
 
-      onError?.(event.error);
+      onErrorRef.current?.(event.error);
     };
 
     recognition.onend = () => {
-      isListeningRef.current = false;
-      setIsListening(false);
+      isActuallyListeningRef.current = false;
 
       // Auto-restart if we should still be listening
-      if (shouldRestartRef.current && enabledRef.current) {
-        // Small delay to avoid rapid restart loops
-        setTimeout(() => {
-          if (shouldRestartRef.current && enabledRef.current && recognitionRef.current) {
+      // Do NOT set isListening to false during restart gap - prevents flicker
+      if (shouldBeListeningRef.current && enabledRef.current) {
+        if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+        restartTimerRef.current = setTimeout(() => {
+          if (shouldBeListeningRef.current && enabledRef.current && recognitionRef.current) {
             try {
               recognitionRef.current.start();
             } catch {
               // Recognition might already be started
             }
+          } else {
+            // We actually stopped - now update the UI state
+            setIsListening(false);
           }
-        }, 100);
+        }, 150);
+      } else {
+        setIsListening(false);
       }
     };
 
     return recognition;
-  }, [isSupported, lang, onCommandRecognized, onError]);
+  }, [isSupported, lang]);
 
   const startListening = useCallback(() => {
     if (!isSupported) return;
 
-    shouldRestartRef.current = true;
+    shouldBeListeningRef.current = true;
+    setIsListening(true); // Optimistically set to true
 
     if (!recognitionRef.current) {
       recognitionRef.current = createRecognition();
     }
 
-    if (recognitionRef.current && !isListeningRef.current) {
+    if (recognitionRef.current && !isActuallyListeningRef.current) {
       try {
         recognitionRef.current.start();
       } catch {
@@ -202,7 +206,12 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
   }, [isSupported, createRecognition]);
 
   const stopListening = useCallback(() => {
-    shouldRestartRef.current = false;
+    shouldBeListeningRef.current = false;
+
+    if (restartTimerRef.current) {
+      clearTimeout(restartTimerRef.current);
+      restartTimerRef.current = null;
+    }
 
     if (recognitionRef.current) {
       try {
@@ -212,12 +221,12 @@ export function useVoiceCommand(config: VoiceCommandConfig): VoiceCommandState {
       }
     }
 
-    isListeningRef.current = false;
+    isActuallyListeningRef.current = false;
     setIsListening(false);
   }, []);
 
   const toggleListening = useCallback(() => {
-    if (isListeningRef.current || shouldRestartRef.current) {
+    if (shouldBeListeningRef.current) {
       stopListening();
     } else {
       startListening();

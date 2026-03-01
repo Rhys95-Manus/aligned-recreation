@@ -184,6 +184,8 @@ export default function Analysis() {
   const sessionStateRef = useRef(sessionState);
   const cameraActiveRef = useRef(cameraActive);
   const poseInitializedRef = useRef(poseInitialized);
+  const startVideoRef = useRef<() => void>(() => {});
+  const startCaptureRef = useRef<() => void>(() => {});
   useEffect(() => { sessionStateRef.current = sessionState; }, [sessionState]);
   useEffect(() => { cameraActiveRef.current = cameraActive; }, [cameraActive]);
   useEffect(() => { poseInitializedRef.current = poseInitialized; }, [poseInitialized]);
@@ -194,54 +196,42 @@ export default function Analysis() {
     voiceFeedbackTimeoutRef.current = setTimeout(() => setVoiceCommandFeedback(null), 2500);
   }, []);
 
-  // Voice command handlers - use refs to always access latest state
+  // Voice command handler - uses refs so it NEVER has stale closures
   const handleVoiceStart = useCallback(() => {
     const state = sessionStateRef.current;
     const camActive = cameraActiveRef.current;
     const poseReady = poseInitializedRef.current;
 
+    console.log(`\u{1F3A4} Voice start handler called. state=${state}, camActive=${camActive}, poseReady=${poseReady}`);
+
     if (!camActive) {
-      // Camera not active yet - start video first
       showVoiceFeedback('Starting camera...');
-      startVideo();
-    } else if (state === 'ready' && poseReady) {
-      // Camera active and ready - start capture
+      startVideoRef.current();
+    } else if ((state === 'ready' || state === 'idle') && poseReady) {
       showVoiceFeedback('Voice command: Start!');
-      startCapture();
-    } else if (state === 'idle' && poseReady) {
-      // Pose initialized but in idle - treat as ready and start
-      showVoiceFeedback('Voice command: Start!');
-      startCapture();
+      startCaptureRef.current();
     } else {
       showVoiceFeedback('Not ready yet...');
     }
   }, [showVoiceFeedback]);
 
-  const handleVoiceStop = useCallback(() => {
-    if (sessionStateRef.current === 'capturing') {
-      showVoiceFeedback('Voice command: Stop!');
-      stopAndScore();
-    }
-  }, [showVoiceFeedback]);
-
+  // Only start commands - no stop commands needed (auto-stop works great)
   const voiceCommands = useMemo(() => ({
     'start': handleVoiceStart,
     'go': handleVoiceStart,
     'begin': handleVoiceStart,
     'capture': handleVoiceStart,
-    'stop': handleVoiceStop,
-    'finish': handleVoiceStop,
-    'done': handleVoiceStop,
-  }), [handleVoiceStart, handleVoiceStop]);
+  }), [handleVoiceStart]);
 
+  // Enable voice listening even before camera is active so user can say "start" to begin
   const voiceCommand = useVoiceCommand({
     commands: voiceCommands,
-    enabled: voiceEnabled && cameraActive,
+    enabled: voiceEnabled,
     onCommandRecognized: (cmd) => {
-      console.log(`🎤 Voice command recognized: "${cmd}"`);
+      console.log(`\u{1F3A4} Voice command recognized: "${cmd}"`);
     },
     onError: (err) => {
-      console.warn('🎤 Voice recognition error:', err);
+      console.warn('\u{1F3A4} Voice recognition error:', err);
       if (err.includes('permission denied')) {
         showVoiceFeedback('Mic access denied');
         setVoiceEnabled(false);
@@ -259,10 +249,10 @@ export default function Analysis() {
 
     if (completedReps.length > 0 && completedReps.length >= selectedRepsRef.current) {
       console.log(`🎯 useEffect detected all ${selectedRepsRef.current} reps complete. Triggering stopAndScore...`);
-      // Small timeout to ensure state is settled
+      // Minimal delay - state is already settled from the rep detection
       const timer = setTimeout(() => {
         stopAndScore();
-      }, 500); // Reduced delay for instant transition
+      }, 100);
       return () => clearTimeout(timer);
     }
   }, [completedReps]);
@@ -330,13 +320,9 @@ export default function Analysis() {
     };
   }, [stream]);
   
-  // Auto-stop navigation effect
-  useEffect(() => {
-    if (sessionState === 'complete') {
-      console.log('🏁 Session complete detected via useEffect - triggering stopAndScore');
-      stopAndScore();
-    }
-  }, [sessionState]);
+  // Note: stopAndScore is called from the completedReps useEffect.
+  // The sessionState === 'complete' check was removed to avoid double-calling stopAndScore
+  // which caused delays from redundant processing.
 
   // Countdown timer effect
   useEffect(() => {
@@ -1214,6 +1200,10 @@ export default function Analysis() {
     console.log('⏱️ Starting 5-second countdown');
     speak("Get ready. Starting in 5 seconds");
   };
+
+  // Keep voice command refs in sync with latest function definitions
+  startVideoRef.current = startVideo;
+  startCaptureRef.current = startCapture;
   
   // Helper function to get drill recommendation for a metric
   const getDrillForMetric = (metricTitle: string): string => {
@@ -1546,7 +1536,7 @@ export default function Analysis() {
                       : 'bg-slate-800/80 border-slate-700 text-slate-400'
                   }`}
                   onClick={() => setVoiceEnabled(!voiceEnabled)}
-                  title={voiceCommand.isSupported ? 'Toggle voice commands (say "Start", "Stop")' : 'Voice commands not supported in this browser'}
+                  title={voiceCommand.isSupported ? 'Toggle voice commands (say "Start" to begin capture)' : 'Voice commands not supported in this browser'}
                 >
                   {voiceCommand.isListening ? (
                     <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
@@ -1606,8 +1596,8 @@ export default function Analysis() {
                   </div>
                 )}
 
-                {/* Voice Listening Indicator */}
-                {voiceEnabled && voiceCommand.isListening && !voiceCommandFeedback && cameraActive && (
+                {/* Voice Listening Indicator - only show when not capturing */}
+                {voiceEnabled && voiceCommand.isListening && !voiceCommandFeedback && cameraActive && sessionState !== 'capturing' && sessionState !== 'countdown' && (
                   <div className="absolute top-4 left-4 z-20 bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-2 text-emerald-400 text-xs font-semibold flex items-center gap-2">
                     <div className="relative">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1618,7 +1608,7 @@ export default function Analysis() {
                       </svg>
                       <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
                     </div>
-                    Say &quot;Start&quot; or &quot;Stop&quot;
+                    Say &quot;Start&quot; to begin
                   </div>
                 )}
 
@@ -1738,19 +1728,16 @@ export default function Analysis() {
                 {getButtonText()}
               </Button>
 
-              {/* Voice Command Hint */}
-              {voiceEnabled && cameraActive && voiceCommand.isListening && (
-                <div className="mt-2 text-center">
+              {/* Voice Command Hint - stable visibility based on voiceEnabled, not isListening */}
+              {voiceEnabled && sessionState !== 'capturing' && sessionState !== 'countdown' && sessionState !== 'complete' && (
+                <div className="mt-2 text-center" style={{ minHeight: '1.5rem' }}>
                   <p className="text-xs text-emerald-400/80">
                     <span className="inline-flex items-center gap-1">
                       <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                       </svg>
-                      {sessionState === 'capturing' 
-                        ? 'Say "Stop", "Finish", or "Done" to end capture' 
-                        : 'Say "Start", "Go", "Begin", or "Capture" to start hands-free'
-                      }
+                      Say &quot;Start&quot;, &quot;Go&quot;, &quot;Begin&quot;, or &quot;Capture&quot; to start hands-free
                     </span>
                   </p>
                 </div>
