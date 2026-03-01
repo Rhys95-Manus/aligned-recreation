@@ -185,3 +185,10 @@
 - [x] Move voice commands to standalone VoiceCommandOverlay component (uses DOM click, zero hooks/state/refs in Analysis.tsx)
 - [x] Fix speech text: changed to "You may now proceed when ready" (no trigger words)
 - [x] Verify auto-stop code: diff shows only 5 lines changed (import, data-attr, component render, speech text, flex-wrap)
+
+## Bug Fixes (Round 6 - Root Cause Hunt)
+- [x] Found real root cause: useCloudStorage hook causing re-renders during capture, resetting pose callback closures
+- [x] Removed useCloudStorage from Analysis.tsx, restored original localStorage approach for totalPoints
+- [x] Moved voice toggle back next to Live Coaching toggle
+- [x] Cleaned up VoiceCommandOverlay to single-instance rendering (no renderLocation split)
+- [x] Verified diff: only 5 non-voice lines differ from working version (import, speech text, localStorage)

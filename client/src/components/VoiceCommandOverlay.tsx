@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Completely standalone voice command overlay.
  * 
  * This component has ZERO coupling to Analysis.tsx internals.
  * It works by programmatically clicking the existing Start/Stop button
- * via a CSS selector or ref forwarding. No hooks, state, or refs are
- * injected into Analysis.tsx.
+ * via a CSS selector. No hooks, state, or refs are injected into Analysis.tsx.
  */
 
 // Minimal inline Speech Recognition hook — self-contained, no external dependencies
@@ -172,11 +171,6 @@ export default function VoiceCommandOverlay({
   useEffect(() => {
     if (!voiceEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
-    const handleSpeechStart = () => {
-      // Mute for 8 seconds to cover any speech duration
-      mutedUntil.current = Date.now() + 8000;
-    };
-
     // Poll for speaking state since events aren't reliable across browsers
     const interval = setInterval(() => {
       if (window.speechSynthesis.speaking) {
@@ -191,7 +185,7 @@ export default function VoiceCommandOverlay({
 
   return (
     <>
-      {/* Voice Toggle Button — positioned in the toggle row */}
+      {/* Voice Toggle Button — renders inline in the toggle row */}
       <div
         className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
           voiceEnabled
@@ -215,7 +209,7 @@ export default function VoiceCommandOverlay({
         </span>
       </div>
 
-      {/* Feedback overlay — fixed position on the video */}
+      {/* Feedback overlay — fixed position */}
       {feedback && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-emerald-600/90 backdrop-blur-sm rounded-lg px-4 py-2 text-white font-bold text-sm shadow-lg">
           <div className="flex items-center gap-2">
@@ -230,7 +224,7 @@ export default function VoiceCommandOverlay({
         </div>
       )}
 
-      {/* Listening indicator on the video */}
+      {/* Listening indicator */}
       {voiceEnabled && isListening && !feedback && cameraActive && sessionState !== "capturing" && sessionState !== "countdown" && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-2 text-emerald-400 text-xs font-semibold flex items-center gap-2">
           <div className="relative">
@@ -243,21 +237,6 @@ export default function VoiceCommandOverlay({
             <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
           </div>
           Say &quot;Start&quot; or &quot;Go&quot; to begin
-        </div>
-      )}
-
-      {/* Voice hint below button area */}
-      {voiceEnabled && sessionState !== "capturing" && sessionState !== "countdown" && sessionState !== "complete" && (
-        <div className="mt-2 text-center" style={{ minHeight: "1.5rem" }}>
-          <p className="text-xs text-emerald-400/80">
-            <span className="inline-flex items-center gap-1">
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              </svg>
-              Say &quot;Start&quot;, &quot;Go&quot;, or &quot;Capture&quot; to begin hands-free
-            </span>
-          </p>
         </div>
       )}
     </>
