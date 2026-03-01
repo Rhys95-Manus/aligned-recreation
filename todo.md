@@ -163,3 +163,9 @@
 - [x] Ensure voice command works alongside manual button (both paths supported)
 - [x] Handle browser compatibility (fallback when Speech API unavailable)
 - [x] Write tests for voice command integration (13 tests passing)
+
+## Bug Fixes
+- [x] Fix voice commands not triggering start capture (stale closures fixed with refs)
+- [x] Remove stop/finish/done voice commands (auto-stop works well, not needed)
+- [x] Fix auto-stop delay regression (reduced to 100ms, removed duplicate stopAndScore call)
+- [x] Fix glitching text under start capture button (use voiceEnabled not isListening for stable rendering)
