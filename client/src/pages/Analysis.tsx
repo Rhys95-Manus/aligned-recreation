@@ -201,9 +201,7 @@ export default function Analysis() {
     const state = sessionStateRef.current;
     const camActive = cameraActiveRef.current;
     const poseReady = poseInitializedRef.current;
-
     console.log(`\u{1F3A4} Voice start handler called. state=${state}, camActive=${camActive}, poseReady=${poseReady}`);
-
     if (!camActive) {
       showVoiceFeedback('Starting camera...');
       startVideoRef.current();
@@ -215,7 +213,6 @@ export default function Analysis() {
     }
   }, [showVoiceFeedback]);
 
-  // Only start commands - no stop commands needed (auto-stop works great)
   const voiceCommands = useMemo(() => ({
     'start': handleVoiceStart,
     'go': handleVoiceStart,
@@ -223,10 +220,9 @@ export default function Analysis() {
     'capture': handleVoiceStart,
   }), [handleVoiceStart]);
 
-  // Enable voice listening even before camera is active so user can say "start" to begin
   const voiceCommand = useVoiceCommand({
     commands: voiceCommands,
-    // Auto-disable during capture/countdown to free CPU for pose detection
+    // Auto-disable during capture/countdown to avoid interfering with pose detection
     enabled: voiceEnabled && sessionState !== 'capturing' && sessionState !== 'countdown',
     onCommandRecognized: (cmd) => {
       console.log(`\u{1F3A4} Voice command recognized: "${cmd}"`);
@@ -239,10 +235,6 @@ export default function Analysis() {
       }
     },
   });
-
-  // Ref to track completedReps inside onResults closure (avoids stale state)
-  const completedRepsRef = useRef<number[]>([]);
-  useEffect(() => { completedRepsRef.current = completedReps; }, [completedReps]);
 
   // Watch for completion of all reps AND trigger feedback
   useEffect(() => {
@@ -257,7 +249,7 @@ export default function Analysis() {
       // Small timeout to ensure state is settled
       const timer = setTimeout(() => {
         stopAndScore();
-      }, 500);
+      }, 500); // Reduced delay for instant transition
       return () => clearTimeout(timer);
     }
   }, [completedReps]);
@@ -325,7 +317,7 @@ export default function Analysis() {
     };
   }, [stream]);
   
-  // Auto-stop navigation effect (backup path when sessionState is set to 'complete' inside onResults)
+  // Auto-stop navigation effect
   useEffect(() => {
     if (sessionState === 'complete') {
       console.log('🏁 Session complete detected via useEffect - triggering stopAndScore');
@@ -749,8 +741,6 @@ export default function Analysis() {
         
         // HARD KILL SWITCH: Stop recording immediately if we've reached the target reps
         // This prevents "walking over to camera" from being recorded
-        // Note: completedReps is stale in this closure (always []) but that's OK -
-        // the real auto-stop logic is in the completedReps useEffect
         if (completedReps.length >= selectedRepsRef.current) {
           console.log('🛑 Hard kill switch triggered: Target reps reached. Stopping frame recording.');
           isCapturingRef.current = false;
@@ -917,9 +907,8 @@ export default function Analysis() {
               setCompletedReps(prev => [...prev, currentCaptureRep]);
               
               // Check if this was the final rep
-              // Note: completedReps is stale (always []) in this closure, so length+1 = 1
-              // For 1-rep sessions this triggers immediately; for multi-rep, the
-              // completedReps useEffect handles the auto-stop when state updates
+              // Use ref here to ensure we have the latest value inside the closure
+              // IMPORTANT: We check completedReps.length + 1 because the state update hasn't happened yet
               const totalCompleted = completedReps.length + 1;
               
               // Trigger live coaching feedback for the completed rep
@@ -1180,8 +1169,7 @@ export default function Analysis() {
         setTimeout(() => {
           setPoseInitialized(true);
           setSessionState('ready');
-          // Mute voice commands during speech to prevent self-triggering
-          if (voiceCommand.mute) voiceCommand.mute(5000);
+          // Changed speech text to avoid trigger words that activate voice commands
           speak("Video capture is ready. You may begin when ready");
         }, 1500);
       }
@@ -1192,6 +1180,8 @@ export default function Analysis() {
   };
   
   const startCapture = () => {
+    // Mute voice commands during countdown speech to prevent self-triggering
+    if (voiceCommand.mute) voiceCommand.mute(7000);
     // Reset peak values at start of capture
     peakHipRotation.current = 0;
     peakRightElbowAngle.current = 0;
@@ -1209,15 +1199,9 @@ export default function Analysis() {
     setSessionState('countdown');
     setCurrentCaptureRep(1); // Reset rep counter
     setCompletedReps([]); // Clear completed reps
-    completedRepsRef.current = []; // Also reset the ref immediately
     captureMotionState.current = 'neutral'; // Reset motion state
     captureBaselineMetrics.current = null; // Clear baseline
-    captureRepStartFrame.current = 0; // Reset rep start frame
-    capturedRepBoundaries.current = []; // Clear rep boundaries
-    neutralHoldCounter.current = 0; // Reset neutral hold counter
     console.log('⏱️ Starting 5-second countdown');
-    // Mute voice commands during countdown speech to prevent self-triggering
-    if (voiceCommand.mute) voiceCommand.mute(7000); // 5s countdown + 2s buffer
     speak("Get ready. Starting in 5 seconds");
   };
 
@@ -1616,7 +1600,7 @@ export default function Analysis() {
                   </div>
                 )}
 
-                {/* Voice Listening Indicator - only show when not capturing */}
+                {/* Voice Listening Indicator */}
                 {voiceEnabled && voiceCommand.isListening && !voiceCommandFeedback && cameraActive && sessionState !== 'capturing' && sessionState !== 'countdown' && (
                   <div className="absolute top-4 left-4 z-20 bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-2 text-emerald-400 text-xs font-semibold flex items-center gap-2">
                     <div className="relative">
@@ -1748,7 +1732,7 @@ export default function Analysis() {
                 {getButtonText()}
               </Button>
 
-              {/* Voice Command Hint - stable visibility based on voiceEnabled, not isListening */}
+              {/* Voice Command Hint */}
               {voiceEnabled && sessionState !== 'capturing' && sessionState !== 'countdown' && sessionState !== 'complete' && (
                 <div className="mt-2 text-center" style={{ minHeight: '1.5rem' }}>
                   <p className="text-xs text-emerald-400/80">
