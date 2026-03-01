@@ -1468,6 +1468,7 @@ export default function Analysis() {
                   buttonSelector="[data-analysis-button]"
                   sessionState={sessionState}
                   cameraActive={cameraActive}
+                  videoContainerSelector="[data-video-container]"
                 />
                 <div 
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
@@ -1483,7 +1484,7 @@ export default function Analysis() {
                   </span>
                 </div>
               </div>
-              <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', maxHeight: '500px' }}>
+              <div data-video-container className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', maxHeight: '500px' }}>
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover scale-x-[-1]"
