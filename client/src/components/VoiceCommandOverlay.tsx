@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Completely standalone voice command overlay.
@@ -108,12 +109,15 @@ interface VoiceCommandOverlayProps {
   sessionState: string;
   /** Whether camera is active */
   cameraActive: boolean;
+  /** CSS selector for the video container to render the overlay inside */
+  videoContainerSelector?: string;
 }
 
 export default function VoiceCommandOverlay({
   buttonSelector,
   sessionState,
   cameraActive,
+  videoContainerSelector,
 }: VoiceCommandOverlayProps) {
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -209,36 +213,60 @@ export default function VoiceCommandOverlay({
         </span>
       </div>
 
-      {/* Feedback overlay — fixed position */}
-      {feedback && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-emerald-600/90 backdrop-blur-sm rounded-lg px-4 py-2 text-white font-bold text-sm shadow-lg">
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
-            </svg>
-            {feedback}
-          </div>
-        </div>
-      )}
+      {/* Voice overlay rendered inside the video container */}
+      {(() => {
+        const videoContainer = videoContainerSelector
+          ? document.querySelector(videoContainerSelector)
+          : null;
+        
+        const showOverlay = voiceEnabled && cameraActive && sessionState !== "capturing" && sessionState !== "countdown";
+        
+        if (!showOverlay && !feedback) return null;
+        
+        const overlayContent = (
+          <>
+            {/* Feedback overlay — inside video frame */}
+            {feedback && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-emerald-600/90 backdrop-blur-sm rounded-lg px-4 py-2 text-white font-bold text-sm shadow-lg">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="8" y1="23" x2="16" y2="23" />
+                  </svg>
+                  {feedback}
+                </div>
+              </div>
+            )}
 
-      {/* Listening indicator */}
-      {voiceEnabled && isListening && !feedback && cameraActive && sessionState !== "capturing" && sessionState !== "countdown" && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/70 backdrop-blur-sm rounded-lg px-3 py-2 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-          <div className="relative">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
-            </svg>
-            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
-          </div>
-          Say &quot;Start&quot; or &quot;Go&quot; to begin
-        </div>
-      )}
+            {/* Centered voice hint — inside video frame */}
+            {voiceEnabled && isListening && !feedback && cameraActive && sessionState !== "capturing" && sessionState !== "countdown" && (
+              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                <div className="bg-black/50 backdrop-blur-sm rounded-xl px-6 py-4 text-center">
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <div className="relative">
+                      <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
+                      </svg>
+                      <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping" />
+                    </div>
+                  </div>
+                  <p className="text-emerald-400 text-lg font-semibold tracking-wide">
+                    Say &quot;Start&quot; or &quot;Go&quot; to begin
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        );
+        
+        // Render inside the video container if available, otherwise inline
+        return videoContainer ? createPortal(overlayContent, videoContainer) : overlayContent;
+      })()}
     </>
   );
 }

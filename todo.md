@@ -192,3 +192,10 @@
 - [x] Moved voice toggle back next to Live Coaching toggle
 - [x] Cleaned up VoiceCommandOverlay to single-instance rendering (no renderLocation split)
 - [x] Verified diff: only 5 non-voice lines differ from working version (import, speech text, localStorage)
+
+## UI Polish
+- [ ] Move voice hint text to larger centered overlay on video frame until capture begins
+
+## UI Polish
+- [x] Move voice hint to larger centered text inside video frame (uses createPortal into video container)
+- [x] Hide hint when capture begins (auto-hidden during capturing/countdown states)
