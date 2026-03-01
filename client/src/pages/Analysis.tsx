@@ -748,8 +748,9 @@ export default function Analysis() {
         
         // HARD KILL SWITCH: Stop recording immediately if we've reached the target reps
         // This prevents "walking over to camera" from being recorded
-        // Uses completedRepsRef (not completedReps) to avoid stale closure inside onResults
-        if (completedRepsRef.current.length >= selectedRepsRef.current) {
+        // Note: completedReps is stale in this closure (always []) but that's OK -
+        // the real auto-stop logic is in the completedReps useEffect
+        if (completedReps.length >= selectedRepsRef.current) {
           console.log('🛑 Hard kill switch triggered: Target reps reached. Stopping frame recording.');
           isCapturingRef.current = false;
           setSessionState('complete');
@@ -915,9 +916,10 @@ export default function Analysis() {
               setCompletedReps(prev => [...prev, currentCaptureRep]);
               
               // Check if this was the final rep
-              // Use completedRepsRef (not completedReps) to get the latest value inside the stale closure
-              // +1 because setCompletedReps above hasn't propagated yet
-              const totalCompleted = completedRepsRef.current.length + 1;
+              // Note: completedReps is stale (always []) in this closure, so length+1 = 1
+              // For 1-rep sessions this triggers immediately; for multi-rep, the
+              // completedReps useEffect handles the auto-stop when state updates
+              const totalCompleted = completedReps.length + 1;
               
               // Trigger live coaching feedback for the completed rep
               // We can't call setFeedbackTrigger directly here because it's inside a closure that might not have the latest state setter

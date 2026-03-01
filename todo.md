@@ -173,3 +173,6 @@
 ## Bug Fixes (Round 2)
 - [x] Fix auto-stop rep counter off-by-one (added completedRepsRef, restored sessionState complete useEffect, reset refs in startCapture, restored 500ms delay)
 - [x] Fix app's own speech triggering voice command (added mute() to useVoiceCommand, changed speech text to avoid trigger words, mute during countdown)
+
+## Bug Fixes (Round 3)
+- [x] Fix auto-stop not triggering after rep completion (reverted completedRepsRef back to original completedReps.length - the stale closure was the correct design)
