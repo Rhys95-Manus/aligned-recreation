@@ -138,3 +138,20 @@
 - [ ] Read `LiveCoachingOverlay.tsx` to check `useEffect` dependencies for `currentRep`
 - [ ] Ensure feedback animation triggers on every rep change
 - [ ] Verify z-index and visibility of the overlay container
+
+- [x] Upgrade to full-stack project (database, server, user auth)
+- [x] Resolve merge conflicts from upgrade (preserve Home.tsx, package.json deps)
+- [x] Update dependencies (tanstack/react-query v5, vite-plugin-manus-runtime v0.57)
+- [x] Push database schema (users table)
+- [x] Verify all existing pages and routes preserved after upgrade
+- [x] Migrate local storage data to cloud database
+- [x] Add cloud video storage (S3 upload for exported videos)
+- [x] Create sessions and user_settings database tables
+- [x] Create tRPC API for sessions CRUD and settings management
+- [x] Create useCloudStorage hook with dual-mode (cloud + localStorage fallback)
+- [x] Update Analysis.tsx to use cloud storage for totalPoints
+- [x] Update Replay.tsx to save sessions to cloud
+- [x] Update Replay.tsx "Save to Cloud" button to upload videos to S3
+- [x] Update SessionHistory.tsx to load from cloud with auth banner
+- [x] Write vitest tests for sessions and settings (11 tests passing)
+- [x] All TypeScript compiles clean (tsc --noEmit passes)

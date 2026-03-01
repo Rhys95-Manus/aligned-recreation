@@ -7,6 +7,7 @@ import { generateProfessionalMotion, getPhaseForFrame, ProfessionalFrame } from 
 import { detectThrowingPhase, getPhaseMiddleFrame, type MotionPhase } from "../utils/phaseDetection";
 import { calculateRotation, formatWeightDistribution, formatSpineAngle, formatRotationAngle, formatRotationWithSide } from "../utils/rotationCalculations";
 import Hologram3D from "../components/Hologram3D";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 
 interface ReplayProps {
   recordedFrames: Array<{
@@ -45,6 +46,7 @@ interface ReplayProps {
 }
 
 export default function Replay({ recordedFrames, professionalReference, motionName, onBack, detailedAnalysis, selectedReps = 1, videoUrl }: ReplayProps) {
+  const cloudStorage = useCloudStorage();
   const userCanvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const proCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -622,35 +624,43 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
     }
   };
   
-  const handleSaveSession = () => {
-    // Create session data structure
-    const sessionData = {
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString(),
-      motionName,
-      recordedFrames,
-      detailedAnalysis,
-      duration: (recordedFrames.length / 30).toFixed(1), // Duration in seconds
-      frameCount: recordedFrames.length
-    };
-    
-    // Get existing sessions from localStorage
-    const existingSessions = JSON.parse(localStorage.getItem('alignedSessions') || '[]');
-    
-    // Add new session
-    existingSessions.push(sessionData);
-    
-    // Save back to localStorage
-    localStorage.setItem('alignedSessions', JSON.stringify(existingSessions));
-    
-    // Show success confirmation
-    setSavedSessionCount(existingSessions.length);
-    setShowSaveConfirmation(true);
-    
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-      setShowSaveConfirmation(false);
-    }, 5000);
+  const handleSaveSession = async () => {
+    try {
+      const result = await cloudStorage.saveSession({
+        motionName,
+        duration: (recordedFrames.length / 30).toFixed(1),
+        frameCount: recordedFrames.length,
+        detailedAnalysis,
+      });
+      
+      // Show success confirmation
+      const sessions = cloudStorage.sessions;
+      setSavedSessionCount(sessions.length + 1);
+      setShowSaveConfirmation(true);
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        setShowSaveConfirmation(false);
+      }, 5000);
+    } catch (error) {
+      console.error('Failed to save session:', error);
+      // Fallback to localStorage
+      const sessionData = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        motionName,
+        recordedFrames,
+        detailedAnalysis,
+        duration: (recordedFrames.length / 30).toFixed(1),
+        frameCount: recordedFrames.length
+      };
+      const existingSessions = JSON.parse(localStorage.getItem('alignedSessions') || '[]');
+      existingSessions.push(sessionData);
+      localStorage.setItem('alignedSessions', JSON.stringify(existingSessions));
+      setSavedSessionCount(existingSessions.length);
+      setShowSaveConfirmation(true);
+      setTimeout(() => setShowSaveConfirmation(false), 5000);
+    }
   };
 
   const downloadVideo = (blob: Blob, filename: string) => {
@@ -1679,7 +1689,30 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 </Button>
 
                 <Button 
-                  onClick={() => alert("Cloud storage integration (Google Drive/Dropbox) coming soon!")}
+                  onClick={async () => {
+                    if (!cloudStorage.isAuthenticated) {
+                      alert('Please sign in to save videos to the cloud.');
+                      return;
+                    }
+                    if (exportResult) {
+                      try {
+                        // We need a session ID - save the session first if not already saved
+                        const result = await cloudStorage.saveSession({
+                          motionName,
+                          duration: (recordedFrames.length / 30).toFixed(1),
+                          frameCount: recordedFrames.length,
+                          detailedAnalysis,
+                        });
+                        if (result.cloud && result.id) {
+                          await cloudStorage.uploadVideo(Number(result.id), exportResult.blob);
+                          alert('Video saved to cloud! ☁️');
+                        }
+                      } catch (err) {
+                        console.error('Cloud upload failed:', err);
+                        alert('Failed to upload to cloud. Try downloading instead.');
+                      }
+                    }
+                  }}
                   variant="secondary"
                   className="w-full py-4 text-md bg-slate-800 hover:bg-slate-700"
                 >

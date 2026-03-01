@@ -16,8 +16,8 @@ import Community from "./pages/Community";
 import Session from "./pages/Session";
 import AudioSettings from "./pages/AudioSettings";
 
-
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />

@@ -1,37 +1,34 @@
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
+import { getLoginUrl } from "@/const";
 
-interface SavedSession {
+interface DisplaySession {
   id: string;
   timestamp: string;
   motionName: string;
   duration: string;
   frameCount: number;
   detailedAnalysis?: any;
+  videoUrl?: string;
+  cloudId?: number;
 }
 
 export default function SessionHistory() {
-  const [sessions, setSessions] = useState<SavedSession[]>([]);
+  const { sessions: rawSessions, sessionsLoading, deleteSession, isAuthenticated } = useCloudStorage();
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [sessionToShare, setSessionToShare] = useState<SavedSession | null>(null);
+  const [sessionToShare, setSessionToShare] = useState<DisplaySession | null>(null);
 
-  useEffect(() => {
-    // Load sessions from localStorage
-    const savedSessions = JSON.parse(localStorage.getItem('alignedSessions') || '[]');
-    // Sort by timestamp (newest first)
-    savedSessions.sort((a: SavedSession, b: SavedSession) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
-    setSessions(savedSessions);
-  }, []);
+  // Sort by timestamp (newest first)
+  const sessions: DisplaySession[] = [...rawSessions].sort((a: DisplaySession, b: DisplaySession) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this session?')) {
-      const updatedSessions = sessions.filter(s => s.id !== id);
-      setSessions(updatedSessions);
-      localStorage.setItem('alignedSessions', JSON.stringify(updatedSessions));
+      await deleteSession(id);
     }
   };
 
@@ -48,7 +45,7 @@ export default function SessionHistory() {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
   };
 
-  const handleShare = (session: SavedSession) => {
+  const handleShare = (session: DisplaySession) => {
     setSessionToShare(session);
     setShareModalOpen(true);
   };
@@ -113,6 +110,22 @@ export default function SessionHistory() {
           <div className="w-32"></div>
         </div>
 
+        {/* Auth Banner */}
+        {!isAuthenticated && (
+          <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4 mb-6 flex items-center justify-between">
+            <div>
+              <p className="text-blue-300 font-semibold">Sign in to sync your sessions across devices</p>
+              <p className="text-blue-400/70 text-sm">Your local sessions are shown below. Sign in to save them to the cloud.</p>
+            </div>
+            <Button 
+              onClick={() => window.location.href = getLoginUrl()}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Sign In
+            </Button>
+          </div>
+        )}
+
         {/* Share Modal */}
         {shareModalOpen && sessionToShare && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShareModalOpen(false)}>
@@ -140,38 +153,38 @@ export default function SessionHistory() {
                   onClick={shareToTwitter}
                   className="w-full bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white"
                 >
-                  🐦 Share on Twitter
+                  Share on Twitter
                 </Button>
                 <Button 
                   onClick={shareToFacebook}
                   className="w-full bg-[#1877F2] hover:bg-[#166fe5] text-white"
                 >
-                  👥 Share on Facebook
+                  Share on Facebook
                 </Button>
                 <Button 
                   onClick={shareToReddit}
                   className="w-full bg-[#FF4500] hover:bg-[#e63e00] text-white"
                 >
-                  🟠 Share on Reddit
+                  Share on Reddit
                 </Button>
                 <Button 
                   onClick={shareToTikTok}
                   className="w-full bg-[#000000] hover:bg-[#1a1a1a] text-white border-2 border-[#00f2ea]"
                 >
-                  🎵 Copy for TikTok
+                  Copy for TikTok
                 </Button>
                 <Button 
                   onClick={shareToInstagram}
                   className="w-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] hover:opacity-90 text-white"
                 >
-                  📸 Copy for Instagram
+                  Copy for Instagram
                 </Button>
                 <Button 
                   onClick={copyShareLink}
                   variant="outline"
                   className="w-full"
                 >
-                  🔗 Copy Share Text
+                  Copy Share Text
                 </Button>
               </div>
             </div>
@@ -237,7 +250,7 @@ export default function SessionHistory() {
             </div>
             {selectedSessions.length > 2 && (
               <p className="text-sm text-yellow-400 mt-4">
-                ⚠️ Only the first 2 selected sessions are shown in comparison view
+                Only the first 2 selected sessions are shown in comparison view
               </p>
             )}
           </div>
@@ -245,9 +258,16 @@ export default function SessionHistory() {
 
         {/* Sessions List */}
         <div className="bg-[#1a1f2e] rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4">All Sessions</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            All Sessions
+            {isAuthenticated && <span className="text-sm font-normal text-green-400 ml-2">Synced to cloud</span>}
+          </h2>
           
-          {sessions.length === 0 ? (
+          {sessionsLoading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">Loading sessions...</p>
+            </div>
+          ) : sessions.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-400 text-lg mb-4">No saved sessions yet</p>
               <p className="text-gray-500">Complete a motion analysis and click "Save Session" to track your progress</p>
@@ -289,7 +309,7 @@ export default function SessionHistory() {
                       size="sm"
                       className="text-blue-400 hover:text-blue-300"
                     >
-                      👥 Share
+                      Share
                     </Button>
                     <Button 
                       onClick={() => handleDelete(session.id)} 
@@ -297,7 +317,7 @@ export default function SessionHistory() {
                       size="sm"
                       className="text-red-400 hover:text-red-300"
                     >
-                      🗑️ Delete
+                      Delete
                     </Button>
                   </div>
                 </div>
