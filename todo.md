@@ -200,3 +200,11 @@
 - [x] Move voice hint to larger centered text inside video frame (uses createPortal into video container)
 - [x] Hide hint when capture begins (auto-hidden during capturing/countdown states)
 - [x] Lower hologram mesh opacity to 0.08
+
+## Live Coaching Refinement
+- [x] Audit all tracked metrics across all motions (not just elbow/hip)
+- [x] Replace generic feedback ("fix elbow angle") with actionable sports-science cues ("tuck your elbow tight")
+- [x] Create motion-specific coaching cue mappings for each metric
+- [x] Expand live coaching to cover all tracked metrics, not just elbow angle and hip rotation
+- [x] Ensure cues are flow-friendly (short, actionable, no thinking required)
+- [x] Write/update tests for new coaching cue system

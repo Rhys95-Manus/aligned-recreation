@@ -1545,10 +1545,22 @@ export default function Analysis() {
                     volume={volume}
                     triggerFeedback={feedbackTrigger}
                     metrics={{
-                      hipRotation: hipRotation,
-                      shoulderRotation: shoulderRotation,
-                      rightElbowAngle: rightElbowAngle,
-                      spineAngle: spineAngle
+                      hipRotation,
+                      shoulderRotation,
+                      rightElbowAngle,
+                      leftElbowAngle,
+                      rightKneeFlexion,
+                      leftKneeFlexion,
+                      spineAngle,
+                      rightShoulderAngle,
+                      leftShoulderAngle,
+                      footPositioning,
+                      weightTransfer,
+                    }}
+                    motionContext={{
+                      category: params.get('category') || '',
+                      subcategory: params.get('subcategory') || '',
+                      motionName: motionName,
                     }}
                     onComplete={() => {
                       // Optional: Handle completion of all feedback
