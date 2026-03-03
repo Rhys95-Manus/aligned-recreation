@@ -6,12 +6,19 @@ import {
   evaluateAllMetrics,
   type MotionCoachingProfile 
 } from "@/data/coachingCues";
+import {
+  evaluateRepPhases,
+  type FrameMetrics,
+  type PhaseEvaluation
+} from "@/data/phaseCoaching";
 
 interface FeedbackItem {
   type: "positive" | "correction";
   message: string;
   detail: string;
   speech?: string;
+  /** Optional phase name for phase-aware feedback */
+  phaseName?: string;
 }
 
 interface LiveCoachingOverlayProps {
@@ -24,7 +31,7 @@ interface LiveCoachingOverlayProps {
   onComplete: () => void;
   /** Toggle to trigger a new feedback cycle from the parent */
   triggerFeedback?: boolean;
-  /** All biomechanical metrics from pose detection */
+  /** All biomechanical metrics from pose detection (current frame - used as fallback) */
   metrics?: {
     hipRotation: number;
     shoulderRotation: number;
@@ -44,6 +51,12 @@ interface LiveCoachingOverlayProps {
     subcategory: string;
     motionName: string;
   };
+  /** 
+   * Per-frame metrics for the just-completed rep.
+   * When provided, enables phase-aware coaching that tells the user
+   * WHICH phase of their motion needs work.
+   */
+  repFrames?: FrameMetrics[];
 }
 
 export default function LiveCoachingOverlay({
@@ -56,7 +69,8 @@ export default function LiveCoachingOverlay({
   onComplete,
   triggerFeedback,
   metrics,
-  motionContext
+  motionContext,
+  repFrames
 }: LiveCoachingOverlayProps) {
   const [feedbackState, setFeedbackState] = useState<"analyzing" | "feedback" | "ready">("ready");
   const [currentFeedback, setCurrentFeedback] = useState<FeedbackItem[]>([]);
@@ -90,11 +104,32 @@ export default function LiveCoachingOverlay({
         setFeedbackState("analyzing");
         await new Promise(r => setTimeout(r, 1500));
 
-        // 2. Generate feedback using the coaching cue system
+        // 2. Generate feedback — prefer phase-aware if we have rep frames
         let selectedFeedback: FeedbackItem[] = [];
         
-        if (metrics && coachingProfile) {
-          // Build a flat metrics record from all available values
+        const hasRepFrames = repFrames && repFrames.length > 10;
+        const hasMotionContext = motionContext && motionContext.category && motionContext.motionName;
+
+        if (hasRepFrames && hasMotionContext) {
+          // ===== PHASE-AWARE COACHING =====
+          // Analyze the full rep's frames to identify which phase had issues
+          const phaseEvals: PhaseEvaluation[] = evaluateRepPhases(
+            motionContext!.category,
+            motionContext!.subcategory,
+            motionContext!.motionName,
+            repFrames!,
+            3 // top 3 items
+          );
+
+          selectedFeedback = phaseEvals.map(ev => ({
+            type: ev.type,
+            message: ev.message,
+            detail: ev.detail,
+            speech: ev.speech,
+            phaseName: ev.phaseName,
+          }));
+        } else if (metrics && coachingProfile) {
+          // ===== FALLBACK: Single-frame coaching (original behavior) =====
           const metricsRecord: Record<string, number> = {};
           if (metrics.hipRotation !== undefined) metricsRecord.hipRotation = metrics.hipRotation;
           if (metrics.shoulderRotation !== undefined) metricsRecord.shoulderRotation = metrics.shoulderRotation;
@@ -108,7 +143,6 @@ export default function LiveCoachingOverlay({
           if (metrics.footPositioning !== undefined) metricsRecord.footPositioning = metrics.footPositioning;
           if (metrics.weightTransfer !== undefined) metricsRecord.weightTransfer = metrics.weightTransfer;
 
-          // Evaluate all metrics and get top 3 prioritized feedback items
           const evaluated = evaluateAllMetrics(coachingProfile, metricsRecord, 3);
           
           selectedFeedback = evaluated.map(item => ({
@@ -119,7 +153,7 @@ export default function LiveCoachingOverlay({
           }));
         }
 
-        // Fallback if no metrics or no profile produced results
+        // Fallback if nothing produced results
         if (selectedFeedback.length === 0) {
           selectedFeedback = [
             { type: "positive", message: "Keep it up — stay focused!", detail: "Waiting for clearer tracking data...", speech: "Keep it up!" },
@@ -131,7 +165,7 @@ export default function LiveCoachingOverlay({
         
         // Audio Feedback — use the short speech versions for concise audio
         if (audioEnabled && selectedFeedback.length > 0) {
-          // Build a concise spoken message: "Rep 2. [correction speech]. [positive speech]."
+          // Build a concise spoken message: "Rep 2. [phase prefix + cue]. [phase prefix + cue]."
           const spokenParts = selectedFeedback
             .slice(0, 2) // Max 2 items spoken to keep it brief
             .map(f => f.speech || f.message);
@@ -224,6 +258,12 @@ export default function LiveCoachingOverlay({
                         {item.type === "positive" ? "✅" : "🎯"}
                       </span>
                       <div className="min-w-0">
+                        {/* Phase badge */}
+                        {item.phaseName && (
+                          <span className="inline-block text-[10px] font-bold uppercase tracking-widest bg-white/10 text-white/60 px-2 py-0.5 rounded-md mb-1.5">
+                            {item.phaseName}
+                          </span>
+                        )}
                         <h3 className={`text-xl md:text-2xl font-black tracking-tight leading-tight ${
                           item.type === "positive" ? "text-emerald-400" : "text-amber-400"
                         }`}>

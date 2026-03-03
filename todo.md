@@ -208,3 +208,11 @@
 - [x] Expand live coaching to cover all tracked metrics, not just elbow angle and hip rotation
 - [x] Ensure cues are flow-friendly (short, actionable, no thinking required)
 - [x] Write/update tests for new coaching cue system
+
+## Phase-Aware Coaching
+- [x] Define biomechanical phases for each motion type (setup, cocking, acceleration, release, follow-through, etc.)
+- [x] Map expected metric values per phase per motion (what each metric should be doing at each phase)
+- [x] Implement phase detection logic using metric snapshots during the rep
+- [x] Create phase-aware coaching cue templates (e.g., "During the cocking phase, ___")
+- [x] Update LiveCoachingOverlay to show phase-contextual feedback between reps
+- [x] Write tests for phase detection and phase-aware cue generation
