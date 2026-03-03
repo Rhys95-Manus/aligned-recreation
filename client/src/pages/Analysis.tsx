@@ -8,6 +8,7 @@ import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribu
 import { detectRepBoundaries } from "@/utils/repDetection";
 import Replay from "./Replay";
 import LiveCoachingOverlay from "@/components/LiveCoachingOverlay";
+import { type FrameMetrics } from "@/data/phaseCoaching";
 import VoiceCommandOverlay from "@/components/VoiceCommandOverlay";
 import { useAudio } from "@/contexts/AudioContext";
 
@@ -173,12 +174,24 @@ export default function Analysis() {
   const [completedReps, setCompletedReps] = useState<number[]>([]); // Array of completed rep numbers
   const [feedbackTrigger, setFeedbackTrigger] = useState(false); // Trigger for live coaching
   const [liveCoachingEnabled, setLiveCoachingEnabled] = useState(false); // Toggle for live coaching feature
+  const [lastCompletedRepFrames, setLastCompletedRepFrames] = useState<FrameMetrics[]>([]); // Frames from the last completed rep for phase-aware coaching
 
   // Watch for completion of all reps AND trigger feedback
   useEffect(() => {
-    // If a new rep was just added (length increased), trigger feedback
+    // If a    // Watch for completion of all reps AND trigger feedback
     if (completedReps.length > 0) {
       console.log(`🎯 Rep completed. Triggering feedback...`);
+      
+      // Extract per-frame metrics from the just-completed rep for phase-aware coaching
+      const boundaries = capturedRepBoundaries.current;
+      if (boundaries.length > 0) {
+        const lastBoundary = boundaries[boundaries.length - 1];
+        const repFrameSlice = recordedFramesRef.current.slice(lastBoundary.start, lastBoundary.end + 1);
+        const repMetrics: FrameMetrics[] = repFrameSlice.map(f => f.metrics);
+        setLastCompletedRepFrames(repMetrics);
+        console.log(`📊 Extracted ${repMetrics.length} frames for phase-aware coaching (rep boundary: ${lastBoundary.start}-${lastBoundary.end})`);
+      }
+      
       setFeedbackTrigger(prev => !prev);
     }
 
@@ -1562,6 +1575,7 @@ export default function Analysis() {
                       subcategory: params.get('subcategory') || '',
                       motionName: motionName,
                     }}
+                    repFrames={lastCompletedRepFrames}
                     onComplete={() => {
                       // Optional: Handle completion of all feedback
                     }}
