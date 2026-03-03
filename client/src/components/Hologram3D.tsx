@@ -136,7 +136,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           color: 0x00ffff, // Cyan Highlights
           wireframe: true,
           transparent: true,
-          opacity: 0.1, // Just a whisper of structure
+          opacity: 0.08, // Barely visible digital edge
           depthTest: true,
           depthWrite: false
         });
