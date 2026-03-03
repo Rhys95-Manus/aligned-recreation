@@ -199,3 +199,4 @@
 ## UI Polish
 - [x] Move voice hint to larger centered text inside video frame (uses createPortal into video container)
 - [x] Hide hint when capture begins (auto-hidden during capturing/countdown states)
+- [x] Lower hologram mesh opacity to 0.08
