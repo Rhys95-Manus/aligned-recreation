@@ -526,71 +526,152 @@ const baseballPitch: MotionCoachingProfile = {
 
 /**
  * Basketball Jump Shot coaching cues
+ * Comprehensive profile covering all tracked metrics with sports-science cues.
+ * Optimal ranges represent the overall shot — phase-specific ranges are in phaseCoaching.ts.
+ * Based on shooting mechanics research: external-focus, action-verb cues.
  */
 const basketballShot: MotionCoachingProfile = {
   rightElbowAngle: {
     label: "Shooting Elbow",
-    optimalRange: [80, 110],
+    optimalRange: [60, 180],
     priority: 1,
     cues: {
-      positive: "Elbow under the ball — textbook form!",
-      positiveSpeech: "Textbook elbow position!",
-      tooLow: "Get your elbow under the ball — form an L-shape at your ear",
+      positive: "Shooting elbow tracking clean through the whole shot!",
+      positiveSpeech: "Clean elbow path!",
+      tooLow: "Slide your elbow under the ball — form a compact L-shape at your set point",
       tooLowSpeech: "Elbow under ball, L-shape!",
-      tooHigh: "Tuck your elbow in — keep it aligned with the rim",
-      tooHighSpeech: "Tuck elbow, align with rim!",
+      tooHigh: "Tuck your elbow in tighter — don't let it flare out from the pocket",
+      tooHighSpeech: "Tuck elbow in!",
+    }
+  },
+  leftElbowAngle: {
+    label: "Guide Hand",
+    optimalRange: [60, 180],
+    priority: 2,
+    cues: {
+      positive: "Guide hand supporting naturally — clean release!",
+      positiveSpeech: "Good guide hand!",
+      tooLow: "Bring your guide hand up to support the ball — don't let it drop",
+      tooLowSpeech: "Guide hand up!",
+      tooHigh: "Relax your guide hand — let it peel away on the release, don't push",
+      tooHighSpeech: "Relax guide hand!",
     }
   },
   rightKneeFlexion: {
-    label: "Leg Power",
-    optimalRange: [130, 165],
-    priority: 2,
+    label: "Shooting-Side Leg",
+    optimalRange: [90, 178],
+    priority: 3,
     cues: {
-      positive: "Great knee bend — power from the legs!",
+      positive: "Great leg load and extension — power from the floor!",
       positiveSpeech: "Great leg power!",
-      tooLow: "Bend your knees more — your legs are your engine",
-      tooLowSpeech: "Bend knees more, legs are engine!",
-      tooHigh: "Dip a little deeper — load your legs before the shot",
-      tooHighSpeech: "Dip deeper, load legs!",
+      tooLow: "Don't squat so deep — load your legs but keep the dip quick and rhythmic",
+      tooLowSpeech: "Don't over-dip!",
+      tooHigh: "Dip deeper — load into the floor to generate power for the shot",
+      tooHighSpeech: "Dip deeper, load the floor!",
+    }
+  },
+  leftKneeFlexion: {
+    label: "Non-Shooting Leg",
+    optimalRange: [90, 178],
+    priority: 4,
+    cues: {
+      positive: "Both knees tracking together — balanced base!",
+      positiveSpeech: "Balanced base!",
+      tooLow: "Keep both knees tracking together — don't let one collapse",
+      tooLowSpeech: "Knees together!",
+      tooHigh: "Bend both knees evenly — match your shooting side",
+      tooHighSpeech: "Bend both knees evenly!",
     }
   },
   spineAngle: {
-    label: "Alignment",
-    optimalRange: [0, 10],
-    priority: 3,
+    label: "Spine Alignment",
+    optimalRange: [0, 15],
+    priority: 5,
     cues: {
-      positive: "Straight up and down — clean release!",
+      positive: "Spine tall through the shot — clean vertical line!",
       positiveSpeech: "Clean alignment!",
-      tooLow: "Stay vertical — shoot straight up, not forward",
-      tooLowSpeech: "Shoot straight up!",
-      tooHigh: "Don't lean back — stay balanced and go straight up",
-      tooHighSpeech: "Don't lean, go straight up!",
+      tooLow: "Stay tall — don't fade away, shoot straight up through the ball",
+      tooLowSpeech: "Stay tall, don't fade!",
+      tooHigh: "Don't lean forward so much — keep your chest over your knees in the dip, then go vertical",
+      tooHighSpeech: "Chest up, go vertical!",
     }
   },
   shoulderRotation: {
-    label: "Square Up",
-    optimalRange: [0, 30],
-    priority: 4,
+    label: "Shoulder Alignment",
+    optimalRange: [5, 25],
+    priority: 6,
     cues: {
-      positive: "Squared to the basket — great alignment!",
-      positiveSpeech: "Squared to basket!",
-      tooLow: "Turn your shooting shoulder toward the rim",
-      tooLowSpeech: "Shoulder toward rim!",
-      tooHigh: "Don't over-rotate — keep your feet and shoulders aimed at the basket",
-      tooHighSpeech: "Aim shoulders at basket!",
+      positive: "Open stance maintained — shoulders aligned to the basket!",
+      positiveSpeech: "Good shoulder alignment!",
+      tooLow: "Open your shooting shoulder slightly toward the basket",
+      tooLowSpeech: "Open shoulder to basket!",
+      tooHigh: "Don't over-rotate — keep your shoulders stable and aimed at the rim",
+      tooHighSpeech: "Shoulders stable, aim at rim!",
     }
   },
   weightTransfer: {
-    label: "Lift",
-    optimalRange: [10, 50],
-    priority: 5,
+    label: "Weight Balance",
+    optimalRange: [0, 20],
+    priority: 7,
     cues: {
-      positive: "Great lift — smooth one-motion shot!",
-      positiveSpeech: "Smooth one-motion shot!",
-      tooLow: "Use your legs — push the floor away as you release",
-      tooLowSpeech: "Push floor away on release!",
-      tooHigh: "Don't jump forward — go straight up",
+      positive: "Weight centered and controlled — smooth one-motion shot!",
+      positiveSpeech: "Smooth one-motion!",
+      tooLow: "Push through the floor — transfer your energy straight up",
+      tooLowSpeech: "Push through the floor!",
+      tooHigh: "Don't jump forward — go straight up, land near your takeoff spot",
       tooHighSpeech: "Go straight up!",
+    }
+  },
+  footPositioning: {
+    label: "Foot Placement",
+    optimalRange: [15, 45],
+    priority: 8,
+    cues: {
+      positive: "Feet set — shooting foot slightly ahead, shoulder width!",
+      positiveSpeech: "Feet set!",
+      tooLow: "Widen your stance — get your feet to shoulder width for a stable base",
+      tooLowSpeech: "Widen your stance!",
+      tooHigh: "Bring your feet in — too wide slows your shot and reduces power transfer",
+      tooHighSpeech: "Feet too wide!",
+    }
+  },
+  rightShoulderAngle: {
+    label: "Shooting Shoulder",
+    optimalRange: [60, 150],
+    priority: 9,
+    cues: {
+      positive: "Shooting shoulder tracking well through the motion!",
+      positiveSpeech: "Good shoulder path!",
+      tooLow: "Lift your shooting shoulder — drive the ball up from a higher position",
+      tooLowSpeech: "Lift shooting shoulder!",
+      tooHigh: "Don't shrug your shooting shoulder — keep it relaxed and connected",
+      tooHighSpeech: "Relax shooting shoulder!",
+    }
+  },
+  leftShoulderAngle: {
+    label: "Guide Shoulder",
+    optimalRange: [40, 120],
+    priority: 10,
+    cues: {
+      positive: "Guide shoulder balanced and stable!",
+      positiveSpeech: "Stable guide shoulder!",
+      tooLow: "Bring your guide shoulder up — support the ball from a balanced position",
+      tooLowSpeech: "Guide shoulder up!",
+      tooHigh: "Relax your guide shoulder — don't tense up",
+      tooHighSpeech: "Relax guide shoulder!",
+    }
+  },
+  hipRotation: {
+    label: "Hip Drive",
+    optimalRange: [0, 25],
+    priority: 11,
+    cues: {
+      positive: "Hips driving straight up — clean vertical power!",
+      positiveSpeech: "Clean hip drive!",
+      tooLow: "Drive your hips up through the shot — they power the whole motion",
+      tooLowSpeech: "Drive hips up!",
+      tooHigh: "Don't twist your hips — keep them driving straight up toward the basket",
+      tooHighSpeech: "Hips straight up!",
     }
   },
 };
