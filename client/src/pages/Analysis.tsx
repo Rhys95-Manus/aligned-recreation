@@ -209,7 +209,9 @@ export default function Analysis() {
   const captureRepStartFrame = useRef<number>(0);
   const capturedRepBoundaries = useRef<Array<{start: number, end: number}>>([]);
   const captureBaselineMetrics = useRef<any>(null);
-  const neutralHoldCounter = useRef<number>(0);  // Frame recording for replay
+  const neutralHoldCounter = useRef<number>(0);
+  const peakDeviationDuringRep = useRef<number>(0); // Track max deviation to require real movement
+  const repIsActive = useRef<boolean>(false); // Explicit flag: are we currently inside a rep?  // Frame recording for replay
   const [recordedFrames, setRecordedFrames] = useState<Array<{
     timestamp: number;
     landmarks: any[];
@@ -733,70 +735,128 @@ export default function Analysis() {
         // Real-time rep detection and auto-stop logic
         const currentFrameCount = recordedFramesRef.current.length;
         
-        // Set baseline metrics from first 10 frames
-        if (currentFrameCount === 10 && !captureBaselineMetrics.current) {
-          captureBaselineMetrics.current = {
-            hipRotation: hipRotationCalc,
-            shoulderRotation: shoulderRotationCalc,
-            rightElbowAngle: rightElbowCalc,
-            weightTransfer: weightTransferCalc
-          };
-          console.log('🎯 Baseline metrics set:', captureBaselineMetrics.current);
+        // Set baseline metrics from first 10 frames (AVERAGED for stability)
+        if (currentFrameCount <= 15 && currentFrameCount >= 5) {
+          if (!captureBaselineMetrics.current) {
+            // Average the first 5-15 frames for a stable baseline
+            const baselineSlice = recordedFramesRef.current.slice(0, currentFrameCount);
+            const avgMetric = (key: string) => {
+              const vals = baselineSlice.map((f: any) => f.metrics[key] || 0);
+              return vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
+            };
+            captureBaselineMetrics.current = {
+              hipRotation: avgMetric('hipRotation'),
+              shoulderRotation: avgMetric('shoulderRotation'),
+              rightElbowAngle: avgMetric('rightElbowAngle'),
+              leftElbowAngle: avgMetric('leftElbowAngle'),
+              rightKneeFlexion: avgMetric('rightKneeFlexion'),
+              leftKneeFlexion: avgMetric('leftKneeFlexion'),
+              spineAngle: avgMetric('spineAngle'),
+              weightTransfer: avgMetric('weightTransfer')
+            };
+            if (currentFrameCount === 15) {
+              console.log('🎯 Baseline metrics set (averaged over 15 frames):', captureBaselineMetrics.current);
+            }
+          }
         }
         
         // Detect motion state changes after baseline is set
-        if (captureBaselineMetrics.current && currentFrameCount > 10) {
+        if (captureBaselineMetrics.current && currentFrameCount > 15) {
           const previousState = captureMotionState.current;
+          const baseline = captureBaselineMetrics.current;
           
-          // Calculate changes from baseline
-          const hipChange = Math.abs(hipRotationCalc - captureBaselineMetrics.current.hipRotation);
-          const shoulderChange = Math.abs(shoulderRotationCalc - captureBaselineMetrics.current.shoulderRotation);
-          const elbowChange = Math.abs(rightElbowCalc - captureBaselineMetrics.current.rightElbowAngle);
-          const totalChange = hipChange + shoulderChange + elbowChange;
+          // Determine motion type from URL for motion-aware thresholds
+          const urlPath = window.location.pathname;
+          const isBasketball = urlPath.includes('basketball') || motionName.toLowerCase().includes('jump shot') || motionName.toLowerCase().includes('basketball');
+          const isFootball = urlPath.includes('football') || motionName.toLowerCase().includes('throw') || motionName.toLowerCase().includes('football');
+          const isGolf = urlPath.includes('golf') || motionName.toLowerCase().includes('golf');
+          const isKettlebell = urlPath.includes('kettlebell') || motionName.toLowerCase().includes('kettlebell');
           
-          // Calculate velocity (change from previous frame)
+          // Calculate deviation from baseline for ALL relevant metrics
+          const hipChange = Math.abs(hipRotationCalc - (baseline.hipRotation || 0));
+          const shoulderChange = Math.abs(shoulderRotationCalc - (baseline.shoulderRotation || 0));
+          const elbowChange = Math.abs(rightElbowCalc - (baseline.rightElbowAngle || 0));
+          const kneeChange = Math.abs(rightKneeCalc - (baseline.rightKneeFlexion || 0));
+          const leftKneeChange = Math.abs(leftKneeCalc - (baseline.leftKneeFlexion || 0));
+          const spineChange = Math.abs(spineAngleCalc - (baseline.spineAngle || 0));
+          
+          // MOTION-AWARE TOTAL CHANGE CALCULATION
+          // Different motions have different primary movement signatures
+          let totalChange: number;
+          let primaryMetricChange: number; // The single most important metric for this motion
+          
+          if (isBasketball) {
+            // Basketball: Knee flexion (dip) + elbow extension (shot) + spine (jump) are primary
+            totalChange = kneeChange * 1.5 + elbowChange * 1.2 + spineChange + hipChange * 0.5;
+            primaryMetricChange = Math.max(kneeChange, elbowChange);
+          } else if (isFootball) {
+            // Football throw: Hip rotation + shoulder rotation + elbow are primary
+            totalChange = hipChange * 1.5 + shoulderChange * 1.2 + elbowChange;
+            primaryMetricChange = Math.max(hipChange, shoulderChange);
+          } else if (isGolf) {
+            // Golf: Hip rotation + shoulder rotation are primary
+            totalChange = hipChange * 1.5 + shoulderChange * 1.5 + spineChange * 0.5;
+            primaryMetricChange = Math.max(hipChange, shoulderChange);
+          } else if (isKettlebell) {
+            // Kettlebell: Hip hinge + knee flexion + shoulder are primary
+            totalChange = hipChange * 1.2 + kneeChange * 1.2 + shoulderChange + spineChange;
+            primaryMetricChange = Math.max(hipChange, kneeChange);
+          } else {
+            // Generic: Equal weighting
+            totalChange = hipChange + shoulderChange + elbowChange + kneeChange * 0.8;
+            primaryMetricChange = Math.max(hipChange, shoulderChange, elbowChange);
+          }
+          
+          // Calculate velocity (rate of change between frames)
           const prevFrame = recordedFramesRef.current[currentFrameCount - 2];
           if (prevFrame) {
             const hipVelocity = Math.abs(hipRotationCalc - prevFrame.metrics.hipRotation);
             const shoulderVelocity = Math.abs(shoulderRotationCalc - prevFrame.metrics.shoulderRotation);
-            const totalVelocity = hipVelocity + shoulderVelocity;
+            const elbowVelocity = Math.abs(rightElbowCalc - prevFrame.metrics.rightElbowAngle);
+            const kneeVelocity = Math.abs(rightKneeCalc - (prevFrame.metrics.rightKneeFlexion || 0));
             
-            // POSTURE-BASED NEUTRAL DETECTION (Reverted & Refined)
-            // We compare current posture to the captured baseline to determine state
-            // This ensures user must actually RETURN to neutral, not just stop moving
+            // Motion-aware velocity calculation
+            let totalVelocity: number;
+            if (isBasketball) {
+              totalVelocity = kneeVelocity * 1.5 + elbowVelocity + hipVelocity * 0.5;
+            } else if (isFootball) {
+              totalVelocity = hipVelocity * 1.5 + shoulderVelocity + elbowVelocity * 0.5;
+            } else {
+              totalVelocity = hipVelocity + shoulderVelocity + elbowVelocity * 0.5;
+            }
+            
+            // ===== MOTION STATE DETECTION =====
+            // CRITICAL FIX: Neutral requires BOTH low deviation AND low velocity
+            // The old code had `|| (totalVelocity < 5.0)` which made slow movement = neutral
             
             let newState: 'neutral' | 'execution' | 'follow_through' = 'neutral';
             
-            // Calculate deviation from baseline (how "far" user is from start pose)
-            const hipChange = Math.abs(hipRotationCalc - (captureBaselineMetrics.current?.hipRotation || 0));
-            const shoulderChange = Math.abs(shoulderRotationCalc - (captureBaselineMetrics.current?.shoulderRotation || 0));
-            const elbowChange = Math.abs(rightElbowCalc - (captureBaselineMetrics.current?.rightElbowAngle || 0));
-            // Exclude weight change from neutral detection as it's too noisy/variable
-            // const weightChange = Math.abs(weightTransferCalc - (captureBaselineMetrics.current?.weightTransfer || 0));
+            // Thresholds (motion-aware)
+            const NEUTRAL_MAX_DEVIATION = isBasketball ? 60 : 50; // Total change from baseline to be "neutral"
+            const NEUTRAL_MAX_VELOCITY = 8.0; // Must be nearly still
+            const EXECUTION_MIN_DEVIATION = isBasketball ? 40 : 35; // Must deviate this much to be "execution"
+            const EXECUTION_MIN_PRIMARY = 15; // At least one key metric must change by 15°
+            const EXECUTION_MIN_VELOCITY = 6.0; // Must be moving at reasonable speed
             
-            // Only track core posture metrics for neutral return
-            const totalChange = hipChange + shoulderChange + elbowChange;
-            
-            // Thresholds for state detection
-            // Neutral: Relaxed thresholds to ensure reps are registered even if user isn't perfectly still
-            // totalChange < 100: Allows for ~33 degrees of variance per joint (hips, shoulders, elbow)
-            // totalVelocity < 3.0: Ensures user has actually stopped moving
-            // MOBILE FIX: Tuned thresholds for responsive stopping (reduced from 180/12.0)
-            if ((totalChange < 150 && totalVelocity < 10.0) || (totalVelocity < 5.0)) {
+            // NEUTRAL: Close to baseline posture AND nearly still
+            // BOTH conditions must be true (no more OR shortcut)
+            if (totalChange < NEUTRAL_MAX_DEVIATION && totalVelocity < NEUTRAL_MAX_VELOCITY) {
               newState = 'neutral';
-            } 
-            // Execution: Significant deviation from baseline OR high velocity
-            else if (totalChange > 80 || totalVelocity > 10.0) {
+            }
+            // EXECUTION: Significant deviation from baseline AND meaningful primary metric change
+            else if ((totalChange > EXECUTION_MIN_DEVIATION && primaryMetricChange > EXECUTION_MIN_PRIMARY) || 
+                     totalVelocity > EXECUTION_MIN_VELOCITY * 2) {
               newState = 'execution';
-            } 
-            // Follow-through: In-between state
+            }
+            // FOLLOW-THROUGH: In-between (decelerating, returning to neutral)
             else {
               newState = 'follow_through';
             }
             
-            // Detect rep start: neutral → execution
-            // MUST have been in neutral for at least 15 frames (0.5s) to prevent rapid re-triggering
-            const framesSinceLastRep = currentFrameCount - (captureRepStartFrame.current || 0);
+            // Track peak deviation during active rep (used to validate rep was real)
+            if (repIsActive.current) {
+              peakDeviationDuringRep.current = Math.max(peakDeviationDuringRep.current, totalChange);
+            }
             
             // Get last rep end frame to enforce cool-down
             const lastRepEndFrame = capturedRepBoundaries.current.length > 0 
@@ -804,33 +864,31 @@ export default function Analysis() {
               : 0;
             const framesSinceLastRepEnd = currentFrameCount - lastRepEndFrame;
             
-            // START CONDITION:
-            // 1. Must transition from neutral to execution
-            // 2. Must be at least 45 frames (1.5s) since the last rep ended (COOLDOWN)
-            // This prevents double-counting if the user wobbles while returning to neutral
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 45) {
-              // Add EXTENDED PRE-ROLL BUFFER: Start the rep 60 frames (2.0s) BEFORE the movement actually begins
-              // This captures the "Setup" / "Ready" phase even if detection is slightly late
+            // ===== REP START DETECTION =====
+            // Must transition from neutral to execution with cooldown enforced
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 45 && !repIsActive.current) {
+              // Add PRE-ROLL BUFFER: Start the rep before movement begins
               const preRollFrames = 60;
               const actualStartFrame = Math.max(lastRepEndFrame + 1, currentFrameCount - preRollFrames);
               
               captureRepStartFrame.current = actualStartFrame;
+              repIsActive.current = true;
+              peakDeviationDuringRep.current = totalChange; // Initialize peak
               console.log(`🟢 Rep ${currentCaptureRep} started at frame ${actualStartFrame} (with pre-roll)`);
             }
             
-            // END CONDITION:
-            // 1. Must transition back to neutral (posture matches baseline)
-            // 2. Must have lasted at least 36 frames (1.2s) to be a valid rep (MINIMUM DURATION)
-            // 3. Must currently be tracking a valid rep
-            // 4. NEUTRAL HOLD: Must hold neutral for 10 frames (0.3s) to confirm end
+            // ===== REP END DETECTION =====
+            // CRITICAL FIX: Added peak deviation check to prevent false reps from neutral standing
             const repDurationFrames = currentFrameCount - captureRepStartFrame.current;
+            const MIN_PEAK_DEVIATION = isBasketball ? 100 : 80; // Must have reached significant movement during rep
+            const MIN_REP_DURATION = 36; // ~1.2s minimum
             
-            // Initialize neutral hold counter if entering neutral
+            // Initialize neutral hold counter if entering neutral from movement
             if ((previousState === 'follow_through' || previousState === 'execution') && newState === 'neutral') {
                neutralHoldCounter.current = 0;
             }
             
-            // Increment counter if in neutral
+            // Increment counter if in neutral, reset if moving
             if (newState === 'neutral') {
                neutralHoldCounter.current = (neutralHoldCounter.current || 0) + 1;
             } else {
@@ -838,8 +896,10 @@ export default function Analysis() {
             }
 
             if (newState === 'neutral' && 
-                (neutralHoldCounter.current || 0) >= 20 && // TUNED: Require 20 frames (~0.66s) of neutral hold (slightly faster)
-                repDurationFrames > 36 && // Min duration 1.2s
+                (neutralHoldCounter.current || 0) >= 20 && // Hold neutral for ~0.66s
+                repDurationFrames > MIN_REP_DURATION && // Min duration 1.2s
+                repIsActive.current && // Must be tracking an active rep
+                peakDeviationDuringRep.current > MIN_PEAK_DEVIATION && // MUST have actually moved significantly
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
               // NO BACKDATING:
@@ -848,7 +908,11 @@ export default function Analysis() {
               // We just use the current frame as the end point.
               const actualEndFrame = currentFrameCount;
               
-              console.log(`✅ Rep ${currentCaptureRep} completed at frame ${actualEndFrame}`);
+              console.log(`✅ Rep ${currentCaptureRep} completed at frame ${actualEndFrame} (peak deviation: ${peakDeviationDuringRep.current.toFixed(1)})`);
+              
+              // Reset rep tracking state
+              repIsActive.current = false;
+              peakDeviationDuringRep.current = 0;
               
               // Save boundary for this rep
               capturedRepBoundaries.current.push({
@@ -1150,6 +1214,8 @@ export default function Analysis() {
     setCompletedReps([]); // Clear completed reps
     captureMotionState.current = 'neutral'; // Reset motion state
     captureBaselineMetrics.current = null; // Clear baseline
+    peakDeviationDuringRep.current = 0; // Reset peak deviation
+    repIsActive.current = false; // Reset rep tracking
     console.log('⏱️ Starting 5-second countdown');
     speak("Get ready. Starting in 5 seconds");
   };
