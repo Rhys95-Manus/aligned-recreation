@@ -216,3 +216,14 @@
 - [x] Create phase-aware coaching cue templates (e.g., "During the cocking phase, ___")
 - [x] Update LiveCoachingOverlay to show phase-contextual feedback between reps
 - [x] Write tests for phase detection and phase-aware cue generation
+
+## Basketball Jump Shot - Comprehensive Motion Profile
+- [x] Implement 6-phase basketball jump shot (Neutral/Reset, Ready Pocket, Dip/Load, Rise to Set Point, Release, Flight/Landing/Follow-Through)
+- [x] Add all metrics per phase (shooting/off-hand elbow flexion, knee flexion, shoulder rotation, spine lean, weight transfer, elbow height index, hip-ball synch, release timing, landing recovery)
+- [x] Implement phase timing targets and scoring (0.90-1.20s total motion window)
+- [x] Add global motion events for phase detection anchoring
+- [x] Implement phase-specific scoring logic with deductions and bonuses
+- [x] Update coaching cues with user-specified instructional sentences
+- [x] Update phase coaching with phase triggers and transition logic
+- [x] Update professional references for basketball jump shot
+- [x] Write tests for basketball jump shot motion profile

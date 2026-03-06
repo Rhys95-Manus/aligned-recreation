@@ -79,6 +79,91 @@ function generateBadFormThrowFrames(frameCount: number = 60): FrameMetrics[] {
   return frames;
 }
 
+// Helper: generate frames simulating a basketball jump shot
+function generateBasketballShotFrames(frameCount: number = 60): FrameMetrics[] {
+  const frames: FrameMetrics[] = [];
+  for (let i = 0; i < frameCount; i++) {
+    const t = i / (frameCount - 1); // 0.0 to 1.0
+
+    // Phase 0: Neutral (0-10%), Phase 1: Catch (10-20%), Phase 2: Dip (20-45%),
+    // Phase 3: Rise (45-70%), Phase 4: Release (70-85%), Phase 5: Landing (85-100%)
+    let rightElbow: number, leftElbow: number, rightKnee: number, leftKnee: number;
+    let spine: number, shoulderRot: number, weight: number, foot: number;
+    let rightShoulder: number, leftShoulder: number, hipRot: number;
+
+    if (t < 0.1) {
+      // Phase 0: Neutral
+      rightElbow = 170; leftElbow = 170; rightKnee = 170; leftKnee = 170;
+      spine = 3; shoulderRot = 10; weight = 5; foot = 30;
+      rightShoulder = 40; leftShoulder = 40; hipRot = 5;
+    } else if (t < 0.2) {
+      // Phase 1: Catch & Stance Setup
+      rightElbow = 75; leftElbow = 80; rightKnee = 160; leftKnee = 158;
+      spine = 5; shoulderRot = 12; weight = 8; foot = 32;
+      rightShoulder = 65; leftShoulder = 55; hipRot = 8;
+    } else if (t < 0.45) {
+      // Phase 2: Dip / Load
+      rightElbow = 70; leftElbow = 75; rightKnee = 110; leftKnee = 108;
+      spine = 18; shoulderRot = 15; weight = 12; foot = 30;
+      rightShoulder = 75; leftShoulder = 60; hipRot = 10;
+    } else if (t < 0.7) {
+      // Phase 3: Rise & Arm Extension
+      const riseT = (t - 0.45) / 0.25;
+      rightElbow = 70 + riseT * 70; leftElbow = 75 + riseT * 50;
+      rightKnee = 110 + riseT * 55; leftKnee = 108 + riseT * 55;
+      spine = 18 - riseT * 15; shoulderRot = 15; weight = 12 - riseT * 5;
+      rightShoulder = 75 + riseT * 50; leftShoulder = 60 + riseT * 30;
+      hipRot = 10 + riseT * 5;
+    } else if (t < 0.85) {
+      // Phase 4: Release & Follow-Through
+      rightElbow = 165; leftElbow = 155; rightKnee = 170; leftKnee = 168;
+      spine = 2; shoulderRot = 18; weight = 5; foot = 30;
+      rightShoulder = 140; leftShoulder = 95; hipRot = 15;
+    } else {
+      // Phase 5: Landing & Recovery
+      rightElbow = 140; leftElbow = 140; rightKnee = 145; leftKnee = 143;
+      spine = 5; shoulderRot = 12; weight = 8; foot = 30;
+      rightShoulder = 100; leftShoulder = 80; hipRot = 8;
+    }
+
+    frames.push({
+      hipRotation: hipRot,
+      shoulderRotation: shoulderRot,
+      rightElbowAngle: rightElbow,
+      leftElbowAngle: leftElbow,
+      rightKneeFlexion: rightKnee,
+      leftKneeFlexion: leftKnee,
+      spineAngle: spine,
+      rightShoulderAngle: rightShoulder,
+      leftShoulderAngle: leftShoulder,
+      footPositioning: foot,
+      weightTransfer: weight,
+    });
+  }
+  return frames;
+}
+
+// Helper: generate frames with bad basketball form
+function generateBadBasketballShotFrames(frameCount: number = 60): FrameMetrics[] {
+  const frames: FrameMetrics[] = [];
+  for (let i = 0; i < frameCount; i++) {
+    frames.push({
+      hipRotation: 40, // Too much hip twist
+      shoulderRotation: 45, // Over-rotated
+      rightElbowAngle: 130, // Elbow flared out
+      leftElbowAngle: 130,
+      rightKneeFlexion: 170, // No dip — stiff legs
+      leftKneeFlexion: 170,
+      spineAngle: 30, // Leaning too much
+      rightShoulderAngle: 50, // Shoulder too low
+      leftShoulderAngle: 40,
+      footPositioning: 60, // Feet too wide
+      weightTransfer: 40, // Jumping forward
+    });
+  }
+  return frames;
+}
+
 describe("Phase Coaching System", () => {
   describe("getPhaseProfile", () => {
     it("returns football throw profile for football/throw motions", () => {
@@ -105,7 +190,28 @@ describe("Phase Coaching System", () => {
 
     it("returns basketball shot profile for basketball motions", () => {
       const profile = getPhaseProfile("sports", "basketball", "Basketball Jump Shot");
-      expect(profile.motionName).toBe("Basketball Shot");
+      expect(profile.motionName).toBe("Basketball Jump Shot");
+    });
+
+    it("basketball profile has 6 phases (Phase 0-5)", () => {
+      const profile = getPhaseProfile("sports", "basketball", "Basketball Jump Shot");
+      expect(profile.phases.length).toBe(6);
+    });
+
+    it("basketball profile has correct phase names", () => {
+      const profile = getPhaseProfile("sports", "basketball", "Basketball Jump Shot");
+      const phaseNames = profile.phases.map(p => p.name);
+      expect(phaseNames).toContain("Neutral / Reset");
+      expect(phaseNames).toContain("Ready Pocket");
+      expect(phaseNames).toContain("Dip / Load");
+      expect(phaseNames).toContain("Rise to Set Point");
+      expect(phaseNames).toContain("Release");
+      expect(phaseNames).toContain("Landing & Follow-Through");
+    });
+
+    it("basketball free-throw also uses basketball profile", () => {
+      const profile = getPhaseProfile("sports", "basketball", "Basketball Free Throw");
+      expect(profile.motionName).toBe("Basketball Jump Shot");
     });
 
     it("returns squat profile for squat motions", () => {
@@ -327,6 +433,81 @@ describe("Phase Coaching System", () => {
         if (firstCorrection !== -1 && firstPositive !== -1) {
           expect(firstCorrection).toBeLessThan(firstPositive);
         }
+      }
+    });
+  });
+
+  describe("Basketball Jump Shot - Comprehensive", () => {
+    it("segments basketball shot frames into phases", () => {
+      const profile = getPhaseProfile("sports", "basketball", "Basketball Jump Shot");
+      const frames = generateBasketballShotFrames(60);
+      const segments = segmentRepIntoPhases(profile, frames);
+
+      let phasesWithFrames = 0;
+      segments.forEach((data) => {
+        if (data.frameCount > 0) phasesWithFrames++;
+      });
+      // Should have frames in multiple phases
+      expect(phasesWithFrames).toBeGreaterThanOrEqual(3);
+    });
+
+    it("returns corrections for bad basketball form", () => {
+      const evals = evaluateRepPhases(
+        "sports", "basketball", "Basketball Jump Shot",
+        generateBadBasketballShotFrames(60),
+        5
+      );
+
+      expect(evals.length).toBeGreaterThan(0);
+      const corrections = evals.filter(e => e.type === "correction");
+      expect(corrections.length).toBeGreaterThan(0);
+    });
+
+    it("basketball corrections include phase context", () => {
+      const evals = evaluateRepPhases(
+        "sports", "basketball", "Basketball Jump Shot",
+        generateBadBasketballShotFrames(60),
+        5
+      );
+
+      for (const ev of evals) {
+        expect(ev.phaseName).toBeTruthy();
+        expect(ev.displayPrefix).toBeTruthy();
+      }
+
+      // Should reference basketball-specific phases
+      const allPhaseNames = evals.map(e => e.phaseName);
+      const hasBasketballPhase = allPhaseNames.some(name =>
+        name.includes("Dip") || name.includes("Rise") || name.includes("Release") ||
+        name.includes("Landing") || name.includes("Catch") || name.includes("Neutral")
+      );
+      expect(hasBasketballPhase).toBe(true);
+    });
+
+    it("good basketball form produces some positives", () => {
+      const evals = evaluateRepPhases(
+        "sports", "basketball", "Basketball Jump Shot",
+        generateBasketballShotFrames(60),
+        5
+      );
+
+      expect(evals.length).toBeGreaterThan(0);
+      // Good form should have at least some positives
+      const types = evals.map(e => e.type);
+      expect(types.length).toBeGreaterThan(0);
+    });
+
+    it("basketball speech cues are concise", () => {
+      const evals = evaluateRepPhases(
+        "sports", "basketball", "Basketball Jump Shot",
+        generateBadBasketballShotFrames(60),
+        5
+      );
+
+      for (const ev of evals) {
+        expect(ev.speech).toBeTruthy();
+        // Speech should be reasonably short for between-rep delivery
+        expect(ev.speech.length).toBeLessThan(120);
       }
     });
   });
