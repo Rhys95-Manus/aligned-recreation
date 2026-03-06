@@ -227,3 +227,10 @@
 - [x] Update phase coaching with phase triggers and transition logic
 - [x] Update professional references for basketball jump shot
 - [x] Write tests for basketball jump shot motion profile
+
+## Rep Detection Regression Fix
+- [x] Investigate why rep detection no longer correctly identifies rep completion for football throw and basketball jump shot
+- [x] Fix false rep detection during neutral standing
+- [x] Fix missed rep detection during actual reps
+- [x] Verify rep detection works correctly for both football throw and basketball jump shot
+- [x] Write/update tests for rep detection
