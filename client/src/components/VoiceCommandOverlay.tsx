@@ -136,13 +136,19 @@ export default function VoiceCommandOverlay({
 
   const handleTranscript = useCallback(
     (transcript: string) => {
-      // Debounce — 800ms cooldown (reduced from 2s to prevent double-trigger requirement)
+      // Debounce — 800ms cooldown
       if (Date.now() - lastTriggerTime.current < 800) return;
 
-      // Ignore if muted (app is speaking) — but only for non-start commands
-      // The start command should always work even if app just spoke
-      // (the app never says "start" or "go" so this shouldn't self-trigger)
+      // MUTE CHECK: Ignore ALL transcripts while app is speaking.
+      // The speech recognition can pick up the app's own speech output
+      // (e.g., "Get ready, starting in 5 seconds" contains "start").
+      // This prevents false triggers from the app's own voice.
+      if (Date.now() < mutedUntil.current) {
+        console.log('[Voice] Ignoring transcript during mute period:', transcript);
+        return;
+      }
 
+      // Exact word match only — "starting" should NOT match "start"
       const words = transcript.split(/\s+/);
       const hasStartWord = words.some((w) => START_WORDS.includes(w));
 
@@ -176,13 +182,14 @@ export default function VoiceCommandOverlay({
   useEffect(() => {
     if (!voiceEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
-    // Poll for speaking state since events aren't reliable across browsers
-    // Reduced mute duration from 3s to 1s so voice commands work sooner after app speech
+    // Poll for speaking state since events aren't reliable across browsers.
+    // Mute for 2s after app stops speaking to prevent the mic from picking up
+    // the tail end of app speech as a voice command.
     const interval = setInterval(() => {
       if (window.speechSynthesis.speaking) {
-        mutedUntil.current = Math.max(mutedUntil.current, Date.now() + 1000);
+        mutedUntil.current = Math.max(mutedUntil.current, Date.now() + 2000);
       }
-    }, 150);
+    }, 100);
 
     return () => clearInterval(interval);
   }, [voiceEnabled]);

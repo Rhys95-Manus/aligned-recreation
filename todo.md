@@ -257,3 +257,13 @@
 ## Bug Fixes (Round 9 - Football Throw Rep 1 Still Needs 2 Reps)
 - [x] Football throw: still requiring 2 physical reps for rep 1 (with coaching on or off)
 - [x] Basketball jump shot: confirmed working perfectly - DO NOT TOUCH
+
+## Bug Fixes (Round 10 - Football Throw Rep 1 Still Broken)
+- [ ] Football throw: rep 1 still requires 2 physical reps despite matching old thresholds
+- [ ] Investigate if metric pipeline changed since football was working (basketball metrics may have altered calculations)
+- [ ] Consider implementing phase-aware rep detection for football (like basketball has)
+
+## Bug Fixes (Round 11 - Football Throw Phase-Aware Detection Needed)
+- [x] Football throw: system can't reliably detect when user returns to neutral after a throw (needs phase-aware detection like basketball)
+- [x] Football throw: voice command auto-triggers without user saying anything (auto-starts the motion)
+- [x] Basketball jump shot: confirmed working perfectly with voice commands - DO NOT TOUCH

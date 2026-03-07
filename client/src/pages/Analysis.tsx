@@ -211,7 +211,9 @@ export default function Analysis() {
   const captureBaselineMetrics = useRef<any>(null);
   const neutralHoldCounter = useRef<number>(0);
   const peakDeviationDuringRep = useRef<number>(0); // Track max deviation to require real movement
-  const repIsActive = useRef<boolean>(false); // Explicit flag: are we currently inside a rep?  // Frame recording for replay
+  const repIsActive = useRef<boolean>(false); // Explicit flag: are we currently inside a rep?
+  const stillnessCounter = useRef<number>(0); // Counts consecutive low-velocity frames (for football velocity-based neutral)
+  const dynamicBaseline = useRef<any>(null); // Re-baselined after each rep for football (rotational metrics drift)  // Frame recording for replay
   const [recordedFrames, setRecordedFrames] = useState<Array<{
     timestamp: number;
     landmarks: any[];
@@ -826,31 +828,66 @@ export default function Analysis() {
             }
             
             // ===== MOTION STATE DETECTION =====
-            // CRITICAL FIX: Neutral requires BOTH low deviation AND low velocity
-            // The old code had `|| (totalVelocity < 5.0)` which made slow movement = neutral
+            // FOOTBALL FIX: Use VELOCITY-BASED neutral detection for rotational motions.
+            // After a throw, hip/shoulder rotation values don't return to the original baseline
+            // (the user stands slightly differently). So for football, "neutral" means
+            // "not moving" (low velocity for several frames), not "back to original position".
+            // Basketball uses deviation-based detection because vertical motions (squat/jump/land)
+            // DO return to the same baseline reliably.
             
             let newState: 'neutral' | 'execution' | 'follow_through' = 'neutral';
             
-            // Thresholds (motion-aware) — RESTORED to e553483 values where football was ACTUALLY working perfectly
-            const NEUTRAL_MAX_DEVIATION = isBasketball ? 80 : 70; // Total change from baseline to be "neutral"
-            const NEUTRAL_MAX_VELOCITY = 10.0; // Must be nearly still
-            const EXECUTION_MIN_DEVIATION = isBasketball ? 30 : 25; // Football: 25 (the value where it was actually working)
-            const EXECUTION_MIN_PRIMARY = 10; // At least one key metric must change by 10° (same for all motions)
-            const EXECUTION_MIN_VELOCITY = 5.0; // Must be moving at reasonable speed
-            
-            // NEUTRAL: Close to baseline posture AND nearly still
-            // BOTH conditions must be true (no more OR shortcut)
-            if (totalChange < NEUTRAL_MAX_DEVIATION && totalVelocity < NEUTRAL_MAX_VELOCITY) {
-              newState = 'neutral';
-            }
-            // EXECUTION: Significant deviation from baseline AND meaningful primary metric change
-            else if ((totalChange > EXECUTION_MIN_DEVIATION && primaryMetricChange > EXECUTION_MIN_PRIMARY) || 
-                     totalVelocity > EXECUTION_MIN_VELOCITY * 2) {
-              newState = 'execution';
-            }
-            // FOLLOW-THROUGH: In-between (decelerating, returning to neutral)
-            else {
-              newState = 'follow_through';
+            if (isFootball) {
+              // FOOTBALL: Velocity-based state detection
+              // Use the dynamic baseline (re-set after each rep) if available, otherwise original
+              const activeBaseline = dynamicBaseline.current || baseline;
+              const dynHipChange = Math.abs(hipRotationCalc - (activeBaseline.hipRotation || 0));
+              const dynShoulderChange = Math.abs(shoulderRotationCalc - (activeBaseline.shoulderRotation || 0));
+              const dynElbowChange = Math.abs(rightElbowCalc - (activeBaseline.rightElbowAngle || 0));
+              const dynTotalChange = dynHipChange * 1.5 + dynShoulderChange * 1.2 + dynElbowChange;
+              
+              const FOOTBALL_STILL_VELOCITY = 6.0; // Low velocity = not moving
+              const FOOTBALL_MOVING_VELOCITY = 12.0; // High velocity = definitely in motion
+              const FOOTBALL_STILLNESS_FRAMES = 6; // ~0.2s of stillness = neutral
+              
+              // Track consecutive still frames
+              if (totalVelocity < FOOTBALL_STILL_VELOCITY) {
+                stillnessCounter.current = (stillnessCounter.current || 0) + 1;
+              } else {
+                stillnessCounter.current = 0;
+              }
+              
+              // NEUTRAL: Low velocity for several consecutive frames (user has stopped moving)
+              if (stillnessCounter.current >= FOOTBALL_STILLNESS_FRAMES) {
+                newState = 'neutral';
+              }
+              // EXECUTION: High velocity OR significant deviation from dynamic baseline
+              else if (totalVelocity > FOOTBALL_MOVING_VELOCITY || 
+                       (dynTotalChange > 25 && totalVelocity > FOOTBALL_STILL_VELOCITY)) {
+                newState = 'execution';
+              }
+              // FOLLOW-THROUGH: Decelerating
+              else {
+                newState = 'follow_through';
+              }
+            } else {
+              // BASKETBALL & OTHERS: Deviation-based detection (works great for vertical motions)
+              const NEUTRAL_MAX_DEVIATION = isBasketball ? 80 : 70;
+              const NEUTRAL_MAX_VELOCITY = 10.0;
+              const EXECUTION_MIN_DEVIATION = isBasketball ? 30 : 25;
+              const EXECUTION_MIN_PRIMARY = 10;
+              const EXECUTION_MIN_VELOCITY = 5.0;
+              
+              if (totalChange < NEUTRAL_MAX_DEVIATION && totalVelocity < NEUTRAL_MAX_VELOCITY) {
+                newState = 'neutral';
+              }
+              else if ((totalChange > EXECUTION_MIN_DEVIATION && primaryMetricChange > EXECUTION_MIN_PRIMARY) || 
+                       totalVelocity > EXECUTION_MIN_VELOCITY * 2) {
+                newState = 'execution';
+              }
+              else {
+                newState = 'follow_through';
+              }
             }
             
             // Track peak deviation during active rep (used to validate rep was real)
@@ -901,8 +938,12 @@ export default function Analysis() {
                neutralHoldCounter.current = 0;
             }
 
+            // For football, the stillness counter already ensures we've been still for 6+ frames
+            // before entering neutral, so we need fewer additional neutral hold frames.
+            const NEUTRAL_HOLD_FRAMES = isFootball ? 4 : 8; // Football: 4 (~0.13s) since stillness already validated; Others: 8 (~0.27s)
+            
             if (newState === 'neutral' && 
-                (neutralHoldCounter.current || 0) >= 8 && // RESTORED from e553483: 0.27s for all motions (was working perfectly)
+                (neutralHoldCounter.current || 0) >= NEUTRAL_HOLD_FRAMES &&
                 repDurationFrames > MIN_REP_DURATION &&
                 repIsActive.current && // Must be tracking an active rep
                 peakDeviationDuringRep.current > MIN_PEAK_DEVIATION && // MUST have actually moved significantly
@@ -910,8 +951,6 @@ export default function Analysis() {
               
               // TRIM NEUTRAL: End the rep at the point where neutral was first detected,
               // not after the full neutral hold period. This removes excess idle time from replay.
-              // The neutral hold counter tells us how many frames we've been in neutral,
-              // so we backdate by that amount to get the actual end of motion.
               const neutralFramesElapsed = neutralHoldCounter.current || 0;
               const actualEndFrame = Math.max(captureRepStartFrame.current + 1, currentFrameCount - neutralFramesElapsed + 5); // +5 frames of buffer for smooth ending
               
@@ -920,6 +959,25 @@ export default function Analysis() {
               // Reset rep tracking state
               repIsActive.current = false;
               peakDeviationDuringRep.current = 0;
+              
+              // FOOTBALL: Re-baseline after each rep so the next rep's detection
+              // uses the current standing position, not the original one.
+              // This is critical because rotational motions leave the user in a
+              // slightly different position after each throw.
+              if (isFootball) {
+                dynamicBaseline.current = {
+                  hipRotation: hipRotationCalc,
+                  shoulderRotation: shoulderRotationCalc,
+                  rightElbowAngle: rightElbowCalc,
+                  leftElbowAngle: leftElbowCalc,
+                  rightKneeFlexion: rightKneeCalc,
+                  leftKneeFlexion: leftKneeCalc,
+                  spineAngle: spineAngleCalc,
+                  weightTransfer: weightTransferCalc
+                };
+                stillnessCounter.current = 0; // Reset stillness for next rep
+                console.log(`🏈 Football: Re-baselined after rep ${currentCaptureRep}`);
+              }
               
               // Save boundary for this rep
               capturedRepBoundaries.current.push({
@@ -1226,6 +1284,8 @@ export default function Analysis() {
     captureRepStartFrame.current = 0; // Reset rep start frame
     capturedRepBoundaries.current = []; // Clear rep boundaries
     neutralHoldCounter.current = 0; // Reset neutral hold counter
+    stillnessCounter.current = 0; // Reset stillness counter
+    dynamicBaseline.current = null; // Clear dynamic baseline
     console.log('⏱️ Starting 5-second countdown');
     speak("Get ready. Starting in 5 seconds");
   };
