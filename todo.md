@@ -238,3 +238,7 @@
 ## Rep Detection & Replay Timing Bugs
 - [x] Fix rep detection thresholds too strict — requiring 2-3 actual reps before counting one (football throw and basketball first rep)
 - [x] Fix skeleton overlay timing delay in replay screen — skeleton is delayed from user's actual motion
+
+## Football Throw Rep Detection Too Sensitive
+- [x] Fix football throw counting a rep while user is standing in neutral listening to coaching feedback
+- [x] Keep basketball jump shot detection unchanged (currently working perfectly)

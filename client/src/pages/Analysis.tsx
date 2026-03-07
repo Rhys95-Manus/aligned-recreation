@@ -834,8 +834,8 @@ export default function Analysis() {
             // Thresholds (motion-aware)
             const NEUTRAL_MAX_DEVIATION = isBasketball ? 80 : 70; // Total change from baseline to be "neutral" (more lenient)
             const NEUTRAL_MAX_VELOCITY = 10.0; // Must be nearly still (more lenient)
-            const EXECUTION_MIN_DEVIATION = isBasketball ? 30 : 25; // Must deviate this much to be "execution" (easier to trigger)
-            const EXECUTION_MIN_PRIMARY = 10; // At least one key metric must change by 10°
+            const EXECUTION_MIN_DEVIATION = isBasketball ? 30 : 40; // Basketball easier to trigger, football needs more deviation
+            const EXECUTION_MIN_PRIMARY = isBasketball ? 10 : 15; // Football needs more primary metric change to start execution
             const EXECUTION_MIN_VELOCITY = 5.0; // Must be moving at reasonable speed
             
             // NEUTRAL: Close to baseline posture AND nearly still
@@ -866,7 +866,8 @@ export default function Analysis() {
             
             // ===== REP START DETECTION =====
             // Must transition from neutral to execution with cooldown enforced
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > 20 && !repIsActive.current) {
+            const REP_COOLDOWN = isBasketball ? 20 : 45; // Basketball: 0.66s, Football: 1.5s (longer to avoid false starts during coaching feedback)
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > REP_COOLDOWN && !repIsActive.current) {
               // Add PRE-ROLL BUFFER: Start the rep before movement begins
               const preRollFrames = 60;
               const actualStartFrame = Math.max(lastRepEndFrame + 1, currentFrameCount - preRollFrames);
@@ -880,8 +881,8 @@ export default function Analysis() {
             // ===== REP END DETECTION =====
             // CRITICAL FIX: Added peak deviation check to prevent false reps from neutral standing
             const repDurationFrames = currentFrameCount - captureRepStartFrame.current;
-            const MIN_PEAK_DEVIATION = isBasketball ? 50 : 45; // Must have reached significant movement during rep (lowered)
-            const MIN_REP_DURATION = 20; // ~0.66s minimum (faster motions like basketball shot)
+            const MIN_PEAK_DEVIATION = isBasketball ? 50 : 70; // Basketball: 50 (working well), Football: 70 (needs more movement to count)
+            const MIN_REP_DURATION = isBasketball ? 20 : 30; // Basketball: 0.66s, Football: 1.0s minimum
             
             // Initialize neutral hold counter if entering neutral from movement
             if ((previousState === 'follow_through' || previousState === 'execution') && newState === 'neutral') {
@@ -896,7 +897,7 @@ export default function Analysis() {
             }
 
             if (newState === 'neutral' && 
-                (neutralHoldCounter.current || 0) >= 8 && // Hold neutral for ~0.27s (quicker detection)
+                (neutralHoldCounter.current || 0) >= (isBasketball ? 8 : 15) && // Basketball: 0.27s, Football: 0.5s (longer to avoid false reps during feedback)
                 repDurationFrames > MIN_REP_DURATION && // Min duration 1.2s
                 repIsActive.current && // Must be tracking an active rep
                 peakDeviationDuringRep.current > MIN_PEAK_DEVIATION && // MUST have actually moved significantly
