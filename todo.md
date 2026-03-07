@@ -253,3 +253,7 @@
 ## Bug Fixes (Round 8 - Football Throw Overcorrected)
 - [x] Football throw rep detection way too strict — requires 5-6 physical reps for 1 counted rep
 - [x] Restore football throw to its previously perfect detection and only fix the coaching feedback false-rep issue
+
+## Bug Fixes (Round 9 - Football Throw Rep 1 Still Needs 2 Reps)
+- [x] Football throw: still requiring 2 physical reps for rep 1 (with coaching on or off)
+- [x] Basketball jump shot: confirmed working perfectly - DO NOT TOUCH
