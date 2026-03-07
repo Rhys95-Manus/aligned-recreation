@@ -272,3 +272,7 @@
 - [x] Football throw: velocity-based detection still failing — needs biomechanics-based approach like basketball
 - [x] Football throw: implement elbow-angle phase detection (ball at chest = bent elbow = neutral, throw = extended = execution)
 - [x] Basketball: confirmed perfect — DO NOT TOUCH
+
+## Bug Fixes (Round 13 - Restore Exact Working Football Code)
+- [x] Football throw: elbow-based detection still broken — restore EXACT code from the commit where football was confirmed working
+- [x] Stop overengineering — find the working commit and restore byte-for-byte
