@@ -831,11 +831,11 @@ export default function Analysis() {
             
             let newState: 'neutral' | 'execution' | 'follow_through' = 'neutral';
             
-            // Thresholds (motion-aware)
-            const NEUTRAL_MAX_DEVIATION = isBasketball ? 80 : 80; // Total change from baseline to be "neutral"
+            // Thresholds (motion-aware) — RESTORED to the values that were working perfectly
+            const NEUTRAL_MAX_DEVIATION = isBasketball ? 80 : 70; // Total change from baseline to be "neutral"
             const NEUTRAL_MAX_VELOCITY = 10.0; // Must be nearly still
-            const EXECUTION_MIN_DEVIATION = isBasketball ? 30 : 35; // Deviation to start execution
-            const EXECUTION_MIN_PRIMARY = isBasketball ? 10 : 12; // Primary metric change to start execution
+            const EXECUTION_MIN_DEVIATION = isBasketball ? 30 : 40; // Football: 40 (was working perfectly at this value)
+            const EXECUTION_MIN_PRIMARY = isBasketball ? 10 : 15; // Football: 15 (was working perfectly)
             const EXECUTION_MIN_VELOCITY = 5.0; // Must be moving at reasonable speed
             
             // NEUTRAL: Close to baseline posture AND nearly still
@@ -866,17 +866,13 @@ export default function Analysis() {
             
             // ===== REP START DETECTION =====
             // Must transition from neutral to execution with cooldown enforced
-            // Football needs much longer cooldown because coaching feedback plays for 5-10s during neutral
-            const REP_COOLDOWN = isBasketball ? 20 : 90; // Basketball: 0.66s, Football: 3.0s (prevents false starts during coaching feedback)
+            // COACHING-AWARE COOLDOWN: When coaching is on, speech synthesis plays for 5-10s.
+            // During that time the user stands still, and any small fidget could trigger a false rep.
+            // So we use a longer cooldown ONLY when coaching is enabled.
+            const isSpeaking = typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.speaking;
+            const REP_COOLDOWN = isBasketball ? 20 : (isSpeaking ? 150 : 45); // Football: 1.5s normally, 5s while coaching is speaking
             
-            // For rep start, we require a DECISIVE movement, not just a tiny fluctuation
-            // This is the key fix: the rep start requires both state transition AND sufficient movement magnitude
-            const REP_START_MIN_DEVIATION = isBasketball ? 30 : 50; // Football needs more decisive movement to start a rep
-            const REP_START_MIN_VELOCITY = isBasketball ? 5.0 : 8.0; // Football needs faster movement to start
-            
-            if (previousState === 'neutral' && newState === 'execution' && 
-                framesSinceLastRepEnd > REP_COOLDOWN && !repIsActive.current &&
-                totalChange > REP_START_MIN_DEVIATION && totalVelocity > REP_START_MIN_VELOCITY) {
+            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > REP_COOLDOWN && !repIsActive.current) {
               // Add PRE-ROLL BUFFER: Start the rep before movement begins
               const preRollFrames = 30; // Reduced from 60 to trim neutral time in replay
               const actualStartFrame = Math.max(lastRepEndFrame + 1, currentFrameCount - preRollFrames);
@@ -884,14 +880,14 @@ export default function Analysis() {
               captureRepStartFrame.current = actualStartFrame;
               repIsActive.current = true;
               peakDeviationDuringRep.current = totalChange; // Initialize peak
-              console.log(`🟢 Rep ${currentCaptureRep} started at frame ${actualStartFrame} (with pre-roll, deviation: ${totalChange.toFixed(1)}, velocity: ${totalVelocity.toFixed(1)})`);
+              console.log(`\u{1F7E2} Rep ${currentCaptureRep} started at frame ${actualStartFrame} (with pre-roll)`);
             }
             
             // ===== REP END DETECTION =====
             // CRITICAL FIX: Added peak deviation check to prevent false reps from neutral standing
             const repDurationFrames = currentFrameCount - captureRepStartFrame.current;
-            const MIN_PEAK_DEVIATION = isBasketball ? 50 : 55; // Basketball: 50 (working well), Football: 55 (lowered from 70 - was too strict)
-            const MIN_REP_DURATION = isBasketball ? 20 : 25; // Basketball: 0.66s, Football: 0.83s minimum
+            const MIN_PEAK_DEVIATION = isBasketball ? 50 : 70; // RESTORED: Football: 70 (was working perfectly)
+            const MIN_REP_DURATION = isBasketball ? 20 : 30; // RESTORED: Football: 1.0s minimum (was working perfectly)
             
             // Initialize neutral hold counter if entering neutral from movement
             if ((previousState === 'follow_through' || previousState === 'execution') && newState === 'neutral') {
@@ -906,7 +902,7 @@ export default function Analysis() {
             }
 
             if (newState === 'neutral' && 
-                (neutralHoldCounter.current || 0) >= (isBasketball ? 12 : 20) && // Basketball: 0.4s (slightly more reliable), Football: 0.66s
+                (neutralHoldCounter.current || 0) >= (isBasketball ? 8 : 15) && // RESTORED: Basketball: 0.27s, Football: 0.5s
                 repDurationFrames > MIN_REP_DURATION &&
                 repIsActive.current && // Must be tracking an active rep
                 peakDeviationDuringRep.current > MIN_PEAK_DEVIATION && // MUST have actually moved significantly
