@@ -267,3 +267,8 @@
 - [x] Football throw: system can't reliably detect when user returns to neutral after a throw (needs phase-aware detection like basketball)
 - [x] Football throw: voice command auto-triggers without user saying anything (auto-starts the motion)
 - [x] Basketball jump shot: confirmed working perfectly with voice commands - DO NOT TOUCH
+
+## Bug Fixes (Round 12 - Football Throw Elbow-Based Detection)
+- [x] Football throw: velocity-based detection still failing — needs biomechanics-based approach like basketball
+- [x] Football throw: implement elbow-angle phase detection (ball at chest = bent elbow = neutral, throw = extended = execution)
+- [x] Basketball: confirmed perfect — DO NOT TOUCH

@@ -213,7 +213,9 @@ export default function Analysis() {
   const peakDeviationDuringRep = useRef<number>(0); // Track max deviation to require real movement
   const repIsActive = useRef<boolean>(false); // Explicit flag: are we currently inside a rep?
   const stillnessCounter = useRef<number>(0); // Counts consecutive low-velocity frames (for football velocity-based neutral)
-  const dynamicBaseline = useRef<any>(null); // Re-baselined after each rep for football (rotational metrics drift)  // Frame recording for replay
+  const dynamicBaseline = useRef<any>(null); // Re-baselined after each rep for football (rotational metrics drift)
+  const peakElbowDuringRep = useRef<number>(0); // Track peak elbow extension during football throw rep
+  const footballThrowPhase = useRef<'ready' | 'wind_up' | 'release' | 'returning'>('ready'); // Football throw phase tracking  // Frame recording for replay
   const [recordedFrames, setRecordedFrames] = useState<Array<{
     timestamp: number;
     landmarks: any[];
@@ -828,48 +830,77 @@ export default function Analysis() {
             }
             
             // ===== MOTION STATE DETECTION =====
-            // FOOTBALL FIX: Use VELOCITY-BASED neutral detection for rotational motions.
-            // After a throw, hip/shoulder rotation values don't return to the original baseline
-            // (the user stands slightly differently). So for football, "neutral" means
-            // "not moving" (low velocity for several frames), not "back to original position".
-            // Basketball uses deviation-based detection because vertical motions (squat/jump/land)
-            // DO return to the same baseline reliably.
-            
             let newState: 'neutral' | 'execution' | 'follow_through' = 'neutral';
             
             if (isFootball) {
-              // FOOTBALL: Velocity-based state detection
-              // Use the dynamic baseline (re-set after each rep) if available, otherwise original
-              const activeBaseline = dynamicBaseline.current || baseline;
-              const dynHipChange = Math.abs(hipRotationCalc - (activeBaseline.hipRotation || 0));
-              const dynShoulderChange = Math.abs(shoulderRotationCalc - (activeBaseline.shoulderRotation || 0));
-              const dynElbowChange = Math.abs(rightElbowCalc - (activeBaseline.rightElbowAngle || 0));
-              const dynTotalChange = dynHipChange * 1.5 + dynShoulderChange * 1.2 + dynElbowChange;
+              // ===== FOOTBALL: ELBOW-ANGLE PHASE DETECTION =====
+              // The football throw has a clear biomechanical cycle:
+              //   NEUTRAL: Ball at chest, throwing arm elbow BENT (small angle, ~60-90°)
+              //   WIND-UP/THROW: Arm goes back and extends, elbow OPENS (large angle, ~130-170°)
+              //   RETURN: Arm comes back to chest, elbow BENDS again (back to ~60-90°)
+              //
+              // This is the SAME approach that makes basketball work perfectly:
+              //   Basketball uses KNEE ANGLE (bent=dip, straight=jump, bent=land)
+              //   Football uses ELBOW ANGLE (bent=chest, straight=throw, bent=chest)
+              //
+              // The elbow angle is the single clearest signal because:
+              //   - It changes by 40-80° during a throw (huge, unmistakable signal)
+              //   - It returns to nearly the same value when ball is back at chest
+              //   - Hip/shoulder rotation DON'T return reliably (user stands differently)
               
-              const FOOTBALL_STILL_VELOCITY = 6.0; // Low velocity = not moving
-              const FOOTBALL_MOVING_VELOCITY = 12.0; // High velocity = definitely in motion
-              const FOOTBALL_STILLNESS_FRAMES = 6; // ~0.2s of stillness = neutral
+              const baselineElbow = baseline.rightElbowAngle || 0;
+              const currentElbow = rightElbowCalc;
+              const elbowDeltaFromBaseline = currentElbow - baselineElbow; // Positive = more extended
               
-              // Track consecutive still frames
-              if (totalVelocity < FOOTBALL_STILL_VELOCITY) {
-                stillnessCounter.current = (stillnessCounter.current || 0) + 1;
-              } else {
-                stillnessCounter.current = 0;
+              // Thresholds for elbow-based detection
+              const ELBOW_THROW_THRESHOLD = 20; // Elbow must extend 20°+ from baseline to count as throwing
+              const ELBOW_RETURN_THRESHOLD = 15; // Elbow must be within 15° of baseline to count as returned
+              
+              // Track peak elbow extension during active rep
+              if (repIsActive.current) {
+                peakElbowDuringRep.current = Math.max(peakElbowDuringRep.current, elbowDeltaFromBaseline);
               }
               
-              // NEUTRAL: Low velocity for several consecutive frames (user has stopped moving)
-              if (stillnessCounter.current >= FOOTBALL_STILLNESS_FRAMES) {
-                newState = 'neutral';
+              // Phase state machine for football throw
+              const phase = footballThrowPhase.current;
+              
+              if (phase === 'ready') {
+                // READY: Waiting for throw to begin
+                // Transition to wind_up when elbow starts extending significantly
+                if (elbowDeltaFromBaseline > ELBOW_THROW_THRESHOLD) {
+                  footballThrowPhase.current = 'wind_up';
+                  newState = 'execution';
+                } else {
+                  newState = 'neutral';
+                }
+              } else if (phase === 'wind_up') {
+                // WIND-UP/THROW: Arm is extending or at peak
+                // Stay in execution until elbow starts coming back down
+                if (elbowDeltaFromBaseline > ELBOW_THROW_THRESHOLD * 0.5) {
+                  // Still extended — in the throw
+                  newState = 'execution';
+                } else {
+                  // Elbow coming back — entering follow-through/return
+                  footballThrowPhase.current = 'returning';
+                  newState = 'follow_through';
+                }
+              } else if (phase === 'returning') {
+                // RETURNING: Arm coming back to chest
+                // Transition to ready when elbow is back near baseline
+                if (Math.abs(elbowDeltaFromBaseline) <= ELBOW_RETURN_THRESHOLD) {
+                  footballThrowPhase.current = 'ready';
+                  newState = 'neutral';
+                } else if (elbowDeltaFromBaseline > ELBOW_THROW_THRESHOLD) {
+                  // Went back up — still in throw motion
+                  footballThrowPhase.current = 'wind_up';
+                  newState = 'execution';
+                } else {
+                  newState = 'follow_through';
+                }
               }
-              // EXECUTION: High velocity OR significant deviation from dynamic baseline
-              else if (totalVelocity > FOOTBALL_MOVING_VELOCITY || 
-                       (dynTotalChange > 25 && totalVelocity > FOOTBALL_STILL_VELOCITY)) {
-                newState = 'execution';
-              }
-              // FOLLOW-THROUGH: Decelerating
-              else {
-                newState = 'follow_through';
-              }
+              
+              console.log(`🏈 Football phase: ${footballThrowPhase.current} | elbow: ${currentElbow.toFixed(1)}° | baseline: ${baselineElbow.toFixed(1)}° | delta: ${elbowDeltaFromBaseline.toFixed(1)}° | peak: ${peakElbowDuringRep.current.toFixed(1)}° | state: ${newState}`);
+              
             } else {
               // BASKETBALL & OTHERS: Deviation-based detection (works great for vertical motions)
               const NEUTRAL_MAX_DEVIATION = isBasketball ? 80 : 70;
@@ -903,28 +934,31 @@ export default function Analysis() {
             
             // ===== REP START DETECTION =====
             // Must transition from neutral to execution with cooldown enforced
-            // COACHING-AWARE COOLDOWN: When coaching is on, speech synthesis plays for 5-10s.
-            // During that time the user stands still, and any small fidget could trigger a false rep.
-            // So we use a longer cooldown ONLY when coaching is enabled.
             const isSpeaking = typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.speaking;
-            const REP_COOLDOWN = isBasketball ? 20 : (isSpeaking ? 150 : 20); // Football: 0.66s normally (RESTORED from e553483), 5s while coaching is speaking
+            // For football with coaching: use longer cooldown while speech is playing to prevent
+            // the system from detecting fidgets during feedback as new reps
+            const REP_COOLDOWN = isSpeaking ? 150 : 20; // 5s while coaching speaks, 0.66s otherwise
             
             if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > REP_COOLDOWN && !repIsActive.current) {
               // Add PRE-ROLL BUFFER: Start the rep before movement begins
-              const preRollFrames = 30; // Reduced from 60 to trim neutral time in replay
+              const preRollFrames = 30;
               const actualStartFrame = Math.max(lastRepEndFrame + 1, currentFrameCount - preRollFrames);
               
               captureRepStartFrame.current = actualStartFrame;
               repIsActive.current = true;
               peakDeviationDuringRep.current = totalChange; // Initialize peak
+              peakElbowDuringRep.current = 0; // Reset peak elbow for this rep
               console.log(`\u{1F7E2} Rep ${currentCaptureRep} started at frame ${actualStartFrame} (with pre-roll)`);
             }
             
             // ===== REP END DETECTION =====
-            // CRITICAL FIX: Added peak deviation check to prevent false reps from neutral standing
             const repDurationFrames = currentFrameCount - captureRepStartFrame.current;
-            const MIN_PEAK_DEVIATION = isBasketball ? 50 : 45; // RESTORED from e553483: Football: 45 (the value where it was actually working)
-            const MIN_REP_DURATION = 20; // RESTORED from e553483: 0.66s minimum for all motions
+            const MIN_REP_DURATION = isFootball ? 15 : 20; // Football: 0.5s (throws are fast), Others: 0.66s
+            
+            // For football: use peak elbow extension as the "real movement" validator
+            // For others: use peak total deviation
+            const MIN_PEAK_DEVIATION = isBasketball ? 50 : 45;
+            const MIN_PEAK_ELBOW = 15; // Football: elbow must have extended at least 15° during the rep
             
             // Initialize neutral hold counter if entering neutral from movement
             if ((previousState === 'follow_through' || previousState === 'execution') && newState === 'neutral') {
@@ -938,45 +972,37 @@ export default function Analysis() {
                neutralHoldCounter.current = 0;
             }
 
-            // For football, the stillness counter already ensures we've been still for 6+ frames
-            // before entering neutral, so we need fewer additional neutral hold frames.
-            const NEUTRAL_HOLD_FRAMES = isFootball ? 4 : 8; // Football: 4 (~0.13s) since stillness already validated; Others: 8 (~0.27s)
+            // Football uses fewer neutral hold frames because the elbow-based phase machine
+            // already ensures a clean neutral→execution→neutral cycle
+            const NEUTRAL_HOLD_FRAMES = isFootball ? 4 : 8;
+            
+            // Determine if this is a valid rep completion
+            const isValidRep = isFootball 
+              ? (peakElbowDuringRep.current > MIN_PEAK_ELBOW) // Football: validate via elbow extension
+              : (peakDeviationDuringRep.current > MIN_PEAK_DEVIATION); // Others: validate via total deviation
             
             if (newState === 'neutral' && 
                 (neutralHoldCounter.current || 0) >= NEUTRAL_HOLD_FRAMES &&
                 repDurationFrames > MIN_REP_DURATION &&
-                repIsActive.current && // Must be tracking an active rep
-                peakDeviationDuringRep.current > MIN_PEAK_DEVIATION && // MUST have actually moved significantly
+                repIsActive.current &&
+                isValidRep &&
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
-              // TRIM NEUTRAL: End the rep at the point where neutral was first detected,
-              // not after the full neutral hold period. This removes excess idle time from replay.
+              // TRIM NEUTRAL: End the rep at the point where neutral was first detected
               const neutralFramesElapsed = neutralHoldCounter.current || 0;
-              const actualEndFrame = Math.max(captureRepStartFrame.current + 1, currentFrameCount - neutralFramesElapsed + 5); // +5 frames of buffer for smooth ending
+              const actualEndFrame = Math.max(captureRepStartFrame.current + 1, currentFrameCount - neutralFramesElapsed + 5);
               
-              console.log(`✅ Rep ${currentCaptureRep} completed at frame ${actualEndFrame} (peak deviation: ${peakDeviationDuringRep.current.toFixed(1)})`);
+              console.log(`✅ Rep ${currentCaptureRep} completed at frame ${actualEndFrame} (peak elbow: ${peakElbowDuringRep.current.toFixed(1)}°, peak deviation: ${peakDeviationDuringRep.current.toFixed(1)})`);
               
               // Reset rep tracking state
               repIsActive.current = false;
               peakDeviationDuringRep.current = 0;
+              peakElbowDuringRep.current = 0;
               
-              // FOOTBALL: Re-baseline after each rep so the next rep's detection
-              // uses the current standing position, not the original one.
-              // This is critical because rotational motions leave the user in a
-              // slightly different position after each throw.
+              // FOOTBALL: Reset phase machine for next rep
               if (isFootball) {
-                dynamicBaseline.current = {
-                  hipRotation: hipRotationCalc,
-                  shoulderRotation: shoulderRotationCalc,
-                  rightElbowAngle: rightElbowCalc,
-                  leftElbowAngle: leftElbowCalc,
-                  rightKneeFlexion: rightKneeCalc,
-                  leftKneeFlexion: leftKneeCalc,
-                  spineAngle: spineAngleCalc,
-                  weightTransfer: weightTransferCalc
-                };
-                stillnessCounter.current = 0; // Reset stillness for next rep
-                console.log(`🏈 Football: Re-baselined after rep ${currentCaptureRep}`);
+                footballThrowPhase.current = 'ready';
+                console.log(`🏈 Football: Phase reset to ready for next rep`);
               }
               
               // Save boundary for this rep
@@ -1286,6 +1312,8 @@ export default function Analysis() {
     neutralHoldCounter.current = 0; // Reset neutral hold counter
     stillnessCounter.current = 0; // Reset stillness counter
     dynamicBaseline.current = null; // Clear dynamic baseline
+    peakElbowDuringRep.current = 0; // Reset peak elbow
+    footballThrowPhase.current = 'ready'; // Reset football phase
     console.log('⏱️ Starting 5-second countdown');
     speak("Get ready. Starting in 5 seconds");
   };
