@@ -136,11 +136,12 @@ export default function VoiceCommandOverlay({
 
   const handleTranscript = useCallback(
     (transcript: string) => {
-      // Ignore if muted (app is speaking)
-      if (Date.now() < mutedUntil.current) return;
+      // Debounce — 800ms cooldown (reduced from 2s to prevent double-trigger requirement)
+      if (Date.now() - lastTriggerTime.current < 800) return;
 
-      // Debounce — 2 second cooldown
-      if (Date.now() - lastTriggerTime.current < 2000) return;
+      // Ignore if muted (app is speaking) — but only for non-start commands
+      // The start command should always work even if app just spoke
+      // (the app never says "start" or "go" so this shouldn't self-trigger)
 
       const words = transcript.split(/\s+/);
       const hasStartWord = words.some((w) => START_WORDS.includes(w));
@@ -176,11 +177,12 @@ export default function VoiceCommandOverlay({
     if (!voiceEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     // Poll for speaking state since events aren't reliable across browsers
+    // Reduced mute duration from 3s to 1s so voice commands work sooner after app speech
     const interval = setInterval(() => {
       if (window.speechSynthesis.speaking) {
-        mutedUntil.current = Math.max(mutedUntil.current, Date.now() + 3000);
+        mutedUntil.current = Math.max(mutedUntil.current, Date.now() + 1000);
       }
-    }, 200);
+    }, 150);
 
     return () => clearInterval(interval);
   }, [voiceEnabled]);
