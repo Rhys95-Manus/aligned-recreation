@@ -832,10 +832,10 @@ export default function Analysis() {
             let newState: 'neutral' | 'execution' | 'follow_through' = 'neutral';
             
             // Thresholds (motion-aware)
-            const NEUTRAL_MAX_DEVIATION = isBasketball ? 80 : 70; // Total change from baseline to be "neutral" (more lenient)
-            const NEUTRAL_MAX_VELOCITY = 10.0; // Must be nearly still (more lenient)
-            const EXECUTION_MIN_DEVIATION = isBasketball ? 30 : 40; // Basketball easier to trigger, football needs more deviation
-            const EXECUTION_MIN_PRIMARY = isBasketball ? 10 : 15; // Football needs more primary metric change to start execution
+            const NEUTRAL_MAX_DEVIATION = isBasketball ? 80 : 80; // Total change from baseline to be "neutral"
+            const NEUTRAL_MAX_VELOCITY = 10.0; // Must be nearly still
+            const EXECUTION_MIN_DEVIATION = isBasketball ? 30 : 35; // Deviation to start execution
+            const EXECUTION_MIN_PRIMARY = isBasketball ? 10 : 12; // Primary metric change to start execution
             const EXECUTION_MIN_VELOCITY = 5.0; // Must be moving at reasonable speed
             
             // NEUTRAL: Close to baseline posture AND nearly still
@@ -866,23 +866,32 @@ export default function Analysis() {
             
             // ===== REP START DETECTION =====
             // Must transition from neutral to execution with cooldown enforced
-            const REP_COOLDOWN = isBasketball ? 20 : 45; // Basketball: 0.66s, Football: 1.5s (longer to avoid false starts during coaching feedback)
-            if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > REP_COOLDOWN && !repIsActive.current) {
+            // Football needs much longer cooldown because coaching feedback plays for 5-10s during neutral
+            const REP_COOLDOWN = isBasketball ? 20 : 90; // Basketball: 0.66s, Football: 3.0s (prevents false starts during coaching feedback)
+            
+            // For rep start, we require a DECISIVE movement, not just a tiny fluctuation
+            // This is the key fix: the rep start requires both state transition AND sufficient movement magnitude
+            const REP_START_MIN_DEVIATION = isBasketball ? 30 : 50; // Football needs more decisive movement to start a rep
+            const REP_START_MIN_VELOCITY = isBasketball ? 5.0 : 8.0; // Football needs faster movement to start
+            
+            if (previousState === 'neutral' && newState === 'execution' && 
+                framesSinceLastRepEnd > REP_COOLDOWN && !repIsActive.current &&
+                totalChange > REP_START_MIN_DEVIATION && totalVelocity > REP_START_MIN_VELOCITY) {
               // Add PRE-ROLL BUFFER: Start the rep before movement begins
-              const preRollFrames = 60;
+              const preRollFrames = 30; // Reduced from 60 to trim neutral time in replay
               const actualStartFrame = Math.max(lastRepEndFrame + 1, currentFrameCount - preRollFrames);
               
               captureRepStartFrame.current = actualStartFrame;
               repIsActive.current = true;
               peakDeviationDuringRep.current = totalChange; // Initialize peak
-              console.log(`🟢 Rep ${currentCaptureRep} started at frame ${actualStartFrame} (with pre-roll)`);
+              console.log(`🟢 Rep ${currentCaptureRep} started at frame ${actualStartFrame} (with pre-roll, deviation: ${totalChange.toFixed(1)}, velocity: ${totalVelocity.toFixed(1)})`);
             }
             
             // ===== REP END DETECTION =====
             // CRITICAL FIX: Added peak deviation check to prevent false reps from neutral standing
             const repDurationFrames = currentFrameCount - captureRepStartFrame.current;
-            const MIN_PEAK_DEVIATION = isBasketball ? 50 : 70; // Basketball: 50 (working well), Football: 70 (needs more movement to count)
-            const MIN_REP_DURATION = isBasketball ? 20 : 30; // Basketball: 0.66s, Football: 1.0s minimum
+            const MIN_PEAK_DEVIATION = isBasketball ? 50 : 55; // Basketball: 50 (working well), Football: 55 (lowered from 70 - was too strict)
+            const MIN_REP_DURATION = isBasketball ? 20 : 25; // Basketball: 0.66s, Football: 0.83s minimum
             
             // Initialize neutral hold counter if entering neutral from movement
             if ((previousState === 'follow_through' || previousState === 'execution') && newState === 'neutral') {
@@ -897,17 +906,18 @@ export default function Analysis() {
             }
 
             if (newState === 'neutral' && 
-                (neutralHoldCounter.current || 0) >= (isBasketball ? 8 : 15) && // Basketball: 0.27s, Football: 0.5s (longer to avoid false reps during feedback)
-                repDurationFrames > MIN_REP_DURATION && // Min duration 1.2s
+                (neutralHoldCounter.current || 0) >= (isBasketball ? 12 : 20) && // Basketball: 0.4s (slightly more reliable), Football: 0.66s
+                repDurationFrames > MIN_REP_DURATION &&
                 repIsActive.current && // Must be tracking an active rep
                 peakDeviationDuringRep.current > MIN_PEAK_DEVIATION && // MUST have actually moved significantly
                 captureRepStartFrame.current > lastRepEndFrame) { 
               
-              // NO BACKDATING:
-              // We want to capture the full follow-through and return to neutral.
-              // Cutting too early makes the replay confusing.
-              // We just use the current frame as the end point.
-              const actualEndFrame = currentFrameCount;
+              // TRIM NEUTRAL: End the rep at the point where neutral was first detected,
+              // not after the full neutral hold period. This removes excess idle time from replay.
+              // The neutral hold counter tells us how many frames we've been in neutral,
+              // so we backdate by that amount to get the actual end of motion.
+              const neutralFramesElapsed = neutralHoldCounter.current || 0;
+              const actualEndFrame = Math.max(captureRepStartFrame.current + 1, currentFrameCount - neutralFramesElapsed + 5); // +5 frames of buffer for smooth ending
               
               console.log(`✅ Rep ${currentCaptureRep} completed at frame ${actualEndFrame} (peak deviation: ${peakDeviationDuringRep.current.toFixed(1)})`);
               
@@ -1217,6 +1227,9 @@ export default function Analysis() {
     captureBaselineMetrics.current = null; // Clear baseline
     peakDeviationDuringRep.current = 0; // Reset peak deviation
     repIsActive.current = false; // Reset rep tracking
+    captureRepStartFrame.current = 0; // Reset rep start frame
+    capturedRepBoundaries.current = []; // Clear rep boundaries
+    neutralHoldCounter.current = 0; // Reset neutral hold counter
     console.log('⏱️ Starting 5-second countdown');
     speak("Get ready. Starting in 5 seconds");
   };
@@ -1419,24 +1432,23 @@ export default function Analysis() {
     };
     
     // Use captured rep boundaries if available, otherwise fallback to detection
-    if (selectedReps > 1) {
-      if (capturedRepBoundaries.current.length > 0) {
-        // Use the boundaries we captured in real-time
-        analysis.repBoundaries = capturedRepBoundaries.current.map((b, i) => ({
-          repNumber: i + 1,
-          startFrame: b.start,
-          endFrame: b.end
-        }));
-        console.log(`🎯 Using captured boundaries for ${capturedRepBoundaries.current.length} reps:`, capturedRepBoundaries.current);
-      } else {
-        // Fallback to post-processing detection if something went wrong
-        const boundaries = detectRepBoundaries(
-          recordedFramesRef.current.map(f => ({ metrics: f.metrics })),
-          selectedReps
-        );
-        analysis.repBoundaries = boundaries;
-        console.log(`🎯 Fallback detection found ${boundaries.length} reps:`, boundaries);
-      }
+    // IMPORTANT: Always pass boundaries, even for single-rep sessions, so replay can trim neutral time
+    if (capturedRepBoundaries.current.length > 0) {
+      // Use the boundaries we captured in real-time
+      analysis.repBoundaries = capturedRepBoundaries.current.map((b, i) => ({
+        repNumber: i + 1,
+        startFrame: b.start,
+        endFrame: b.end
+      }));
+      console.log(`🎯 Using captured boundaries for ${capturedRepBoundaries.current.length} reps:`, capturedRepBoundaries.current);
+    } else if (selectedReps > 1) {
+      // Fallback to post-processing detection if something went wrong (multi-rep only)
+      const boundaries = detectRepBoundaries(
+        recordedFramesRef.current.map(f => ({ metrics: f.metrics })),
+        selectedReps
+      );
+      analysis.repBoundaries = boundaries;
+      console.log(`🎯 Fallback detection found ${boundaries.length} reps:`, boundaries);
     }
     
     console.log(`🎬 Recorded ${recordedFramesRef.current.length} frames for replay`);

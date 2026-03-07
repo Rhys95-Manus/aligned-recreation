@@ -242,3 +242,10 @@
 ## Football Throw Rep Detection Too Sensitive
 - [x] Fix football throw counting a rep while user is standing in neutral listening to coaching feedback
 - [x] Keep basketball jump shot detection unchanged (currently working perfectly)
+
+## Bug Fixes (Round 7 - User Testing Feedback)
+- [x] Football throw without coaching: requiring 2 physical reps for 1 counted rep (thresholds too strict)
+- [x] Football throw with coaching: still counting neutral/resting as a rep (moves to rep 3 while resting after rep 1)
+- [x] Basketball jump shot without coaching: 3rd rep occasionally needs 2 physical reps
+- [x] Replay analysis: showing too much neutral/rest time instead of trimming to just the motion
+- [x] Voice command "start/go": requiring user to say the command twice before it triggers
