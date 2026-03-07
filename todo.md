@@ -249,3 +249,7 @@
 - [x] Basketball jump shot without coaching: 3rd rep occasionally needs 2 physical reps
 - [x] Replay analysis: showing too much neutral/rest time instead of trimming to just the motion
 - [x] Voice command "start/go": requiring user to say the command twice before it triggers
+
+## Bug Fixes (Round 8 - Football Throw Overcorrected)
+- [x] Football throw rep detection way too strict — requires 5-6 physical reps for 1 counted rep
+- [x] Restore football throw to its previously perfect detection and only fix the coaching feedback false-rep issue
