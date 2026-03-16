@@ -290,3 +290,7 @@
 
 ## Hologram Color Fix
 - [x] Match basketball hologram color to football hologram color (same material/lighting, no other changes)
+
+## Hologram Color Fix (Round 2)
+- [x] Basketball hologram still different color from football — starts dark blue, gets lighter during replay
+- [x] Root cause: denser geometry catches more light; fixed with model-specific material (lower metalness 0.2, higher roughness 0.8, reduced emissive)

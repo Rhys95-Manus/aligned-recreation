@@ -168,17 +168,32 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         model.position.y = -box.min.y * scale - 1.6;
         model.position.z = -center.z * scale;
 
-        // VOLUMETRIC CORE MATERIAL
-        const innerMaterial = new THREE.MeshStandardMaterial({
-          color: 0x3a006e,
-          emissive: 0x220044,
-          emissiveIntensity: 0.8,
-          metalness: 0.6,
-          roughness: 0.4,
-          transparent: true,
-          opacity: 0.9,
-          side: THREE.DoubleSide
-        });
+        // VOLUMETRIC CORE MATERIAL — tuned per model to produce same visual result
+        const isBasketballModel = modelUrl === BASKETBALL_MODEL_URL;
+        const innerMaterial = isBasketballModel
+          ? new THREE.MeshStandardMaterial({
+              // Basketball model has denser geometry that catches more light,
+              // so we lower metalness, raise roughness, and reduce emissive
+              // to match the football model's visual appearance
+              color: 0x2a0055,
+              emissive: 0x180033,
+              emissiveIntensity: 0.5,
+              metalness: 0.2,
+              roughness: 0.8,
+              transparent: true,
+              opacity: 0.9,
+              side: THREE.DoubleSide
+            })
+          : new THREE.MeshStandardMaterial({
+              color: 0x3a006e,
+              emissive: 0x220044,
+              emissiveIntensity: 0.8,
+              metalness: 0.6,
+              roughness: 0.4,
+              transparent: true,
+              opacity: 0.9,
+              side: THREE.DoubleSide
+            });
 
         // Outer Wireframe
         const wireframeMaterial = new THREE.MeshBasicMaterial({
