@@ -168,32 +168,17 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         model.position.y = -box.min.y * scale - 1.6;
         model.position.z = -center.z * scale;
 
-        // VOLUMETRIC CORE MATERIAL — tuned per model to produce same visual result
-        const isBasketballModel = modelUrl === BASKETBALL_MODEL_URL;
-        const innerMaterial = isBasketballModel
-          ? new THREE.MeshStandardMaterial({
-              // Basketball model has denser geometry that catches more light,
-              // so we lower metalness, raise roughness, and reduce emissive
-              // to match the football model's visual appearance
-              color: 0x2a0055,
-              emissive: 0x180033,
-              emissiveIntensity: 0.5,
-              metalness: 0.2,
-              roughness: 0.8,
-              transparent: true,
-              opacity: 0.9,
-              side: THREE.DoubleSide
-            })
-          : new THREE.MeshStandardMaterial({
-              color: 0x3a006e,
-              emissive: 0x220044,
-              emissiveIntensity: 0.8,
-              metalness: 0.6,
-              roughness: 0.4,
-              transparent: true,
-              opacity: 0.9,
-              side: THREE.DoubleSide
-            });
+        // VOLUMETRIC CORE MATERIAL — same for all models
+        const innerMaterial = new THREE.MeshStandardMaterial({
+          color: 0x3a006e,
+          emissive: 0x220044,
+          emissiveIntensity: 0.8,
+          metalness: 0.6,
+          roughness: 0.4,
+          transparent: true,
+          opacity: 0.9,
+          side: THREE.DoubleSide
+        });
 
         // Outer Wireframe
         const wireframeMaterial = new THREE.MeshBasicMaterial({
@@ -221,16 +206,11 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
               origMat.dispose();
             }
             
-            if ((mesh as any).isSkinnedMesh) {
-              const skinned = new THREE.SkinnedMesh(mesh.geometry, wireframeMaterial);
-              skinned.skeleton = (mesh as any).skeleton;
-              skinned.bind((mesh as any).skeleton, (mesh as any).bindMatrix);
-              model.add(skinned);
-            } else {
-              const wireframeMesh = mesh.clone();
-              wireframeMesh.material = wireframeMaterial;
-              model.add(wireframeMesh);
-            }
+            // Clone the mesh for wireframe overlay — clone() preserves
+            // skeleton binding for SkinnedMesh so wireframe deforms with the model
+            const wireframeMesh = mesh.clone();
+            wireframeMesh.material = wireframeMaterial;
+            model.add(wireframeMesh);
 
             mesh.material = innerMaterial;
             mesh.castShadow = true;

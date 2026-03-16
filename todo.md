@@ -294,3 +294,8 @@
 ## Hologram Color Fix (Round 2)
 - [x] Basketball hologram still different color from football — starts dark blue, gets lighter during replay
 - [x] Root cause: denser geometry catches more light; fixed with model-specific material (lower metalness 0.2, higher roughness 0.8, reduced emissive)
+
+## Hologram Color Fix (Round 3)
+- [x] Basketball hologram wireframe not applied from start — appears only at end of replay
+- [x] Color still shifts from dark blue to electric blue during replay
+- [x] Root cause: SkinnedMesh wireframe was created as separate mesh not bound to skeleton; fixed by using clone() which preserves skeleton binding
