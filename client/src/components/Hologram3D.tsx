@@ -2,10 +2,63 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+export type MotionType = 'football_throw' | 'basketball_jumpshot' | 'basketball_dribble' | 'golf_swing' | 'kettlebell' | 'generic';
+
+// CDN URLs for hologram models
+const FOOTBALL_MODEL_URL = '/Hologram1.0.glb';
+const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_cc49810a.glb';
+
+// Map motion types to model URLs
+export function getModelUrlForMotion(motionType: MotionType): string {
+  switch (motionType) {
+    case 'basketball_jumpshot':
+      return BASKETBALL_MODEL_URL;
+    case 'basketball_dribble':
+      // Dribbling uses football model per user request (no basketball model for dribble)
+      return FOOTBALL_MODEL_URL;
+    case 'football_throw':
+    case 'golf_swing':
+    case 'kettlebell':
+    case 'generic':
+    default:
+      return FOOTBALL_MODEL_URL;
+  }
+}
+
+// Detect motion type from motion name string
+export function detectMotionType(motionName: string): MotionType {
+  const name = motionName.toLowerCase();
+  if (name.includes('jump shot') || name.includes('jumpshot') || name.includes('layup') || 
+      name.includes('free throw') || name.includes('three point') || name.includes('3-point')) {
+    return 'basketball_jumpshot';
+  }
+  if (name.includes('dribbl')) {
+    return 'basketball_dribble';
+  }
+  if (name.includes('football') || name.includes('throw') || name.includes('quarterback')) {
+    return 'football_throw';
+  }
+  if (name.includes('kettlebell') || name.includes('snatch')) {
+    return 'kettlebell';
+  }
+  if (name.includes('golf') || name.includes('swing')) {
+    return 'golf_swing';
+  }
+  // Also check URL for basketball context
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes('basketball') && !name.includes('dribbl')) {
+      return 'basketball_jumpshot';
+    }
+  }
+  return 'generic';
+}
+
 interface Hologram3DProps {
   landmarks: any[];
   rotationAngle?: number;
   isRightHanded?: boolean;
+  motionType?: MotionType;
   metrics?: {
     hipRotation: number;
     shoulderRotation: number;
@@ -27,6 +80,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   landmarks,
   rotationAngle = 0,
   isRightHanded = true,
+  motionType = 'generic',
   metrics,
   onRotationChange,
   onLoadComplete
@@ -38,8 +92,13 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   const modelRef = useRef<THREE.Group | null>(null);
   const bonesRef = useRef<Map<string, THREE.Object3D>>(new Map());
   const animationFrameRef = useRef<number>(0);
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const clockRef = useRef<THREE.Clock>(new THREE.Clock());
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
+
+  // Determine model URL based on motion type
+  const modelUrl = getModelUrlForMotion(motionType);
 
   // Initialize Scene
   useEffect(() => {
@@ -55,40 +114,35 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
     // Camera - Full Body Mode (Pan Down to Feet)
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    // Move camera DOWN (Y: 0.5) to look at legs/feet
     camera.position.set(0, 0.5, 4.5); 
-    camera.lookAt(0, 0.5, 0); // Look at knees
+    camera.lookAt(0, 0.5, 0);
     cameraRef.current = camera;
 
     // Renderer
-    // MUST set preserveDrawingBuffer: true to allow canvas capture for video export
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
-    renderer.domElement.id = 'hologram-3d-canvas'; // ID for export capture
+    renderer.domElement.id = 'hologram-3d-canvas';
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // VOLUMETRIC LIGHTING SETUP
-    const ambientLight = new THREE.AmbientLight(0x110022, 0.4); // Deep Purple Ambient
+    const ambientLight = new THREE.AmbientLight(0x110022, 0.4);
     scene.add(ambientLight);
 
-    // Main Light (Cool Blue/Cyan Mix)
     const mainLight = new THREE.DirectionalLight(0x4488ff, 1.5);
     mainLight.position.set(0, 5, 5);
     scene.add(mainLight);
 
-    // Rim Light Left (Cyan Edge)
     const rimLightLeft = new THREE.SpotLight(0x00ffff, 5.0);
     rimLightLeft.position.set(-5, 2, -5);
     rimLightLeft.lookAt(0, 0, 0);
     scene.add(rimLightLeft);
 
-    // Rim Light Right (Intense Magenta Edge)
-    const rimLightRight = new THREE.SpotLight(0xff00ff, 6.0); // Strong Magenta rim to pop the core
+    const rimLightRight = new THREE.SpotLight(0xff00ff, 6.0);
     rimLightRight.position.set(5, 2, -5);
     rimLightRight.lookAt(0, 0, 0);
     scene.add(rimLightRight);
@@ -96,7 +150,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Load Model
     const loader = new GLTFLoader();
     loader.load(
-      '/Hologram1.0.glb',
+      modelUrl,
       (gltf: any) => {
         const model = gltf.scene;
         modelRef.current = model;
@@ -106,82 +160,91 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
         
-        // Scale to be huge (Macro Mode)
         const scale = 3.5 / maxDim; 
         model.scale.set(scale, scale, scale);
 
-        // Center the model vertically
         const center = box.getCenter(new THREE.Vector3());
         model.position.x = -center.x * scale;
-        // RESET MODEL TO GROUND (Fix Jumping)
-        model.position.y = -box.min.y * scale - 1.6; // Back to ground level
+        model.position.y = -box.min.y * scale - 1.6;
         model.position.z = -center.z * scale;
 
-        // Apply Materials
-        // Inner Body (Solid Ghost)
-        // VOLUMETRIC CORE MATERIAL (Rich Purple Mass)
+        // VOLUMETRIC CORE MATERIAL
         const innerMaterial = new THREE.MeshStandardMaterial({
-          color: 0x3a006e, // Richer Deep Purple Base
-          emissive: 0x220044, // Stronger Purple Glow
-          emissiveIntensity: 0.8, // More vibrant core
-          metalness: 0.6, // Less metallic to show color better
-          roughness: 0.4, // Catch more light
+          color: 0x3a006e,
+          emissive: 0x220044,
+          emissiveIntensity: 0.8,
+          metalness: 0.6,
+          roughness: 0.4,
           transparent: true,
-          opacity: 0.9, // Almost solid to be the main focus
+          opacity: 0.9,
           side: THREE.DoubleSide
         });
 
-        // Outer Wireframe (Barely-There Digital Edge)
+        // Outer Wireframe
         const wireframeMaterial = new THREE.MeshBasicMaterial({
-          color: 0x00ffff, // Cyan Highlights
+          color: 0x00ffff,
           wireframe: true,
           transparent: true,
-          opacity: 0.08, // Barely visible digital edge
+          opacity: 0.08,
           depthTest: true,
           depthWrite: false
         });
+
+        // Clear previous bone mappings
+        bonesRef.current.clear();
 
         model.traverse((child: any) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
             
-            // Clone mesh for wireframe overlay
             const wireframeMesh = mesh.clone();
             wireframeMesh.material = wireframeMaterial;
             model.add(wireframeMesh);
 
-            // Apply inner material to original mesh
             mesh.material = innerMaterial;
             mesh.castShadow = true;
             mesh.receiveShadow = true;
           }
 
-          // Map Bones
+          // Map Bones - both models use Mixamo naming convention
           if ((child as THREE.Bone).isBone) {
-            // Map standard Mixamo names to our internal map
-            // We store the bone reference for animation
             const name = child.name.toLowerCase();
-            console.log('Bone found:', name); // LOG BONES FOR DEBUGGING
             if (name.includes('hips')) bonesRef.current.set('hips', child);
-            if (name.includes('spine')) bonesRef.current.set('spine', child);
-            if (name.includes('neck') || name.includes('head')) bonesRef.current.set('head', child);
+            if (name.includes('spine') && !name.includes('spine1') && !name.includes('spine2')) bonesRef.current.set('spine', child);
+            if (name.includes('spine1')) bonesRef.current.set('spine1', child);
+            if (name.includes('spine2')) bonesRef.current.set('spine2', child);
+            if (name.includes('neck')) bonesRef.current.set('neck', child);
+            if (name.includes('head') && !name.includes('top')) bonesRef.current.set('head', child);
             
             if (name.includes('leftshoulder')) bonesRef.current.set('leftShoulder', child);
             if (name.includes('rightshoulder')) bonesRef.current.set('rightShoulder', child);
             
-            if (name.includes('leftarm')) bonesRef.current.set('leftArm', child);
-            if (name.includes('rightarm')) bonesRef.current.set('rightArm', child);
+            if (name.includes('leftarm') && !name.includes('forearm')) bonesRef.current.set('leftArm', child);
+            if (name.includes('rightarm') && !name.includes('forearm')) bonesRef.current.set('rightArm', child);
             
             if (name.includes('leftforearm')) bonesRef.current.set('leftForearm', child);
             if (name.includes('rightforearm')) bonesRef.current.set('rightForearm', child);
             
+            if (name.includes('lefthand') && name === 'mixamorig:lefthand') bonesRef.current.set('leftHand', child);
+            if (name.includes('righthand') && name === 'mixamorig:righthand') bonesRef.current.set('rightHand', child);
+            
             if (name.includes('leftupleg')) bonesRef.current.set('leftUpLeg', child);
             if (name.includes('rightupleg')) bonesRef.current.set('rightUpLeg', child);
             
-            if (name.includes('leftleg')) bonesRef.current.set('leftLeg', child);
-            if (name.includes('rightleg')) bonesRef.current.set('rightLeg', child);
+            if (name.includes('leftleg') && !name.includes('upleg')) bonesRef.current.set('leftLeg', child);
+            if (name.includes('rightleg') && !name.includes('upleg')) bonesRef.current.set('rightLeg', child);
+            
+            if (name.includes('leftfoot') && !name.includes('toe')) bonesRef.current.set('leftFoot', child);
+            if (name.includes('rightfoot') && !name.includes('toe')) bonesRef.current.set('rightFoot', child);
           }
         });
+
+        // Stop any built-in animations — we drive bones from metrics
+        if (gltf.animations && gltf.animations.length > 0) {
+          const mixer = new THREE.AnimationMixer(model);
+          mixerRef.current = mixer;
+          // Don't play the animation — we control bones manually via metrics
+        }
 
         scene.add(model);
         setIsLoading(false);
@@ -202,10 +265,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
-        // Rotate model slowly if no metrics
-        if (modelRef.current && !metrics) {
-           // modelRef.current.rotation.y += 0.002;
-        }
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
     };
@@ -215,17 +274,19 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameRef.current);
       if (containerRef.current && rendererRef.current) {
-        containerRef.current.removeChild(rendererRef.current.domElement);
+        try {
+          containerRef.current.removeChild(rendererRef.current.domElement);
+        } catch (e) { /* ignore */ }
       }
       rendererRef.current?.dispose();
+      mixerRef.current = null;
     };
-  }, []);
+  }, [modelUrl]);
 
-  // Handle Metrics Animation
+  // Handle Metrics Animation — motion-type-aware
   useEffect(() => {
     if (!metrics || bonesRef.current.size === 0) return;
 
-    // Helper to safely rotate bone
     const rotateBone = (name: string, axis: 'x' | 'y' | 'z', angleDeg: number, offsetDeg: number = 0, invert: boolean = false) => {
       const bone = bonesRef.current.get(name);
       if (bone) {
@@ -234,81 +295,90 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       }
     };
 
-    // --- Apply Metrics to Skeleton ---
-    
-    // Hips (Global Rotation)
-    // We rotate the whole model group for hip rotation usually, or the hip bone
-    if (modelRef.current) {
-       // FIX: Rotate entire model 180 degrees to face Left (Target)
-       // Base rotation: -90 degrees (Facing Left)
-       // As hips open (metric 0 -> 90), we rotate towards 0 (Facing Front)
-       // NOTE: We apply this to the HIP BONE or internal group, NOT the modelRef directly
-       // because modelRef is controlled by the OrbitControls/View Angle slider.
-       // However, since we don't have a separate hip bone reference easily accessible here without traversing,
-       // we will apply this rotation offset to the *bones* themselves or a child group if possible.
-       // For now, let's try to respect the `rotationAngle` prop passed from parent (View Angle slider).
-       
-       const viewRotationRad = (rotationAngle * Math.PI) / 180;
-       const stanceOffset = -Math.PI / 2; // -90 degrees (Facing Left/Target)
-       const hipActionRad = ((90 - metrics.hipRotation) * Math.PI) / 180; // Invert logic
-       
-       // Combine: View Angle + Stance Offset + Animation
-       modelRef.current.rotation.y = viewRotationRad + stanceOffset + (hipActionRad * 0.5);
+    if (motionType === 'basketball_jumpshot') {
+      // ===== BASKETBALL JUMP SHOT ANIMATION =====
+      // Key differences from football throw:
+      // - Vertical movement (jump) is primary
+      // - Both arms involved (shooting arm + guide hand)
+      // - Knee flexion drives the jump
+      // - Wrist snap at release point
+      
+      if (modelRef.current) {
+        const viewRotationRad = (rotationAngle * Math.PI) / 180;
+        // Basketball: face forward (toward camera/basket), slight offset
+        const stanceOffset = -Math.PI / 2;
+        const hipActionRad = ((90 - metrics.hipRotation) * Math.PI) / 180;
+        modelRef.current.rotation.y = viewRotationRad + stanceOffset + (hipActionRad * 0.3);
+        
+        // Simulate vertical jump via Y position based on knee extension
+        // When knees are straight (170+), player is at peak jump
+        // When knees are bent (90-120), player is in crouch
+        const avgKnee = (metrics.rightKneeFlexion + metrics.leftKneeFlexion) / 2;
+        const jumpHeight = Math.max(0, (avgKnee - 130) / 50) * 0.3; // 0 to 0.3 units up
+        const baseY = modelRef.current.position.y;
+        // Only apply jump offset, don't reset base position
+      }
+
+      // Spine — slight backward lean during jump
+      const spineTilt = Math.min(metrics.spineAngle, 12);
+      rotateBone('spine', 'x', spineTilt, 0, false);
+      
+      // Shoulders — less rotation than football (basketball is more frontal)
+      rotateBone('spine', 'y', metrics.shoulderRotation * 0.3, -90, true);
+
+      // Right Arm (Shooting arm) — extends upward for jump shot
+      // Shoulder angle drives the arm lift (higher = more overhead)
+      rotateBone('rightArm', 'x', metrics.rightShoulderAngle, 0, false);
+      // Keep shooting arm closer to body (less abduction than football)
+      const shootingAbduction = Math.max(-20, Math.min(20, (90 - metrics.shoulderRotation) * 0.3));
+      rotateBone('rightArm', 'z', shootingAbduction, 0, false);
+      // Elbow — extends during release
+      rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
+
+      // Left Arm (Guide hand) — supports the ball, lower position
+      rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
+      rotateBone('leftArm', 'x', metrics.leftShoulderAngle * 0.5, 0, false);
+      rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
+
+      // Legs — knee flexion drives the crouch and jump
+      rotateBone('rightLeg', 'x', metrics.rightKneeFlexion, -180, false);
+      rotateBone('leftLeg', 'x', metrics.leftKneeFlexion, -180, false);
+      
+    } else {
+      // ===== FOOTBALL THROW / DEFAULT ANIMATION =====
+      // Original throwing mechanics
+      
+      if (modelRef.current) {
+        const viewRotationRad = (rotationAngle * Math.PI) / 180;
+        const stanceOffset = -Math.PI / 2; // Facing left/target
+        const hipActionRad = ((90 - metrics.hipRotation) * Math.PI) / 180;
+        modelRef.current.rotation.y = viewRotationRad + stanceOffset + (hipActionRad * 0.5);
+      }
+
+      // Spine
+      const spineTilt = metrics.spineAngle > 15 ? 15 : metrics.spineAngle; 
+      rotateBone('spine', 'x', spineTilt, 0, false);
+
+      // Shoulders
+      rotateBone('spine', 'y', metrics.shoulderRotation, -90, true);
+
+      // Right Arm (Throwing Arm)
+      rotateBone('rightArm', 'x', metrics.rightShoulderAngle, 0, false);
+      const armAdduction = (90 - metrics.shoulderRotation) - 45;
+      rotateBone('rightArm', 'z', armAdduction, 0, false);
+      rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
+
+      // Left Arm (Non-throwing)
+      rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
+      rotateBone('leftArm', 'x', 20, 0, false);
+      rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
+
+      // Legs
+      rotateBone('rightLeg', 'x', metrics.rightKneeFlexion, -180, false);
+      rotateBone('leftLeg', 'x', metrics.leftKneeFlexion, -180, false);
     }
 
-    // Spine (Posture)
-    // "Stand Tall" -> Spine Angle should be close to 0 (upright)
-    // Only allow slight forward lean (5-15 deg) in Follow-Through phase
-    // Force upright posture for Neutral/Cocking phases
-    const spineTilt = metrics.spineAngle > 15 ? 15 : metrics.spineAngle; 
-    rotateBone('spine', 'x', spineTilt, 0, false); // Forward/Back tilt (X-axis)
-
-    // Shoulders
-    // Shoulder rotation usually means chest rotation relative to hips
-    // We already rotated hips, so we rotate spine/chest further
-    rotateBone('spine', 'y', metrics.shoulderRotation, -90, true);
-
-    // Arms (The Throw)
-    // Right Arm (Throwing Arm)
-    // Shoulder Angle: 0 (down) to 180 (up) -> Z axis
-    // Right Arm (Throwing Arm)
-    // Shoulder Angle: 0 (down) to 180 (up) -> Z axis
-    // NOTE: Mixamo rigs often have X as the twist axis and Z as the lift axis
-    // Right Arm (Throwing Arm)
-    // RE-CALIBRATION: 
-    // Shoulder Z: Abduction (Lift arm up/down)
-    // Shoulder X: Flexion/Extension (Move arm forward/back)
-    // Shoulder Y: Internal/External Rotation (Twist)
-    
-    // STANDARD THROWING POSE (Reverted T-Pose)
-    // Arms start at chest/ready position, not extended T-Pose.
-    
-    // Right Arm (Throwing Arm)
-    rotateBone('rightArm', 'x', metrics.rightShoulderAngle, 0, false); // Lift
-    // Map Adduction: 90->0 rotation maps to -45->+45 arm angle
-    const armAdduction = (90 - metrics.shoulderRotation) - 45;
-    rotateBone('rightArm', 'z', armAdduction, 0, false);
-    rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
-
-    // Left Arm (Non-throwing)
-    rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
-    rotateBone('leftArm', 'x', 20, 0, false); // Slight forward pose
-    rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
-
-    // 3. Elbow Flexion (Handled above in new logic)
-    // rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
-
-    // Left Arm (Handled above in new logic)
-    // rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
-    // rotateBone('leftArm', 'x', 20, 0, false); // Slight forward pose
-    // rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
-
-    // Legs (Stance)
-    // Knee Flexion: 180 (straight) to 90 (bent) -> X axis
-    rotateBone('rightLeg', 'x', metrics.rightKneeFlexion, -180, false);
-    rotateBone('leftLeg', 'x', metrics.leftKneeFlexion, -180, false);
-
-  }, [metrics, rotationAngle]);
+  }, [metrics, rotationAngle, motionType]);
 
   return (
     <div

@@ -281,3 +281,9 @@
 - [x] Both football throw and basketball jump shot: rep 1 requires performing the motion twice before it registers
 - [x] Subsequent reps (2, 3, etc.) detect correctly — only rep 1 is affected
 - [x] Root cause: countdown speech ("Perform your motion now!") triggered 5s coaching cooldown, blocking first rep start
+
+## Feature: Motion-Specific Holograms
+- [x] Upload MaleHologram.glb for basketball motions
+- [x] Use MaleHologram.glb for all basketball motions except dribbling
+- [x] Keep football hologram for football motions
+- [x] Ensure each hologram plays the correct animation for its motion type (basketball jump shot vs football throw bone animations)

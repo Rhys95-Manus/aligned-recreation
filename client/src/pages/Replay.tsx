@@ -6,7 +6,7 @@ import { POSE_CONNECTIONS } from "@mediapipe/pose";
 import { generateProfessionalMotion, getPhaseForFrame, ProfessionalFrame } from "../utils/professionalMotionGenerator";
 import { detectThrowingPhase, getPhaseMiddleFrame, type MotionPhase } from "../utils/phaseDetection";
 import { calculateRotation, formatWeightDistribution, formatSpineAngle, formatRotationAngle, formatRotationWithSide } from "../utils/rotationCalculations";
-import Hologram3D from "../components/Hologram3D";
+import Hologram3D, { detectMotionType } from "../components/Hologram3D";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
 
 interface ReplayProps {
@@ -1299,6 +1299,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 landmarks={proFrame?.landmarks || []}
                 rotationAngle={rotationAngle}
                 isRightHanded={isRightHanded}
+                motionType={detectMotionType(motionName)}
                 metrics={proFrame?.metrics}
                 onLoadComplete={() => {
                   setIsHologramLoaded(true);
