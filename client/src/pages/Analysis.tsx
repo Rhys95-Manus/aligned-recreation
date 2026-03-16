@@ -858,9 +858,12 @@ export default function Analysis() {
             
             // ===== REP START DETECTION =====
             // RESTORED: Simple cooldown — 45 frames (1.5s) between reps
-            // Only addition: coaching-aware cooldown when speech is playing
+            // Coaching-aware cooldown ONLY applies after first rep is done.
+            // For rep 1, always use normal cooldown — otherwise the countdown speech
+            // ("Perform your motion now!") triggers the 5s cooldown and blocks the first rep.
+            const hasCompletedAnyRep = capturedRepBoundaries.current.length > 0;
             const isSpeaking = typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.speaking;
-            const REP_COOLDOWN = isSpeaking ? 150 : 45; // 5s while coaching speaks, 1.5s otherwise
+            const REP_COOLDOWN = (hasCompletedAnyRep && isSpeaking) ? 150 : 45; // 5s while coaching speaks (after rep 1), 1.5s otherwise
             
             if (previousState === 'neutral' && newState === 'execution' && framesSinceLastRepEnd > REP_COOLDOWN) {
               // RESTORED: 60-frame pre-roll buffer (2.0s)

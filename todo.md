@@ -276,3 +276,8 @@
 ## Bug Fixes (Round 13 - Restore Exact Working Football Code)
 - [x] Football throw: elbow-based detection still broken — restore EXACT code from the commit where football was confirmed working
 - [x] Stop overengineering — find the working commit and restore byte-for-byte
+
+## Bug Fixes (Round 14 - Rep 1 Detection)
+- [x] Both football throw and basketball jump shot: rep 1 requires performing the motion twice before it registers
+- [x] Subsequent reps (2, 3, etc.) detect correctly — only rep 1 is affected
+- [x] Root cause: countdown speech ("Perform your motion now!") triggered 5s coaching cooldown, blocking first rep start
