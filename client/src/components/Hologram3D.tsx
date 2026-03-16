@@ -197,9 +197,25 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
             
-            const wireframeMesh = mesh.clone();
-            wireframeMesh.material = wireframeMaterial;
-            model.add(wireframeMesh);
+            // Dispose of original material and textures to prevent bleed-through
+            if (mesh.material) {
+              const origMat = mesh.material as THREE.MeshStandardMaterial;
+              if (origMat.map) { origMat.map.dispose(); origMat.map = null; }
+              if (origMat.emissiveMap) { origMat.emissiveMap.dispose(); origMat.emissiveMap = null; }
+              if (origMat.normalMap) { origMat.normalMap.dispose(); origMat.normalMap = null; }
+              origMat.dispose();
+            }
+            
+            if ((mesh as any).isSkinnedMesh) {
+              const skinned = new THREE.SkinnedMesh(mesh.geometry, wireframeMaterial);
+              skinned.skeleton = (mesh as any).skeleton;
+              skinned.bind((mesh as any).skeleton, (mesh as any).bindMatrix);
+              model.add(skinned);
+            } else {
+              const wireframeMesh = mesh.clone();
+              wireframeMesh.material = wireframeMaterial;
+              model.add(wireframeMesh);
+            }
 
             mesh.material = innerMaterial;
             mesh.castShadow = true;
