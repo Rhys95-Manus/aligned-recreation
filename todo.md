@@ -287,3 +287,6 @@
 - [x] Use MaleHologram.glb for all basketball motions except dribbling
 - [x] Keep football hologram for football motions
 - [x] Ensure each hologram plays the correct animation for its motion type (basketball jump shot vs football throw bone animations)
+
+## Hologram Color Fix
+- [x] Match basketball hologram color to football hologram color (same material/lighting, no other changes)
