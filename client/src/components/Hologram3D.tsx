@@ -6,7 +6,7 @@ export type MotionType = 'football_throw' | 'basketball_jumpshot' | 'basketball_
 
 // CDN URLs for hologram models
 const FOOTBALL_MODEL_URL = '/Hologram1.0.glb';
-const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_clean_e3c57a7f.glb';
+const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_v2_466da788.glb';
 
 // Map motion types to model URLs
 export function getModelUrlForMotion(motionType: MotionType): string {
@@ -196,11 +196,14 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // IMPORTANT: Collect meshes first, then process AFTER traversal.
         // Adding children during traverse() causes infinite cloning loops
         // because traverse visits newly added children.
-        const meshesToProcess: THREE.Mesh[] = [];
+        const skinnedMeshes: THREE.SkinnedMesh[] = [];
+        const regularMeshes: THREE.Mesh[] = [];
 
         model.traverse((child: any) => {
-          if ((child as THREE.Mesh).isMesh) {
-            meshesToProcess.push(child as THREE.Mesh);
+          if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
+            skinnedMeshes.push(child as THREE.SkinnedMesh);
+          } else if ((child as THREE.Mesh).isMesh) {
+            regularMeshes.push(child as THREE.Mesh);
           }
 
           // Map Bones - both models use Mixamo naming convention
@@ -236,26 +239,59 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           }
         });
 
-        // Now process meshes AFTER traversal is complete
-        for (const mesh of meshesToProcess) {
-          // Dispose of original material and textures to prevent bleed-through
-          if (mesh.material) {
-            const origMat = mesh.material as THREE.MeshStandardMaterial;
-            if (origMat.map) { origMat.map.dispose(); origMat.map = null; }
-            if (origMat.emissiveMap) { origMat.emissiveMap.dispose(); origMat.emissiveMap = null; }
-            if (origMat.normalMap) { origMat.normalMap.dispose(); origMat.normalMap = null; }
-            origMat.dispose();
-          }
-          
-          // Clone the mesh for wireframe overlay — clone() preserves
-          // skeleton binding for SkinnedMesh so wireframe deforms with the model
-          const wireframeMesh = mesh.clone();
-          wireframeMesh.material = wireframeMaterial;
-          model.add(wireframeMesh);
+        // Helper to dispose original materials/textures
+        const disposeMaterial = (mat: THREE.Material) => {
+          const stdMat = mat as THREE.MeshStandardMaterial;
+          if (stdMat.map) { stdMat.map.dispose(); stdMat.map = null; }
+          if (stdMat.emissiveMap) { stdMat.emissiveMap.dispose(); stdMat.emissiveMap = null; }
+          if (stdMat.normalMap) { stdMat.normalMap.dispose(); stdMat.normalMap = null; }
+          stdMat.dispose();
+        };
 
+        // Process SkinnedMeshes — proper wireframe overlay that shares skeleton.
+        // SkinnedMesh.clone() copies the skeleton reference but also recursively
+        // clones the entire bone hierarchy as disconnected children, causing the
+        // wireframe to stay in T-pose. Instead, create a fresh SkinnedMesh that
+        // shares the same geometry and explicitly bind() it to the original skeleton.
+        for (const mesh of skinnedMeshes) {
+          if (mesh.material) {
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            mats.forEach(disposeMaterial);
+          }
           mesh.material = innerMaterial;
           mesh.castShadow = true;
           mesh.receiveShadow = true;
+
+          const wireframeOverlay = new THREE.SkinnedMesh(
+            mesh.geometry,
+            wireframeMaterial
+          );
+          wireframeOverlay.name = mesh.name + '_wireframe';
+          wireframeOverlay.frustumCulled = false;
+          // Copy local transform so the wireframe sits exactly on top
+          wireframeOverlay.position.copy(mesh.position);
+          wireframeOverlay.rotation.copy(mesh.rotation);
+          wireframeOverlay.scale.copy(mesh.scale);
+          // Bind to the SAME skeleton — this is the critical step
+          wireframeOverlay.bind(mesh.skeleton, mesh.bindMatrix);
+          // Add as sibling so it shares the same parent transform
+          const parent = mesh.parent || model;
+          parent.add(wireframeOverlay);
+        }
+
+        // Process regular (non-skinned) meshes — clone() works fine here
+        for (const mesh of regularMeshes) {
+          if (mesh.material) {
+            disposeMaterial(mesh.material as THREE.Material);
+          }
+          mesh.material = innerMaterial;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+          const wireframeMesh = mesh.clone();
+          wireframeMesh.material = wireframeMaterial;
+          const parent = mesh.parent || model;
+          parent.add(wireframeMesh);
         }
 
         // No animations needed — we drive bones manually from metrics
