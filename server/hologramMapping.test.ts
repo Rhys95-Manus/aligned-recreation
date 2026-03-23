@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 type MotionType = 'football_throw' | 'basketball_jumpshot' | 'basketball_dribble' | 'golf_swing' | 'kettlebell' | 'generic';
 
 const FOOTBALL_MODEL_URL = '/Hologram1.0.glb';
-const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_cc49810a.glb';
+const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_v2_466da788.glb';
 
 function getModelUrlForMotion(motionType: MotionType): string {
   switch (motionType) {
