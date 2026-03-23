@@ -290,3 +290,8 @@
 
 ## Hologram Color Fix
 - [x] Match basketball hologram color to football hologram color (same material/lighting, no other changes)
+
+## Stable Baseline (All Features Confirmed Working After Publish)
+- [x] All features confirmed present: rep counter, voice commands, auto-stop, replay with video, hologram, live coaching
+- [x] Issue was unpublished changes — deployed version was stale, not missing code
+- [ ] Basketball motion still has major issues — needs investigation and fix
