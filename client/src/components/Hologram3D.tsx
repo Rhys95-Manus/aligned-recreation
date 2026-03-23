@@ -6,7 +6,7 @@ export type MotionType = 'football_throw' | 'basketball_jumpshot' | 'basketball_
 
 // CDN URLs for hologram models
 const FOOTBALL_MODEL_URL = '/Hologram1.0.glb';
-const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_clean_e3c57a7f.glb';
+const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_cc49810a.glb';
 
 // Map motion types to model URLs
 export function getModelUrlForMotion(motionType: MotionType): string {
@@ -168,7 +168,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         model.position.y = -box.min.y * scale - 1.6;
         model.position.z = -center.z * scale;
 
-        // VOLUMETRIC CORE MATERIAL — same for all models
+        // VOLUMETRIC CORE MATERIAL
         const innerMaterial = new THREE.MeshStandardMaterial({
           color: 0x3a006e,
           emissive: 0x220044,
@@ -193,14 +193,33 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Clear previous bone mappings
         bonesRef.current.clear();
 
-        // IMPORTANT: Collect meshes first, then process AFTER traversal.
-        // Adding children during traverse() causes infinite cloning loops
-        // because traverse visits newly added children.
-        const meshesToProcess: THREE.Mesh[] = [];
-
         model.traverse((child: any) => {
           if ((child as THREE.Mesh).isMesh) {
-            meshesToProcess.push(child as THREE.Mesh);
+            const mesh = child as THREE.Mesh;
+            
+            // Dispose of original material and textures to prevent bleed-through
+            if (mesh.material) {
+              const origMat = mesh.material as THREE.MeshStandardMaterial;
+              if (origMat.map) { origMat.map.dispose(); origMat.map = null; }
+              if (origMat.emissiveMap) { origMat.emissiveMap.dispose(); origMat.emissiveMap = null; }
+              if (origMat.normalMap) { origMat.normalMap.dispose(); origMat.normalMap = null; }
+              origMat.dispose();
+            }
+            
+            if ((mesh as any).isSkinnedMesh) {
+              const skinned = new THREE.SkinnedMesh(mesh.geometry, wireframeMaterial);
+              skinned.skeleton = (mesh as any).skeleton;
+              skinned.bind((mesh as any).skeleton, (mesh as any).bindMatrix);
+              model.add(skinned);
+            } else {
+              const wireframeMesh = mesh.clone();
+              wireframeMesh.material = wireframeMaterial;
+              model.add(wireframeMesh);
+            }
+
+            mesh.material = innerMaterial;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
           }
 
           // Map Bones - both models use Mixamo naming convention
@@ -236,30 +255,12 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           }
         });
 
-        // Now process meshes AFTER traversal is complete
-        for (const mesh of meshesToProcess) {
-          // Dispose of original material and textures to prevent bleed-through
-          if (mesh.material) {
-            const origMat = mesh.material as THREE.MeshStandardMaterial;
-            if (origMat.map) { origMat.map.dispose(); origMat.map = null; }
-            if (origMat.emissiveMap) { origMat.emissiveMap.dispose(); origMat.emissiveMap = null; }
-            if (origMat.normalMap) { origMat.normalMap.dispose(); origMat.normalMap = null; }
-            origMat.dispose();
-          }
-          
-          // Clone the mesh for wireframe overlay — clone() preserves
-          // skeleton binding for SkinnedMesh so wireframe deforms with the model
-          const wireframeMesh = mesh.clone();
-          wireframeMesh.material = wireframeMaterial;
-          model.add(wireframeMesh);
-
-          mesh.material = innerMaterial;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
+        // Stop any built-in animations — we drive bones from metrics
+        if (gltf.animations && gltf.animations.length > 0) {
+          const mixer = new THREE.AnimationMixer(model);
+          mixerRef.current = mixer;
+          // Don't play the animation — we control bones manually via metrics
         }
-
-        // No animations needed — we drive bones manually from metrics
-        // (animation data has been stripped from the model)
 
         scene.add(model);
         setIsLoading(false);

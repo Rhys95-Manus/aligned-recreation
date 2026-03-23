@@ -290,18 +290,3 @@
 
 ## Hologram Color Fix
 - [x] Match basketball hologram color to football hologram color (same material/lighting, no other changes)
-
-## Hologram Color Fix (Round 2)
-- [x] Basketball hologram still different color from football — starts dark blue, gets lighter during replay
-- [x] Root cause: denser geometry catches more light; fixed with model-specific material (lower metalness 0.2, higher roughness 0.8, reduced emissive)
-
-## Hologram Color Fix (Round 3)
-- [x] Basketball hologram wireframe not applied from start — appears only at end of replay
-- [x] Color still shifts from dark blue to electric blue during replay
-- [x] Root cause: SkinnedMesh wireframe was created as separate mesh not bound to skeleton; fixed by using clone() which preserves skeleton binding
-
-## Hologram Color Fix (Round 4)
-- [x] Basketball hologram still dark blue → electric blue transition with wireframe appearing late
-- [x] Strip any baked animation from the GLB model (created clean version without animation data)
-- [x] Fixed infinite clone bug: traverse() was adding cloned wireframe meshes during iteration, causing exponential mesh duplication
-- [x] Match football hologram appearance exactly (same material, proper wireframe from frame 1)
