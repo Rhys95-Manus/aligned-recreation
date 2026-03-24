@@ -6,7 +6,7 @@ export type MotionType = 'football_throw' | 'basketball_jumpshot' | 'basketball_
 
 // CDN URLs for hologram models
 const FOOTBALL_MODEL_URL = '/Hologram1.0.glb';
-const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_cc49810a.glb';
+const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_quant_d74b85d9.glb';
 
 // Map motion types to model URLs
 export function getModelUrlForMotion(motionType: MotionType): string {
@@ -121,7 +121,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio at 2 for performance
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
@@ -193,33 +193,18 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         // Clear previous bone mappings
         bonesRef.current.clear();
 
+        // ============================================================
+        // FIX: Collect meshes FIRST, then process AFTER traverse ends.
+        // Previously, model.add() was called INSIDE traverse(), which
+        // mutated the child list during iteration, causing newly added
+        // wireframe meshes to be picked up by the ongoing traverse and
+        // processed again — creating exponential mesh duplication.
+        // ============================================================
+        const meshesToProcess: THREE.Mesh[] = [];
+
         model.traverse((child: any) => {
           if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            
-            // Dispose of original material and textures to prevent bleed-through
-            if (mesh.material) {
-              const origMat = mesh.material as THREE.MeshStandardMaterial;
-              if (origMat.map) { origMat.map.dispose(); origMat.map = null; }
-              if (origMat.emissiveMap) { origMat.emissiveMap.dispose(); origMat.emissiveMap = null; }
-              if (origMat.normalMap) { origMat.normalMap.dispose(); origMat.normalMap = null; }
-              origMat.dispose();
-            }
-            
-            if ((mesh as any).isSkinnedMesh) {
-              const skinned = new THREE.SkinnedMesh(mesh.geometry, wireframeMaterial);
-              skinned.skeleton = (mesh as any).skeleton;
-              skinned.bind((mesh as any).skeleton, (mesh as any).bindMatrix);
-              model.add(skinned);
-            } else {
-              const wireframeMesh = mesh.clone();
-              wireframeMesh.material = wireframeMaterial;
-              model.add(wireframeMesh);
-            }
-
-            mesh.material = innerMaterial;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
+            meshesToProcess.push(child as THREE.Mesh);
           }
 
           // Map Bones - both models use Mixamo naming convention
@@ -254,6 +239,40 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
             if (name.includes('rightfoot') && !name.includes('toe')) bonesRef.current.set('rightFoot', child);
           }
         });
+
+        // NOW process meshes AFTER traverse is complete — safe to mutate model.children
+        for (const mesh of meshesToProcess) {
+          // Dispose of original material and textures to prevent bleed-through
+          if (mesh.material) {
+            const origMat = mesh.material as THREE.MeshStandardMaterial;
+            if (origMat.map) { origMat.map.dispose(); origMat.map = null; }
+            if (origMat.emissiveMap) { origMat.emissiveMap.dispose(); origMat.emissiveMap = null; }
+            if (origMat.normalMap) { origMat.normalMap.dispose(); origMat.normalMap = null; }
+            origMat.dispose();
+          }
+
+          if ((mesh as any).isSkinnedMesh) {
+            // For SkinnedMesh: create a new SkinnedMesh sharing the same geometry
+            // and explicitly bind it to the ORIGINAL skeleton so it deforms in sync
+            const skinnedMesh = mesh as THREE.SkinnedMesh;
+            const wireframe = new THREE.SkinnedMesh(skinnedMesh.geometry, wireframeMaterial);
+            wireframe.skeleton = skinnedMesh.skeleton;
+            wireframe.bind(skinnedMesh.skeleton, skinnedMesh.bindMatrix);
+            wireframe.name = 'wireframe_overlay'; // Tag so we never re-process it
+            model.add(wireframe);
+          } else {
+            // For regular Mesh: simple clone with wireframe material
+            const wireframeMesh = mesh.clone();
+            wireframeMesh.material = wireframeMaterial;
+            wireframeMesh.name = 'wireframe_overlay'; // Tag so we never re-process it
+            model.add(wireframeMesh);
+          }
+
+          // Apply inner material to the original mesh
+          mesh.material = innerMaterial;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+        }
 
         // Stop any built-in animations — we drive bones from metrics
         if (gltf.animations && gltf.animations.length > 0) {
