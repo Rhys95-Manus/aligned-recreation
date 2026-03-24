@@ -295,3 +295,9 @@
 - [x] All features confirmed present: rep counter, voice commands, auto-stop, replay with video, hologram, live coaching
 - [x] Issue was unpublished changes — deployed version was stale, not missing code
 - [ ] Basketball motion still has major issues — needs investigation and fix
+
+## Basketball Hologram Fixes (Round 2)
+- [x] Fix mesh accumulation — traverse() adding wireframe meshes during iteration
+- [x] Fix inconsistent coloring — basketball hologram color changes during replay
+- [x] Fix replay lag — basketball hologram causes lag that football hologram does not
+- [x] Ensure basketball hologram matches football hologram quality
