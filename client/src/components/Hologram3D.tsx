@@ -14,7 +14,6 @@ export function getModelUrlForMotion(motionType: MotionType): string {
     case 'basketball_jumpshot':
       return BASKETBALL_MODEL_URL;
     case 'basketball_dribble':
-      // Dribbling uses football model per user request (no basketball model for dribble)
       return FOOTBALL_MODEL_URL;
     case 'football_throw':
     case 'golf_swing':
@@ -44,7 +43,6 @@ export function detectMotionType(motionName: string): MotionType {
   if (name.includes('golf') || name.includes('swing')) {
     return 'golf_swing';
   }
-  // Also check URL for basketball context
   if (typeof window !== 'undefined') {
     const path = window.location.pathname.toLowerCase();
     if (path.includes('basketball') && !name.includes('dribbl')) {
@@ -97,7 +95,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
 
-  // Determine model URL based on motion type
   const modelUrl = getModelUrlForMotion(motionType);
 
   // Initialize Scene
@@ -109,10 +106,10 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
     // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0e27); // Deep dark blue background
+    scene.background = new THREE.Color(0x0a0e27);
     sceneRef.current = scene;
 
-    // Camera - Full Body Mode (Pan Down to Feet)
+    // Camera
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 0.5, 4.5); 
     camera.lookAt(0, 0.5, 0);
@@ -121,7 +118,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio at 2 for performance
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
@@ -168,7 +165,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         model.position.y = -box.min.y * scale - 1.6;
         model.position.z = -center.z * scale;
 
-        // VOLUMETRIC CORE MATERIAL
+        // VOLUMETRIC CORE MATERIAL — the solid inner body
         const innerMaterial = new THREE.MeshStandardMaterial({
           color: 0x3a006e,
           emissive: 0x220044,
@@ -180,7 +177,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           side: THREE.DoubleSide
         });
 
-        // Outer Wireframe
+        // Outer Wireframe — subtle cyan grid overlay
         const wireframeMaterial = new THREE.MeshBasicMaterial({
           color: 0x00ffff,
           wireframe: true,
@@ -194,20 +191,24 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         bonesRef.current.clear();
 
         // ============================================================
-        // FIX: Collect meshes FIRST, then process AFTER traverse ends.
-        // Previously, model.add() was called INSIDE traverse(), which
-        // mutated the child list during iteration, causing newly added
-        // wireframe meshes to be picked up by the ongoing traverse and
-        // processed again — creating exponential mesh duplication.
+        // Collect meshes and bones FIRST, then process AFTER traverse.
+        // This prevents mutating the scene graph during iteration.
         // ============================================================
-        const meshesToProcess: THREE.Mesh[] = [];
+        const meshesToProcess: { mesh: THREE.Mesh; parent: THREE.Object3D }[] = [];
 
         model.traverse((child: any) => {
           if ((child as THREE.Mesh).isMesh) {
-            meshesToProcess.push(child as THREE.Mesh);
+            // Record the mesh AND its parent so we add the wireframe
+            // as a sibling, not at the model root. This ensures the
+            // wireframe SkinnedMesh inherits the same world transform
+            // and stays in sync with the original mesh.
+            meshesToProcess.push({
+              mesh: child as THREE.Mesh,
+              parent: child.parent || model
+            });
           }
 
-          // Map Bones - both models use Mixamo naming convention
+          // Map Bones — both models use Mixamo naming convention
           if ((child as THREE.Bone).isBone) {
             const name = child.name.toLowerCase();
             if (name.includes('hips')) bonesRef.current.set('hips', child);
@@ -240,8 +241,8 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           }
         });
 
-        // NOW process meshes AFTER traverse is complete — safe to mutate model.children
-        for (const mesh of meshesToProcess) {
+        // Process meshes AFTER traverse is complete
+        for (const { mesh, parent } of meshesToProcess) {
           // Dispose of original material and textures to prevent bleed-through
           if (mesh.material) {
             const origMat = mesh.material as THREE.MeshStandardMaterial;
@@ -252,33 +253,44 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           }
 
           if ((mesh as any).isSkinnedMesh) {
-            // For SkinnedMesh: create a new SkinnedMesh sharing the same geometry
-            // and explicitly bind it to the ORIGINAL skeleton so it deforms in sync
+            // For SkinnedMesh: create a wireframe overlay that shares the
+            // SAME skeleton and is added to the SAME parent node.
+            // This ensures identical world transforms so the wireframe
+            // deforms perfectly in sync with the inner mesh.
             const skinnedMesh = mesh as THREE.SkinnedMesh;
-            const wireframe = new THREE.SkinnedMesh(skinnedMesh.geometry, wireframeMaterial);
-            wireframe.skeleton = skinnedMesh.skeleton;
-            wireframe.bind(skinnedMesh.skeleton, skinnedMesh.bindMatrix);
-            wireframe.name = 'wireframe_overlay'; // Tag so we never re-process it
-            model.add(wireframe);
+            const wireframe = new THREE.SkinnedMesh(
+              skinnedMesh.geometry,
+              wireframeMaterial
+            );
+            // Copy the local transform so it sits in exactly the same spot
+            wireframe.position.copy(skinnedMesh.position);
+            wireframe.rotation.copy(skinnedMesh.rotation);
+            wireframe.scale.copy(skinnedMesh.scale);
+            // Share skeleton and bind to the same bind matrix
+            wireframe.bind(skinnedMesh.skeleton, skinnedMesh.bindMatrix.clone());
+            wireframe.bindMatrixInverse.copy(skinnedMesh.bindMatrixInverse);
+            wireframe.name = 'wireframe_overlay';
+            wireframe.frustumCulled = false; // Prevent culling glitches
+            // Add as sibling — same parent as original mesh
+            parent.add(wireframe);
           } else {
-            // For regular Mesh: simple clone with wireframe material
             const wireframeMesh = mesh.clone();
             wireframeMesh.material = wireframeMaterial;
-            wireframeMesh.name = 'wireframe_overlay'; // Tag so we never re-process it
-            model.add(wireframeMesh);
+            wireframeMesh.name = 'wireframe_overlay';
+            parent.add(wireframeMesh);
           }
 
           // Apply inner material to the original mesh
           mesh.material = innerMaterial;
           mesh.castShadow = true;
           mesh.receiveShadow = true;
+          mesh.frustumCulled = false; // Prevent culling glitches
         }
 
         // Stop any built-in animations — we drive bones from metrics
         if (gltf.animations && gltf.animations.length > 0) {
           const mixer = new THREE.AnimationMixer(model);
           mixerRef.current = mixer;
-          // Don't play the animation — we control bones manually via metrics
         }
 
         scene.add(model);
@@ -332,26 +344,11 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
     if (motionType === 'basketball_jumpshot') {
       // ===== BASKETBALL JUMP SHOT ANIMATION =====
-      // Key differences from football throw:
-      // - Vertical movement (jump) is primary
-      // - Both arms involved (shooting arm + guide hand)
-      // - Knee flexion drives the jump
-      // - Wrist snap at release point
-      
       if (modelRef.current) {
         const viewRotationRad = (rotationAngle * Math.PI) / 180;
-        // Basketball: face forward (toward camera/basket), slight offset
         const stanceOffset = -Math.PI / 2;
         const hipActionRad = ((90 - metrics.hipRotation) * Math.PI) / 180;
         modelRef.current.rotation.y = viewRotationRad + stanceOffset + (hipActionRad * 0.3);
-        
-        // Simulate vertical jump via Y position based on knee extension
-        // When knees are straight (170+), player is at peak jump
-        // When knees are bent (90-120), player is in crouch
-        const avgKnee = (metrics.rightKneeFlexion + metrics.leftKneeFlexion) / 2;
-        const jumpHeight = Math.max(0, (avgKnee - 130) / 50) * 0.3; // 0 to 0.3 units up
-        const baseY = modelRef.current.position.y;
-        // Only apply jump offset, don't reset base position
       }
 
       // Spine — slight backward lean during jump
@@ -361,31 +358,26 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       // Shoulders — less rotation than football (basketball is more frontal)
       rotateBone('spine', 'y', metrics.shoulderRotation * 0.3, -90, true);
 
-      // Right Arm (Shooting arm) — extends upward for jump shot
-      // Shoulder angle drives the arm lift (higher = more overhead)
+      // Right Arm (Shooting arm)
       rotateBone('rightArm', 'x', metrics.rightShoulderAngle, 0, false);
-      // Keep shooting arm closer to body (less abduction than football)
       const shootingAbduction = Math.max(-20, Math.min(20, (90 - metrics.shoulderRotation) * 0.3));
       rotateBone('rightArm', 'z', shootingAbduction, 0, false);
-      // Elbow — extends during release
       rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
 
-      // Left Arm (Guide hand) — supports the ball, lower position
+      // Left Arm (Guide hand)
       rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
       rotateBone('leftArm', 'x', metrics.leftShoulderAngle * 0.5, 0, false);
       rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
 
-      // Legs — knee flexion drives the crouch and jump
+      // Legs
       rotateBone('rightLeg', 'x', metrics.rightKneeFlexion, -180, false);
       rotateBone('leftLeg', 'x', metrics.leftKneeFlexion, -180, false);
       
     } else {
       // ===== FOOTBALL THROW / DEFAULT ANIMATION =====
-      // Original throwing mechanics
-      
       if (modelRef.current) {
         const viewRotationRad = (rotationAngle * Math.PI) / 180;
-        const stanceOffset = -Math.PI / 2; // Facing left/target
+        const stanceOffset = -Math.PI / 2;
         const hipActionRad = ((90 - metrics.hipRotation) * Math.PI) / 180;
         modelRef.current.rotation.y = viewRotationRad + stanceOffset + (hipActionRad * 0.5);
       }
