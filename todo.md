@@ -301,3 +301,7 @@
 - [x] Fix inconsistent coloring — basketball hologram color changes during replay
 - [x] Fix replay lag — basketball hologram causes lag that football hologram does not
 - [x] Ensure basketball hologram matches football hologram quality
+
+## Basketball Hologram Color Fix (Round 3)
+- [x] Fix wireframe overlay disappearing — appears initially then vanishes leaving only deep blue
+- [x] Make wireframe look as smooth on basketball as it does on football
