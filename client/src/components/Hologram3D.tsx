@@ -178,19 +178,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         const model = gltf.scene;
         modelRef.current = model;
 
-        // Auto-scale logic
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        
-        const scale = 3.5 / maxDim; 
-        model.scale.set(scale, scale, scale);
-
-        const center = box.getCenter(new THREE.Vector3());
-        model.position.x = -center.x * scale;
-        model.position.y = -box.min.y * scale - 1.6;
-        model.position.z = -center.z * scale;
-
         // Clear previous bone mappings
         bonesRef.current.clear();
 
@@ -199,6 +186,31 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           // ORIGINAL MATERIALS MODE: Keep the model's textures, colors,
           // and animation exactly as the creator designed them.
           // ============================================================
+
+          // Remove extra objects (Plane, football, etc.) — keep only the Armature
+          const toRemove: THREE.Object3D[] = [];
+          model.children.forEach((child: any) => {
+            const name = (child.name || '').toLowerCase();
+            // Keep the Armature (the character skeleton + mesh)
+            if (name === 'armature') return;
+            // Remove everything else (Plane, Object_3/football, etc.)
+            toRemove.push(child);
+          });
+          toRemove.forEach((obj) => model.remove(obj));
+
+          // Now compute bounding box from only the Armature
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+
+          const scale = 3.5 / maxDim;
+          model.scale.set(scale, scale, scale);
+
+          const center = box.getCenter(new THREE.Vector3());
+          model.position.x = -center.x * scale;
+          model.position.y = -box.min.y * scale - 1.6;
+          model.position.z = -center.z * scale;
+
           model.traverse((child: any) => {
             if ((child as THREE.Bone).isBone) {
               mapBone(child, bonesRef.current);
@@ -224,6 +236,20 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           // HOLOGRAM MODE: Replace materials with volumetric hologram
           // shader and add wireframe overlay.
           // ============================================================
+
+          // Auto-scale logic for hologram models
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+
+          const scale = 3.5 / maxDim;
+          model.scale.set(scale, scale, scale);
+
+          const center = box.getCenter(new THREE.Vector3());
+          model.position.x = -center.x * scale;
+          model.position.y = -box.min.y * scale - 1.6;
+          model.position.z = -center.z * scale;
+
           const innerMaterial = new THREE.MeshStandardMaterial({
             color: 0x3a006e,
             emissive: 0x220044,
