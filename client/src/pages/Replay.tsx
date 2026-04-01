@@ -1301,6 +1301,7 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 isRightHanded={isRightHanded}
                 motionType={detectMotionType(motionName)}
                 isPlaying={isPlaying}
+                playbackProgress={currentRepFrames.length > 1 ? currentFrameIndex / (currentRepFrames.length - 1) : 0}
                 metrics={proFrame?.metrics}
                 onRotationChange={(angle) => setRotationAngle(angle)}
                 onLoadComplete={() => {

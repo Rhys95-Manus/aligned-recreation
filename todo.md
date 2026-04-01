@@ -333,3 +333,7 @@
 - [x] Connect animation to pause/play controls
 - [x] Enable user rotation of the hologram (buttons + drag)
 - [x] Ensure animation syncs with replay timeline (pauses/resumes with isPlaying)
+
+## Hologram Position & Rewind Fix
+- [x] Lower hologram position further — adjusted Y offset from -0.3 to -0.8
+- [x] Sync hologram animation with replay timeline via playbackProgress prop (0–1 maps to clip time)
