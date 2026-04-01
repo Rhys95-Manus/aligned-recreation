@@ -323,3 +323,7 @@
 - [x] Update Hologram3D.tsx to NOT override materials for football model — preserve original skin coloring
 - [x] Update Hologram3D.tsx to play the model's built-in animation
 - [ ] Verify football hologram shows original mesh, skin, and animation on replay (user to test after publish)
+
+## Fix: Football Hologram Off-Screen
+- [x] Investigate new model bounding box and origin point (Plane 841x, Object_3 football at Y=55 causing issues)
+- [x] Fix auto-scaling and positioning — removed Plane and Object_3, compute bbox from Armature only
