@@ -1300,7 +1300,9 @@ export default function Replay({ recordedFrames, professionalReference, motionNa
                 rotationAngle={rotationAngle}
                 isRightHanded={isRightHanded}
                 motionType={detectMotionType(motionName)}
+                isPlaying={isPlaying}
                 metrics={proFrame?.metrics}
+                onRotationChange={(angle) => setRotationAngle(angle)}
                 onLoadComplete={() => {
                   setIsHologramLoaded(true);
                   setIsPlaying(true); // Start playing once loaded

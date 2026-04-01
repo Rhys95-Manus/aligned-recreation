@@ -60,6 +60,7 @@ interface Hologram3DProps {
   rotationAngle?: number;
   isRightHanded?: boolean;
   motionType?: MotionType;
+  isPlaying?: boolean; // NEW: connect to Replay's pause/play state
   metrics?: {
     hipRotation: number;
     shoulderRotation: number;
@@ -82,6 +83,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   rotationAngle = 0,
   isRightHanded = true,
   motionType = 'generic',
+  isPlaying = true,
   metrics,
   onRotationChange,
   onLoadComplete
@@ -94,10 +96,16 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   const bonesRef = useRef<Map<string, THREE.Object3D>>(new Map());
   const animationFrameRef = useRef<number>(0);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const actionRef = useRef<THREE.AnimationAction | null>(null);
   const clockRef = useRef<THREE.Clock>(new THREE.Clock());
   const useOriginalMaterialsRef = useRef<boolean>(false);
+  const baseRotationRef = useRef<number>(0); // Store the model's base rotation offset
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
+
+  // Touch/mouse drag rotation
+  const isDraggingRef = useRef(false);
+  const lastDragXRef = useRef(0);
 
   const modelUrl = getModelUrlForMotion(motionType);
 
@@ -203,13 +211,19 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           const size = box.getSize(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z);
 
+          // Scale to fit in view
           const scale = 3.5 / maxDim;
           model.scale.set(scale, scale, scale);
 
+          // Center horizontally, position feet at bottom of frame
           const center = box.getCenter(new THREE.Vector3());
           model.position.x = -center.x * scale;
-          model.position.y = -box.min.y * scale - 1.6;
+          // Lower the model: use center.y instead of box.min.y to bring it down
+          model.position.y = -center.y * scale - 0.3;
           model.position.z = -center.z * scale;
+
+          // Store the base rotation (model faces a certain direction by default)
+          baseRotationRef.current = 0;
 
           model.traverse((child: any) => {
             if ((child as THREE.Bone).isBone) {
@@ -229,6 +243,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
             const action = mixer.clipAction(clip);
             action.setLoop(THREE.LoopRepeat, Infinity);
             action.play();
+            actionRef.current = action;
           }
 
         } else {
@@ -360,9 +375,37 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     };
     animate();
 
+    // Touch/mouse drag for rotation
+    const el = renderer.domElement;
+    const onPointerDown = (e: PointerEvent) => {
+      isDraggingRef.current = true;
+      lastDragXRef.current = e.clientX;
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDraggingRef.current) return;
+      const dx = e.clientX - lastDragXRef.current;
+      lastDragXRef.current = e.clientX;
+      // Notify parent of rotation change
+      if (onRotationChange) {
+        const newAngle = ((rotationAngle + dx * 0.5) % 360 + 360) % 360;
+        onRotationChange(newAngle > 180 ? newAngle - 360 : newAngle);
+      }
+    };
+    const onPointerUp = () => {
+      isDraggingRef.current = false;
+    };
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', onPointerUp);
+    el.addEventListener('pointerleave', onPointerUp);
+
     // Cleanup
     return () => {
       cancelAnimationFrame(animationFrameRef.current);
+      el.removeEventListener('pointerdown', onPointerDown);
+      el.removeEventListener('pointermove', onPointerMove);
+      el.removeEventListener('pointerup', onPointerUp);
+      el.removeEventListener('pointerleave', onPointerUp);
       if (containerRef.current && rendererRef.current) {
         try {
           containerRef.current.removeChild(rendererRef.current.domElement);
@@ -370,8 +413,30 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       }
       rendererRef.current?.dispose();
       mixerRef.current = null;
+      actionRef.current = null;
     };
   }, [modelUrl]);
+
+  // Handle pause/play for built-in animation (original material models)
+  useEffect(() => {
+    if (!actionRef.current) return;
+    if (isPlaying) {
+      actionRef.current.paused = false;
+      clockRef.current.start(); // Resume clock so delta is correct
+    } else {
+      actionRef.current.paused = true;
+    }
+  }, [isPlaying]);
+
+  // Handle rotation for original-material models
+  useEffect(() => {
+    if (!modelRef.current) return;
+    if (useOriginalMaterialsRef.current) {
+      // Apply user rotation to the model directly
+      const viewRotationRad = (rotationAngle * Math.PI) / 180;
+      modelRef.current.rotation.y = viewRotationRad + baseRotationRef.current;
+    }
+  }, [rotationAngle]);
 
   // Handle Metrics Animation — only for hologram-mode models (not original-material models)
   useEffect(() => {
@@ -447,7 +512,8 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         width: '100%',
         height: '100%',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        cursor: 'grab'
       }}
     >
       {isLoading && (
