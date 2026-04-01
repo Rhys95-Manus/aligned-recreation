@@ -311,4 +311,9 @@
 - [x] Optimize model (stripped textures/materials/extra meshes, 0.59MB from 17.65MB)
 - [x] Upload to CDN and update Hologram3D.tsx
 - [x] Delete old football hologram model reference
-- [ ] Test football throw replay with new hologram
+- [ ] Test football throw replay with new hologram (user needs to re-publish)
+
+## Fix: Old Football Hologram Still Showing
+- [x] Delete old Hologram1.0.glb from client/public/
+- [x] Search for any remaining references to old model (none found)
+- [ ] Verify new model loads on published site (user needs to re-publish)
