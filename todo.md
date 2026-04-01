@@ -327,3 +327,9 @@
 ## Fix: Football Hologram Off-Screen
 - [x] Investigate new model bounding box and origin point (Plane 841x, Object_3 football at Y=55 causing issues)
 - [x] Fix auto-scaling and positioning — removed Plane and Object_3, compute bbox from Armature only
+
+## Football Hologram Integration
+- [x] Lower hologram position so it's fully in frame
+- [x] Connect animation to pause/play controls
+- [x] Enable user rotation of the hologram (buttons + drag)
+- [x] Ensure animation syncs with replay timeline (pauses/resumes with isPlaying)
