@@ -60,7 +60,9 @@ interface Hologram3DProps {
   rotationAngle?: number;
   isRightHanded?: boolean;
   motionType?: MotionType;
-  isPlaying?: boolean; // NEW: connect to Replay's pause/play state
+  isPlaying?: boolean;
+  /** 0.0–1.0 progress through the current rep, used to sync built-in animation to replay timeline */
+  playbackProgress?: number;
   metrics?: {
     hipRotation: number;
     shoulderRotation: number;
@@ -84,6 +86,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   isRightHanded = true,
   motionType = 'generic',
   isPlaying = true,
+  playbackProgress = 0,
   metrics,
   onRotationChange,
   onLoadComplete
@@ -97,15 +100,17 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   const animationFrameRef = useRef<number>(0);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionRef = useRef<THREE.AnimationAction | null>(null);
-  const clockRef = useRef<THREE.Clock>(new THREE.Clock());
+  const clipDurationRef = useRef<number>(0);
   const useOriginalMaterialsRef = useRef<boolean>(false);
-  const baseRotationRef = useRef<number>(0); // Store the model's base rotation offset
+  const baseRotationRef = useRef<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
 
   // Touch/mouse drag rotation
   const isDraggingRef = useRef(false);
   const lastDragXRef = useRef(0);
+  const currentRotationRef = useRef(rotationAngle);
+  currentRotationRef.current = rotationAngle;
 
   const modelUrl = getModelUrlForMotion(motionType);
 
@@ -157,7 +162,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     scene.add(mainLight);
 
     if (keepOriginalMaterials) {
-      // Natural lighting for original-material models
       const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
       fillLight.position.set(-3, 3, -3);
       scene.add(fillLight);
@@ -166,7 +170,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       backLight.position.set(0, 2, -5);
       scene.add(backLight);
     } else {
-      // Hologram-style rim lights
       const rimLightLeft = new THREE.SpotLight(0x00ffff, 5.0);
       rimLightLeft.position.set(-5, 2, -5);
       rimLightLeft.lookAt(0, 0, 0);
@@ -199,51 +202,51 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           const toRemove: THREE.Object3D[] = [];
           model.children.forEach((child: any) => {
             const name = (child.name || '').toLowerCase();
-            // Keep the Armature (the character skeleton + mesh)
             if (name === 'armature') return;
-            // Remove everything else (Plane, Object_3/football, etc.)
             toRemove.push(child);
           });
           toRemove.forEach((obj) => model.remove(obj));
 
-          // Now compute bounding box from only the Armature
+          // Compute bounding box from only the Armature
           const box = new THREE.Box3().setFromObject(model);
           const size = box.getSize(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z);
 
-          // Scale to fit in view
           const scale = 3.5 / maxDim;
           model.scale.set(scale, scale, scale);
 
-          // Center horizontally, position feet at bottom of frame
           const center = box.getCenter(new THREE.Vector3());
           model.position.x = -center.x * scale;
-          // Lower the model: use center.y instead of box.min.y to bring it down
-          model.position.y = -center.y * scale - 0.3;
+          // Position: place feet near bottom of frame, lower than before
+          model.position.y = -center.y * scale - 0.8;
           model.position.z = -center.z * scale;
 
-          // Store the base rotation (model faces a certain direction by default)
           baseRotationRef.current = 0;
 
           model.traverse((child: any) => {
             if ((child as THREE.Bone).isBone) {
               mapBone(child, bonesRef.current);
             }
-            // Keep all original materials — do NOT replace them
             if ((child as THREE.Mesh).isMesh) {
               child.frustumCulled = false;
             }
           });
 
-          // Play the model's built-in animation
+          // Set up animation — driven by playbackProgress, NOT auto-playing
           if (gltf.animations && gltf.animations.length > 0) {
             const mixer = new THREE.AnimationMixer(model);
             mixerRef.current = mixer;
             const clip = gltf.animations[0];
+            clipDurationRef.current = clip.duration;
             const action = mixer.clipAction(clip);
-            action.setLoop(THREE.LoopRepeat, Infinity);
+            action.setLoop(THREE.LoopOnce, 1);
+            action.clampWhenFinished = true;
             action.play();
+            // Immediately pause — we'll seek to the right time via playbackProgress
+            action.paused = true;
             actionRef.current = action;
+            // Set initial time to 0
+            mixer.setTime(0);
           }
 
         } else {
@@ -252,7 +255,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           // shader and add wireframe overlay.
           // ============================================================
 
-          // Auto-scale logic for hologram models
           const box = new THREE.Box3().setFromObject(model);
           const size = box.getSize(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z);
@@ -300,9 +302,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
             }
           });
 
-          // Process meshes AFTER traverse is complete
           for (const { mesh, parent } of meshesToProcess) {
-            // Dispose of original material and textures
             if (mesh.material) {
               const origMat = mesh.material as THREE.MeshStandardMaterial;
               if (origMat.map) { origMat.map.dispose(); origMat.map = null; }
@@ -332,7 +332,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
               parent.add(wireframeMesh);
             }
 
-            // Apply inner material to the original mesh
             mesh.material = innerMaterial;
             mesh.castShadow = true;
             mesh.receiveShadow = true;
@@ -361,14 +360,9 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       }
     );
 
-    // Animation Loop
+    // Render loop — only renders, does NOT advance the mixer (that's done via playbackProgress)
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
-      // Update animation mixer for built-in animations
-      if (mixerRef.current) {
-        const delta = clockRef.current.getDelta();
-        mixerRef.current.update(delta);
-      }
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
@@ -385,9 +379,8 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       if (!isDraggingRef.current) return;
       const dx = e.clientX - lastDragXRef.current;
       lastDragXRef.current = e.clientX;
-      // Notify parent of rotation change
       if (onRotationChange) {
-        const newAngle = ((rotationAngle + dx * 0.5) % 360 + 360) % 360;
+        const newAngle = ((currentRotationRef.current + dx * 0.5) % 360 + 360) % 360;
         onRotationChange(newAngle > 180 ? newAngle - 360 : newAngle);
       }
     };
@@ -417,22 +410,23 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     };
   }, [modelUrl]);
 
-  // Handle pause/play for built-in animation (original material models)
+  // Sync built-in animation to replay timeline via playbackProgress (0.0–1.0)
+  // This handles play, pause, rewind, scrub — all driven by the parent's frame index
   useEffect(() => {
-    if (!actionRef.current) return;
-    if (isPlaying) {
-      actionRef.current.paused = false;
-      clockRef.current.start(); // Resume clock so delta is correct
-    } else {
-      actionRef.current.paused = true;
-    }
-  }, [isPlaying]);
+    if (!mixerRef.current || !actionRef.current || clipDurationRef.current <= 0) return;
+    // Only applies to original-material models with built-in animation
+    if (!useOriginalMaterialsRef.current) return;
+
+    // Map progress (0–1) to animation time (0–clipDuration)
+    const targetTime = playbackProgress * clipDurationRef.current;
+    // Use setTime on the mixer to seek to exact position (works for rewind too)
+    mixerRef.current.setTime(targetTime);
+  }, [playbackProgress]);
 
   // Handle rotation for original-material models
   useEffect(() => {
     if (!modelRef.current) return;
     if (useOriginalMaterialsRef.current) {
-      // Apply user rotation to the model directly
       const viewRotationRad = (rotationAngle * Math.PI) / 180;
       modelRef.current.rotation.y = viewRotationRad + baseRotationRef.current;
     }
@@ -441,7 +435,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   // Handle Metrics Animation — only for hologram-mode models (not original-material models)
   useEffect(() => {
     if (!metrics || bonesRef.current.size === 0) return;
-    // Skip bone manipulation for models that play their own animation
     if (useOriginalMaterialsRef.current) return;
 
     const rotateBone = (name: string, axis: 'x' | 'y' | 'z', angleDeg: number, offsetDeg: number = 0, invert: boolean = false) => {
@@ -453,7 +446,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     };
 
     if (motionType === 'basketball_jumpshot') {
-      // ===== BASKETBALL JUMP SHOT ANIMATION =====
       if (modelRef.current) {
         const viewRotationRad = (rotationAngle * Math.PI) / 180;
         const stanceOffset = -Math.PI / 2;
@@ -478,7 +470,6 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       rotateBone('leftLeg', 'x', metrics.leftKneeFlexion, -180, false);
       
     } else {
-      // ===== DEFAULT HOLOGRAM ANIMATION (metrics-driven) =====
       if (modelRef.current) {
         const viewRotationRad = (rotationAngle * Math.PI) / 180;
         const stanceOffset = -Math.PI / 2;
