@@ -305,3 +305,10 @@
 ## Basketball Hologram Color Fix (Round 3)
 - [x] Fix wireframe overlay disappearing — appears initially then vanishes leaving only deep blue
 - [x] Make wireframe look as smooth on basketball as it does on football
+
+## Replace Football Hologram Model
+- [x] Convert fotball2.blend to .glb format
+- [x] Optimize model (stripped textures/materials/extra meshes, 0.59MB from 17.65MB)
+- [x] Upload to CDN and update Hologram3D.tsx
+- [x] Delete old football hologram model reference
+- [ ] Test football throw replay with new hologram
