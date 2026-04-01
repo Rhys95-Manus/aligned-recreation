@@ -5,8 +5,11 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 export type MotionType = 'football_throw' | 'basketball_jumpshot' | 'basketball_dribble' | 'golf_swing' | 'kettlebell' | 'generic';
 
 // CDN URLs for hologram models
-const FOOTBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/football2_stripped_d34265ba.glb';
+const FOOTBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/fotball2_b7f18e4a.glb';
 const BASKETBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/MaleHologram_quant_d74b85d9.glb';
+
+// Models that should keep their original materials and play built-in animation
+const ORIGINAL_MATERIAL_MODELS = new Set([FOOTBALL_MODEL_URL]);
 
 // Map motion types to model URLs
 export function getModelUrlForMotion(motionType: MotionType): string {
@@ -92,6 +95,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   const animationFrameRef = useRef<number>(0);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const clockRef = useRef<THREE.Clock>(new THREE.Clock());
+  const useOriginalMaterialsRef = useRef<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
 
@@ -103,6 +107,10 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
 
     const width = containerRef.current.clientWidth;
     const height = containerRef.current.clientHeight;
+
+    // Track whether this model keeps its original materials
+    const keepOriginalMaterials = ORIGINAL_MATERIAL_MODELS.has(modelUrl);
+    useOriginalMaterialsRef.current = keepOriginalMaterials;
 
     // Scene
     const scene = new THREE.Scene();
@@ -126,23 +134,41 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // VOLUMETRIC LIGHTING SETUP
-    const ambientLight = new THREE.AmbientLight(0x110022, 0.4);
+    // LIGHTING SETUP
+    const ambientLight = new THREE.AmbientLight(
+      keepOriginalMaterials ? 0xffffff : 0x110022,
+      keepOriginalMaterials ? 1.0 : 0.4
+    );
     scene.add(ambientLight);
 
-    const mainLight = new THREE.DirectionalLight(0x4488ff, 1.5);
+    const mainLight = new THREE.DirectionalLight(
+      keepOriginalMaterials ? 0xffffff : 0x4488ff,
+      keepOriginalMaterials ? 2.0 : 1.5
+    );
     mainLight.position.set(0, 5, 5);
     scene.add(mainLight);
 
-    const rimLightLeft = new THREE.SpotLight(0x00ffff, 5.0);
-    rimLightLeft.position.set(-5, 2, -5);
-    rimLightLeft.lookAt(0, 0, 0);
-    scene.add(rimLightLeft);
+    if (keepOriginalMaterials) {
+      // Natural lighting for original-material models
+      const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      fillLight.position.set(-3, 3, -3);
+      scene.add(fillLight);
 
-    const rimLightRight = new THREE.SpotLight(0xff00ff, 6.0);
-    rimLightRight.position.set(5, 2, -5);
-    rimLightRight.lookAt(0, 0, 0);
-    scene.add(rimLightRight);
+      const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      backLight.position.set(0, 2, -5);
+      scene.add(backLight);
+    } else {
+      // Hologram-style rim lights
+      const rimLightLeft = new THREE.SpotLight(0x00ffff, 5.0);
+      rimLightLeft.position.set(-5, 2, -5);
+      rimLightLeft.lookAt(0, 0, 0);
+      scene.add(rimLightLeft);
+
+      const rimLightRight = new THREE.SpotLight(0xff00ff, 6.0);
+      rimLightRight.position.set(5, 2, -5);
+      rimLightRight.lookAt(0, 0, 0);
+      scene.add(rimLightRight);
+    }
 
     // Load Model
     const loader = new GLTFLoader();
@@ -165,132 +191,118 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         model.position.y = -box.min.y * scale - 1.6;
         model.position.z = -center.z * scale;
 
-        // VOLUMETRIC CORE MATERIAL — the solid inner body
-        const innerMaterial = new THREE.MeshStandardMaterial({
-          color: 0x3a006e,
-          emissive: 0x220044,
-          emissiveIntensity: 0.8,
-          metalness: 0.6,
-          roughness: 0.4,
-          transparent: true,
-          opacity: 0.9,
-          side: THREE.DoubleSide
-        });
-
-        // Outer Wireframe — subtle cyan grid overlay
-        const wireframeMaterial = new THREE.MeshBasicMaterial({
-          color: 0x00ffff,
-          wireframe: true,
-          transparent: true,
-          opacity: 0.08,
-          depthTest: true,
-          depthWrite: false
-        });
-
         // Clear previous bone mappings
         bonesRef.current.clear();
 
-        // ============================================================
-        // Collect meshes and bones FIRST, then process AFTER traverse.
-        // This prevents mutating the scene graph during iteration.
-        // ============================================================
-        const meshesToProcess: { mesh: THREE.Mesh; parent: THREE.Object3D }[] = [];
+        if (keepOriginalMaterials) {
+          // ============================================================
+          // ORIGINAL MATERIALS MODE: Keep the model's textures, colors,
+          // and animation exactly as the creator designed them.
+          // ============================================================
+          model.traverse((child: any) => {
+            if ((child as THREE.Bone).isBone) {
+              mapBone(child, bonesRef.current);
+            }
+            // Keep all original materials — do NOT replace them
+            if ((child as THREE.Mesh).isMesh) {
+              child.frustumCulled = false;
+            }
+          });
 
-        model.traverse((child: any) => {
-          if ((child as THREE.Mesh).isMesh) {
-            // Record the mesh AND its parent so we add the wireframe
-            // as a sibling, not at the model root. This ensures the
-            // wireframe SkinnedMesh inherits the same world transform
-            // and stays in sync with the original mesh.
-            meshesToProcess.push({
-              mesh: child as THREE.Mesh,
-              parent: child.parent || model
-            });
+          // Play the model's built-in animation
+          if (gltf.animations && gltf.animations.length > 0) {
+            const mixer = new THREE.AnimationMixer(model);
+            mixerRef.current = mixer;
+            const clip = gltf.animations[0];
+            const action = mixer.clipAction(clip);
+            action.setLoop(THREE.LoopRepeat, Infinity);
+            action.play();
           }
 
-          // Map Bones — both models use Mixamo naming convention
-          if ((child as THREE.Bone).isBone) {
-            const name = child.name.toLowerCase();
-            if (name.includes('hips')) bonesRef.current.set('hips', child);
-            if (name.includes('spine') && !name.includes('spine1') && !name.includes('spine2')) bonesRef.current.set('spine', child);
-            if (name.includes('spine1')) bonesRef.current.set('spine1', child);
-            if (name.includes('spine2')) bonesRef.current.set('spine2', child);
-            if (name.includes('neck')) bonesRef.current.set('neck', child);
-            if (name.includes('head') && !name.includes('top')) bonesRef.current.set('head', child);
-            
-            if (name.includes('leftshoulder')) bonesRef.current.set('leftShoulder', child);
-            if (name.includes('rightshoulder')) bonesRef.current.set('rightShoulder', child);
-            
-            if (name.includes('leftarm') && !name.includes('forearm')) bonesRef.current.set('leftArm', child);
-            if (name.includes('rightarm') && !name.includes('forearm')) bonesRef.current.set('rightArm', child);
-            
-            if (name.includes('leftforearm')) bonesRef.current.set('leftForearm', child);
-            if (name.includes('rightforearm')) bonesRef.current.set('rightForearm', child);
-            
-            if (name.includes('lefthand') && name === 'mixamorig:lefthand') bonesRef.current.set('leftHand', child);
-            if (name.includes('righthand') && name === 'mixamorig:righthand') bonesRef.current.set('rightHand', child);
-            
-            if (name.includes('leftupleg')) bonesRef.current.set('leftUpLeg', child);
-            if (name.includes('rightupleg')) bonesRef.current.set('rightUpLeg', child);
-            
-            if (name.includes('leftleg') && !name.includes('upleg')) bonesRef.current.set('leftLeg', child);
-            if (name.includes('rightleg') && !name.includes('upleg')) bonesRef.current.set('rightLeg', child);
-            
-            if (name.includes('leftfoot') && !name.includes('toe')) bonesRef.current.set('leftFoot', child);
-            if (name.includes('rightfoot') && !name.includes('toe')) bonesRef.current.set('rightFoot', child);
+        } else {
+          // ============================================================
+          // HOLOGRAM MODE: Replace materials with volumetric hologram
+          // shader and add wireframe overlay.
+          // ============================================================
+          const innerMaterial = new THREE.MeshStandardMaterial({
+            color: 0x3a006e,
+            emissive: 0x220044,
+            emissiveIntensity: 0.8,
+            metalness: 0.6,
+            roughness: 0.4,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+          });
+
+          const wireframeMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.08,
+            depthTest: true,
+            depthWrite: false
+          });
+
+          // Collect meshes FIRST, then process AFTER traverse
+          const meshesToProcess: { mesh: THREE.Mesh; parent: THREE.Object3D }[] = [];
+
+          model.traverse((child: any) => {
+            if ((child as THREE.Mesh).isMesh) {
+              meshesToProcess.push({
+                mesh: child as THREE.Mesh,
+                parent: child.parent || model
+              });
+            }
+            if ((child as THREE.Bone).isBone) {
+              mapBone(child, bonesRef.current);
+            }
+          });
+
+          // Process meshes AFTER traverse is complete
+          for (const { mesh, parent } of meshesToProcess) {
+            // Dispose of original material and textures
+            if (mesh.material) {
+              const origMat = mesh.material as THREE.MeshStandardMaterial;
+              if (origMat.map) { origMat.map.dispose(); origMat.map = null; }
+              if (origMat.emissiveMap) { origMat.emissiveMap.dispose(); origMat.emissiveMap = null; }
+              if (origMat.normalMap) { origMat.normalMap.dispose(); origMat.normalMap = null; }
+              origMat.dispose();
+            }
+
+            if ((mesh as any).isSkinnedMesh) {
+              const skinnedMesh = mesh as THREE.SkinnedMesh;
+              const wireframe = new THREE.SkinnedMesh(
+                skinnedMesh.geometry,
+                wireframeMaterial
+              );
+              wireframe.position.copy(skinnedMesh.position);
+              wireframe.rotation.copy(skinnedMesh.rotation);
+              wireframe.scale.copy(skinnedMesh.scale);
+              wireframe.bind(skinnedMesh.skeleton, skinnedMesh.bindMatrix.clone());
+              wireframe.bindMatrixInverse.copy(skinnedMesh.bindMatrixInverse);
+              wireframe.name = 'wireframe_overlay';
+              wireframe.frustumCulled = false;
+              parent.add(wireframe);
+            } else {
+              const wireframeMesh = mesh.clone();
+              wireframeMesh.material = wireframeMaterial;
+              wireframeMesh.name = 'wireframe_overlay';
+              parent.add(wireframeMesh);
+            }
+
+            // Apply inner material to the original mesh
+            mesh.material = innerMaterial;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.frustumCulled = false;
           }
-        });
 
-        // Process meshes AFTER traverse is complete
-        for (const { mesh, parent } of meshesToProcess) {
-          // Dispose of original material and textures to prevent bleed-through
-          if (mesh.material) {
-            const origMat = mesh.material as THREE.MeshStandardMaterial;
-            if (origMat.map) { origMat.map.dispose(); origMat.map = null; }
-            if (origMat.emissiveMap) { origMat.emissiveMap.dispose(); origMat.emissiveMap = null; }
-            if (origMat.normalMap) { origMat.normalMap.dispose(); origMat.normalMap = null; }
-            origMat.dispose();
+          // Create mixer but don't play — bones driven by metrics
+          if (gltf.animations && gltf.animations.length > 0) {
+            const mixer = new THREE.AnimationMixer(model);
+            mixerRef.current = mixer;
           }
-
-          if ((mesh as any).isSkinnedMesh) {
-            // For SkinnedMesh: create a wireframe overlay that shares the
-            // SAME skeleton and is added to the SAME parent node.
-            // This ensures identical world transforms so the wireframe
-            // deforms perfectly in sync with the inner mesh.
-            const skinnedMesh = mesh as THREE.SkinnedMesh;
-            const wireframe = new THREE.SkinnedMesh(
-              skinnedMesh.geometry,
-              wireframeMaterial
-            );
-            // Copy the local transform so it sits in exactly the same spot
-            wireframe.position.copy(skinnedMesh.position);
-            wireframe.rotation.copy(skinnedMesh.rotation);
-            wireframe.scale.copy(skinnedMesh.scale);
-            // Share skeleton and bind to the same bind matrix
-            wireframe.bind(skinnedMesh.skeleton, skinnedMesh.bindMatrix.clone());
-            wireframe.bindMatrixInverse.copy(skinnedMesh.bindMatrixInverse);
-            wireframe.name = 'wireframe_overlay';
-            wireframe.frustumCulled = false; // Prevent culling glitches
-            // Add as sibling — same parent as original mesh
-            parent.add(wireframe);
-          } else {
-            const wireframeMesh = mesh.clone();
-            wireframeMesh.material = wireframeMaterial;
-            wireframeMesh.name = 'wireframe_overlay';
-            parent.add(wireframeMesh);
-          }
-
-          // Apply inner material to the original mesh
-          mesh.material = innerMaterial;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.frustumCulled = false; // Prevent culling glitches
-        }
-
-        // Stop any built-in animations — we drive bones from metrics
-        if (gltf.animations && gltf.animations.length > 0) {
-          const mixer = new THREE.AnimationMixer(model);
-          mixerRef.current = mixer;
         }
 
         scene.add(model);
@@ -311,6 +323,11 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     // Animation Loop
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
+      // Update animation mixer for built-in animations
+      if (mixerRef.current) {
+        const delta = clockRef.current.getDelta();
+        mixerRef.current.update(delta);
+      }
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
@@ -330,9 +347,11 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     };
   }, [modelUrl]);
 
-  // Handle Metrics Animation — motion-type-aware
+  // Handle Metrics Animation — only for hologram-mode models (not original-material models)
   useEffect(() => {
     if (!metrics || bonesRef.current.size === 0) return;
+    // Skip bone manipulation for models that play their own animation
+    if (useOriginalMaterialsRef.current) return;
 
     const rotateBone = (name: string, axis: 'x' | 'y' | 'z', angleDeg: number, offsetDeg: number = 0, invert: boolean = false) => {
       const bone = bonesRef.current.get(name);
@@ -351,30 +370,24 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         modelRef.current.rotation.y = viewRotationRad + stanceOffset + (hipActionRad * 0.3);
       }
 
-      // Spine — slight backward lean during jump
       const spineTilt = Math.min(metrics.spineAngle, 12);
       rotateBone('spine', 'x', spineTilt, 0, false);
-      
-      // Shoulders — less rotation than football (basketball is more frontal)
       rotateBone('spine', 'y', metrics.shoulderRotation * 0.3, -90, true);
 
-      // Right Arm (Shooting arm)
       rotateBone('rightArm', 'x', metrics.rightShoulderAngle, 0, false);
       const shootingAbduction = Math.max(-20, Math.min(20, (90 - metrics.shoulderRotation) * 0.3));
       rotateBone('rightArm', 'z', shootingAbduction, 0, false);
       rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
 
-      // Left Arm (Guide hand)
       rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
       rotateBone('leftArm', 'x', metrics.leftShoulderAngle * 0.5, 0, false);
       rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
 
-      // Legs
       rotateBone('rightLeg', 'x', metrics.rightKneeFlexion, -180, false);
       rotateBone('leftLeg', 'x', metrics.leftKneeFlexion, -180, false);
       
     } else {
-      // ===== FOOTBALL THROW / DEFAULT ANIMATION =====
+      // ===== DEFAULT HOLOGRAM ANIMATION (metrics-driven) =====
       if (modelRef.current) {
         const viewRotationRad = (rotationAngle * Math.PI) / 180;
         const stanceOffset = -Math.PI / 2;
@@ -382,25 +395,19 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
         modelRef.current.rotation.y = viewRotationRad + stanceOffset + (hipActionRad * 0.5);
       }
 
-      // Spine
       const spineTilt = metrics.spineAngle > 15 ? 15 : metrics.spineAngle; 
       rotateBone('spine', 'x', spineTilt, 0, false);
-
-      // Shoulders
       rotateBone('spine', 'y', metrics.shoulderRotation, -90, true);
 
-      // Right Arm (Throwing Arm)
       rotateBone('rightArm', 'x', metrics.rightShoulderAngle, 0, false);
       const armAdduction = (90 - metrics.shoulderRotation) - 45;
       rotateBone('rightArm', 'z', armAdduction, 0, false);
       rotateBone('rightForearm', 'x', metrics.rightElbowAngle, -180, false);
 
-      // Left Arm (Non-throwing)
       rotateBone('leftArm', 'z', metrics.leftShoulderAngle, -90, false);
       rotateBone('leftArm', 'x', 20, 0, false);
       rotateBone('leftForearm', 'x', metrics.leftElbowAngle, -180, false);
 
-      // Legs
       rotateBone('rightLeg', 'x', metrics.rightKneeFlexion, -180, false);
       rotateBone('leftLeg', 'x', metrics.leftKneeFlexion, -180, false);
     }
@@ -427,5 +434,37 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     </div>
   );
 };
+
+// Helper: Map bone names from Mixamo convention
+function mapBone(child: THREE.Object3D, boneMap: Map<string, THREE.Object3D>) {
+  const name = child.name.toLowerCase();
+  if (name.includes('hips')) boneMap.set('hips', child);
+  if (name.includes('spine') && !name.includes('spine1') && !name.includes('spine2')) boneMap.set('spine', child);
+  if (name.includes('spine1')) boneMap.set('spine1', child);
+  if (name.includes('spine2')) boneMap.set('spine2', child);
+  if (name.includes('neck')) boneMap.set('neck', child);
+  if (name.includes('head') && !name.includes('top')) boneMap.set('head', child);
+  
+  if (name.includes('leftshoulder')) boneMap.set('leftShoulder', child);
+  if (name.includes('rightshoulder')) boneMap.set('rightShoulder', child);
+  
+  if (name.includes('leftarm') && !name.includes('forearm')) boneMap.set('leftArm', child);
+  if (name.includes('rightarm') && !name.includes('forearm')) boneMap.set('rightArm', child);
+  
+  if (name.includes('leftforearm')) boneMap.set('leftForearm', child);
+  if (name.includes('rightforearm')) boneMap.set('rightForearm', child);
+  
+  if (name.includes('lefthand') && name === 'mixamorig:lefthand') boneMap.set('leftHand', child);
+  if (name.includes('righthand') && name === 'mixamorig:righthand') boneMap.set('rightHand', child);
+  
+  if (name.includes('leftupleg')) boneMap.set('leftUpLeg', child);
+  if (name.includes('rightupleg')) boneMap.set('rightUpLeg', child);
+  
+  if (name.includes('leftleg') && !name.includes('upleg')) boneMap.set('leftLeg', child);
+  if (name.includes('rightleg') && !name.includes('upleg')) boneMap.set('rightLeg', child);
+  
+  if (name.includes('leftfoot') && !name.includes('toe')) boneMap.set('leftFoot', child);
+  if (name.includes('rightfoot') && !name.includes('toe')) boneMap.set('rightFoot', child);
+}
 
 export default Hologram3D;

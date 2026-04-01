@@ -317,3 +317,9 @@
 - [x] Delete old Hologram1.0.glb from client/public/
 - [x] Search for any remaining references to old model (none found)
 - [ ] Verify new model loads on published site (user needs to re-publish)
+
+## Fix: Use Original fotball2.glb As-Is
+- [x] Upload original unmodified fotball2.glb to CDN (keep textures, materials, animation)
+- [x] Update Hologram3D.tsx to NOT override materials for football model — preserve original skin coloring
+- [x] Update Hologram3D.tsx to play the model's built-in animation
+- [ ] Verify football hologram shows original mesh, skin, and animation on replay (user to test after publish)
