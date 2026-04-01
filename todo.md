@@ -337,3 +337,6 @@
 ## Hologram Position & Rewind Fix
 - [x] Lower hologram position further — adjusted Y offset from -0.3 to -0.8
 - [x] Sync hologram animation with replay timeline via playbackProgress prop (0–1 maps to clip time)
+
+## Fix: Football Hologram Animation Stagnant
+- [x] Hologram not performing motion — fixed by setting action.time directly + mixer.update(0)

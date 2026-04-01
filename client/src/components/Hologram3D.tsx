@@ -232,20 +232,18 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
             }
           });
 
-          // Set up animation — driven by playbackProgress, NOT auto-playing
+          // Set up animation — time is controlled externally via playbackProgress
           if (gltf.animations && gltf.animations.length > 0) {
             const mixer = new THREE.AnimationMixer(model);
             mixerRef.current = mixer;
             const clip = gltf.animations[0];
             clipDurationRef.current = clip.duration;
             const action = mixer.clipAction(clip);
-            action.setLoop(THREE.LoopOnce, 1);
-            action.clampWhenFinished = true;
+            action.setLoop(THREE.LoopRepeat, Infinity);
+            action.setEffectiveWeight(1);
             action.play();
-            // Immediately pause — we'll seek to the right time via playbackProgress
-            action.paused = true;
             actionRef.current = action;
-            // Set initial time to 0
+            // Set initial pose at time 0
             mixer.setTime(0);
           }
 
@@ -418,9 +416,10 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     if (!useOriginalMaterialsRef.current) return;
 
     // Map progress (0–1) to animation time (0–clipDuration)
-    const targetTime = playbackProgress * clipDurationRef.current;
-    // Use setTime on the mixer to seek to exact position (works for rewind too)
-    mixerRef.current.setTime(targetTime);
+    const targetTime = Math.min(playbackProgress, 0.9999) * clipDurationRef.current;
+    // Directly set the action's time and force the mixer to apply it
+    actionRef.current.time = targetTime;
+    mixerRef.current.update(0); // delta=0 applies current time without advancing
   }, [playbackProgress]);
 
   // Handle rotation for original-material models
