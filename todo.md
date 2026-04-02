@@ -345,3 +345,8 @@
 - [x] Play hologram at natural/authentic speed instead of stretching to match recording duration
 - [x] After motion completes, have hologram return to neutral pose (ball by chest)
 - [x] Sync hologram rep cycle with user rep cycle (motion + return to neutral)
+
+## Hologram Timing & Reset Fix
+- [x] Slow throw to ~1.8 seconds (professional average)
+- [x] Replace rewind-to-neutral with snap to neutral pose (no visible rewind)
+- [x] Total rep cycle ~2.5 seconds (1.8s throw + 0.7s snap to neutral)
