@@ -340,3 +340,8 @@
 
 ## Fix: Football Hologram Animation Stagnant
 - [x] Hologram not performing motion — fixed by setting action.time directly + mixer.update(0)
+
+## Hologram Animation Timing Fix
+- [x] Play hologram at natural/authentic speed instead of stretching to match recording duration
+- [x] After motion completes, have hologram return to neutral pose (ball by chest)
+- [x] Sync hologram rep cycle with user rep cycle (motion + return to neutral)
