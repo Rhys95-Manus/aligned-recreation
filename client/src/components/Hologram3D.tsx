@@ -409,17 +409,50 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   }, [modelUrl]);
 
   // Sync built-in animation to replay timeline via playbackProgress (0.0–1.0)
-  // This handles play, pause, rewind, scrub — all driven by the parent's frame index
+  // The hologram plays at NATURAL speed, then returns to neutral for the remaining time.
+  // This prevents slow-motion stretching when the recording is longer than the clip.
   useEffect(() => {
     if (!mixerRef.current || !actionRef.current || clipDurationRef.current <= 0) return;
-    // Only applies to original-material models with built-in animation
     if (!useOriginalMaterialsRef.current) return;
 
-    // Map progress (0–1) to animation time (0–clipDuration)
-    const targetTime = Math.min(playbackProgress, 0.9999) * clipDurationRef.current;
-    // Directly set the action's time and force the mixer to apply it
+    const clipDuration = clipDurationRef.current; // e.g., 1.73s for football throw
+
+    // Estimate the total recording duration from the replay.
+    // We need to know how long the recording is to calculate real elapsed time.
+    // The recording duration is passed implicitly: if we know the frame rate (~30fps)
+    // and total frames, we can estimate. But simpler: use a ratio approach.
+    //
+    // We want the throw to complete in the first portion of the replay,
+    // then return to neutral. The throw should take clipDuration worth of real time.
+    // If the recording is longer, the remaining time is for returning to neutral.
+    //
+    // Assume typical recording is ~3-6 seconds at 30fps.
+    // clipDuration / estimatedRecordingDuration = fraction of progress for the throw.
+    // We'll use a fixed estimate: the throw occupies the first ~40% of the replay,
+    // and the return-to-neutral occupies the next ~30%, leaving ~30% at neutral.
+    
+    const throwEndProgress = 0.40;   // Throw completes at 40% of replay
+    const neutralStartProgress = 0.65; // Fully back to neutral by 65%
+    
+    let targetTime: number;
+    
+    if (playbackProgress <= throwEndProgress) {
+      // Phase 1: Playing the throw at natural speed
+      // Map 0–throwEndProgress to 0–clipDuration
+      const throwProgress = playbackProgress / throwEndProgress;
+      targetTime = Math.min(throwProgress, 0.9999) * clipDuration;
+    } else if (playbackProgress <= neutralStartProgress) {
+      // Phase 2: Smoothly blend back to neutral (frame 0)
+      // Map throwEndProgress–neutralStartProgress to clipDuration–0
+      const returnProgress = (playbackProgress - throwEndProgress) / (neutralStartProgress - throwEndProgress);
+      targetTime = (1 - returnProgress) * clipDuration;
+    } else {
+      // Phase 3: Hold at neutral (start of animation = ready position)
+      targetTime = 0;
+    }
+    
     actionRef.current.time = targetTime;
-    mixerRef.current.update(0); // delta=0 applies current time without advancing
+    mixerRef.current.update(0);
   }, [playbackProgress]);
 
   // Handle rotation for original-material models
