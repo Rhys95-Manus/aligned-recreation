@@ -63,6 +63,8 @@ interface Hologram3DProps {
   isPlaying?: boolean;
   /** 0.0–1.0 progress through the current rep, used to sync built-in animation to replay timeline */
   playbackProgress?: number;
+  /** Total duration of the current rep in seconds, used to calculate natural-speed animation timing */
+  repDuration?: number;
   metrics?: {
     hipRotation: number;
     shoulderRotation: number;
@@ -87,6 +89,7 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   motionType = 'generic',
   isPlaying = true,
   playbackProgress = 0,
+  repDuration = 3.0,
   metrics,
   onRotationChange,
   onLoadComplete
@@ -409,51 +412,56 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
   }, [modelUrl]);
 
   // Sync built-in animation to replay timeline via playbackProgress (0.0–1.0)
-  // The hologram plays at NATURAL speed, then returns to neutral for the remaining time.
-  // This prevents slow-motion stretching when the recording is longer than the clip.
+  // Professional throw timing: ~1.8s throw, ~0.7s reset, ~2.5s total rep cycle.
+  // The hologram plays at natural speed, then snaps to neutral (no rewind).
+  const prevProgressRef = useRef(0);
+  const isInNeutralRef = useRef(false);
+  
   useEffect(() => {
     if (!mixerRef.current || !actionRef.current || clipDurationRef.current <= 0) return;
     if (!useOriginalMaterialsRef.current) return;
 
-    const clipDuration = clipDurationRef.current; // e.g., 1.73s for football throw
-
-    // Estimate the total recording duration from the replay.
-    // We need to know how long the recording is to calculate real elapsed time.
-    // The recording duration is passed implicitly: if we know the frame rate (~30fps)
-    // and total frames, we can estimate. But simpler: use a ratio approach.
-    //
-    // We want the throw to complete in the first portion of the replay,
-    // then return to neutral. The throw should take clipDuration worth of real time.
-    // If the recording is longer, the remaining time is for returning to neutral.
-    //
-    // Assume typical recording is ~3-6 seconds at 30fps.
-    // clipDuration / estimatedRecordingDuration = fraction of progress for the throw.
-    // We'll use a fixed estimate: the throw occupies the first ~40% of the replay,
-    // and the return-to-neutral occupies the next ~30%, leaving ~30% at neutral.
+    const clipDuration = clipDurationRef.current; // ~1.73s for football throw
+    const totalRepDuration = repDuration; // actual recording duration in seconds
     
-    const throwEndProgress = 0.40;   // Throw completes at 40% of replay
-    const neutralStartProgress = 0.65; // Fully back to neutral by 65%
+    // Professional timing targets
+    const THROW_DURATION = 1.8; // seconds for the throw motion
+    const TOTAL_REP_CYCLE = 2.5; // total seconds for throw + return to neutral
+    
+    // Convert playbackProgress (0–1) to elapsed seconds
+    const elapsedSeconds = playbackProgress * totalRepDuration;
+    
+    // Detect if we rewound (user scrubbed backward)
+    const didRewind = playbackProgress < prevProgressRef.current - 0.01;
+    prevProgressRef.current = playbackProgress;
     
     let targetTime: number;
     
-    if (playbackProgress <= throwEndProgress) {
-      // Phase 1: Playing the throw at natural speed
-      // Map 0–throwEndProgress to 0–clipDuration
-      const throwProgress = playbackProgress / throwEndProgress;
-      targetTime = Math.min(throwProgress, 0.9999) * clipDuration;
-    } else if (playbackProgress <= neutralStartProgress) {
-      // Phase 2: Smoothly blend back to neutral (frame 0)
-      // Map throwEndProgress–neutralStartProgress to clipDuration–0
-      const returnProgress = (playbackProgress - throwEndProgress) / (neutralStartProgress - throwEndProgress);
-      targetTime = (1 - returnProgress) * clipDuration;
-    } else {
-      // Phase 3: Hold at neutral (start of animation = ready position)
+    if (elapsedSeconds <= THROW_DURATION) {
+      // Phase 1: Playing the throw at professional speed (~1.8s)
+      // Map 0–THROW_DURATION seconds to 0–clipDuration
+      const throwFraction = elapsedSeconds / THROW_DURATION;
+      targetTime = Math.min(throwFraction, 0.9999) * clipDuration;
+      isInNeutralRef.current = false;
+    } else if (elapsedSeconds <= TOTAL_REP_CYCLE) {
+      // Phase 2: Quick snap to neutral — NOT a rewind
+      // Instead of playing the animation backwards, just go to frame 0 immediately
       targetTime = 0;
+      isInNeutralRef.current = true;
+    } else {
+      // Phase 3: Hold at neutral for the rest of the recording
+      targetTime = 0;
+      isInNeutralRef.current = true;
+    }
+    
+    // If user rewound into the throw phase, allow re-playing from that point
+    if (didRewind && elapsedSeconds <= THROW_DURATION) {
+      isInNeutralRef.current = false;
     }
     
     actionRef.current.time = targetTime;
     mixerRef.current.update(0);
-  }, [playbackProgress]);
+  }, [playbackProgress, repDuration]);
 
   // Handle rotation for original-material models
   useEffect(() => {
