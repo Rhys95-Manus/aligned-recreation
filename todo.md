@@ -350,3 +350,13 @@
 - [x] Slow throw to ~1.8 seconds (professional average)
 - [x] Replace rewind-to-neutral with snap to neutral pose (no visible rewind)
 - [x] Total rep cycle ~2.5 seconds (1.8s throw + 0.7s snap to neutral)
+
+## Categories & Pricing Overhaul
+- [x] Replace all categories with exactly: Sports, Weightlifting, Recovery
+- [x] Remove old categories (Kettlebell Snatch, Golf, Football, Kettlebell Swing, etc.)
+- [x] Update Home.tsx featured cards to Sports, Weightlifting, Recovery with new generated images
+- [x] Create monthly pricing tiers: Starter ($15/1 cat), Plus ($29/2 cats), All Access ($40/3 cats)
+- [x] Display monthly plans FIRST on pricing page
+- [x] Create LTD section below monthly: Lifetime Starter ($97), Lifetime Plus ($167), Lifetime All Access ($200)
+- [x] Add urgency badge/label on LTD section (Pre-Launch Special)
+- [x] Add messaging: "Lock in lifetime access before we launch — pricing increases once we go live"

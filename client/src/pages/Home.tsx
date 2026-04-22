@@ -4,6 +4,30 @@ import { useLocation } from "wouter";
 import { useAudio } from "@/contexts/AudioContext";
 import AudioSettingsModal from "@/components/AudioSettingsModal";
 
+const featuredCategories = [
+  {
+    id: "sports",
+    name: "Sports",
+    description: "Football, basketball, baseball, tennis & more",
+    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/category-sports-MVkeqiyv7nw5Rxpexe3F5r.webp",
+    route: "/categories/sports",
+  },
+  {
+    id: "weightlifting",
+    name: "Weightlifting",
+    description: "Powerlifting, Olympic lifts & kettlebell training",
+    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/category-weightlifting-98TYa4o5P2N6yisn6dhbXZ.webp",
+    route: "/categories/weightlifting",
+  },
+  {
+    id: "recovery",
+    name: "Recovery",
+    description: "Physical therapy, stretching & mobility work",
+    image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/category-recovery-V2dndiQN4XfRDXnnnwksJk.webp",
+    route: "/categories/recovery",
+  },
+];
+
 export default function Home() {
   // The userAuth hooks provides authentication state
   // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
@@ -21,7 +45,7 @@ export default function Home() {
         <div className="flex gap-2 md:gap-3 flex-wrap justify-end">
           <AudioSettingsModal />
           <Button variant="outline" onClick={() => setLocation("/community")} className="!border-2 !border-white bg-transparent text-white hover:bg-white/10 rounded-full px-3 md:px-5 text-sm md:text-base">Community</Button>
-          <Button variant="outline" onClick={() => setLocation("/history")} className="!border-2 !border-purple-400 bg-transparent !text-purple-400 hover:bg-purple-400/10 rounded-full px-3 md:px-5 text-sm md:text-base">📊 History</Button>
+          <Button variant="outline" onClick={() => setLocation("/history")} className="!border-2 !border-purple-400 bg-transparent !text-purple-400 hover:bg-purple-400/10 rounded-full px-3 md:px-5 text-sm md:text-base">History</Button>
           <Button variant="outline" onClick={() => setLocation("/pricing")} className="!border-2 !border-cyan-400 bg-transparent !text-cyan-400 hover:bg-cyan-400/10 rounded-full px-3 md:px-5 text-sm md:text-base">Pricing</Button>
         </div>
       </header>
@@ -39,62 +63,32 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24">
-          <div 
-            className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
-            onClick={() => setLocation("/analysis/strength/kettlebell/snatch?motion=Kettlebell%20Snatch")}
-          >
-            <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/SOnnUycYEwqvJYwg.webp" alt="Kettlebell Snatch" className="w-full h-64 object-cover" />
-            <div className="p-6 text-center">
-              <h3 className="text-2xl font-bold mb-2">Kettlebell Snatch</h3>
-              <p className="text-slate-300 text-sm">Optimize your hip drive</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
+          {featuredCategories.map((cat) => (
+            <div
+              key={cat.id}
+              className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 hover:border-cyan-500/40 transition-all cursor-pointer group"
+              onClick={() => setLocation(cat.route)}
+            >
+              <div className="overflow-hidden">
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <div className="p-6 text-center">
+                <h3 className="text-2xl font-bold mb-2">{cat.name}</h3>
+                <p className="text-slate-300 text-sm">{cat.description}</p>
+              </div>
             </div>
-          </div>
-          <div 
-            className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
-            onClick={() => setLocation("/analysis/sports/golf/swing?motion=Golf%20Swing")}
-          >
-            <img src="/golf.webp" alt="Golf" className="w-full h-64 object-cover" />
-            <div className="p-6 text-center">
-              <h3 className="text-2xl font-bold mb-2">Golf</h3>
-              <p className="text-slate-300 text-sm">Analyze your golf technique</p>
-            </div>
-          </div>
-          <div 
-            className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
-            onClick={() => setLocation("/analysis/sports/football/throw?motion=Football%20Throw")}
-          >
-            <img src="/football.webp" alt="Football" className="w-full h-64 object-cover" />
-            <div className="p-6 text-center">
-              <h3 className="text-2xl font-bold mb-2">Football</h3>
-              <p className="text-slate-300 text-sm">Master quarterback mechanics</p>
-            </div>
-          </div>
-          <div 
-            className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-900/40 hover:bg-slate-800/60 transition-all cursor-pointer"
-            onClick={() => setLocation("/analysis/strength/kettlebell/swing?motion=Kettlebell%20Swing")}
-          >
-            <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663143408740/fjcdgycFVnPgCPZP.webp" alt="Kettlebell Swing" className="w-full h-64 object-cover" />
-            <div className="p-6 text-center">
-              <h3 className="text-2xl font-bold mb-2">Kettlebell Swing</h3>
-              <p className="text-slate-300 text-sm">Perfect your hinge pattern</p>
-            </div>
-          </div>
+          ))}
         </div>
       </main>
 
       <footer className="text-center py-10 text-slate-400">
-        <p className="text-base mb-2">Total Points: 0</p>
         <p className="text-sm">Made with Manus</p>
       </footer>
-
-      <div className="fixed bottom-6 right-6 bg-white text-black px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 shadow-lg">
-        <span>✎</span> Tweak
-      </div>
-
-
-
-
     </div>
   );
 }
