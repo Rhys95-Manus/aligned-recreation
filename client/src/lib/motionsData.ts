@@ -38,7 +38,7 @@ export function getDifficultyColor(level: string): string {
   }
 }
 
-// All categories data
+// All categories data — exactly 3 categories: Sports, Weightlifting, Recovery
 export const categoriesData: Category[] = [
   {
     id: "sports",
@@ -166,167 +166,7 @@ export const categoriesData: Category[] = [
           { id: "kb-windmill", name: "Kettlebell Windmill", level: "Advanced", description: "Overhead stability and mobility", duration: "3-5 seconds", keyPoints: "Hip hinge, Overhead stability, Flexibility" },
           { id: "goblet-squat", name: "Goblet Squat", level: "Beginner", description: "Front-loaded squat pattern", duration: "2-3 seconds", keyPoints: "Chest up, Deep squat, Heel contact" },
           { id: "kb-deadlift", name: "Kettlebell Deadlift", level: "Beginner", description: "Hip hinge pattern with kettlebell", duration: "2-3 seconds", keyPoints: "Hip hinge, Neutral spine, Glute squeeze" },
-          { id: "kb-row", name: "Kettlebell Row", level: "Beginner", description: "Single arm rowing movement", duration: "1-2 seconds", keyPoints: "Hip hinge, Elbow path, Squeeze shoulder blade" }
-        ]
-      }
-    ]
-  },
-  {
-    id: "yoga",
-    name: "Yoga",
-    description: "Yoga poses and flow sequences",
-    subcategories: [
-      {
-        id: "seated",
-        name: "Seated",
-        motions: [
-          { id: "seated-forward-fold", name: "Seated Forward Fold", level: "Beginner", description: "Hamstring and spine stretch", duration: "Hold 1-2 minutes", keyPoints: "Long spine, Hip hinge, Relaxed neck" },
-          { id: "bound-angle", name: "Bound Angle Pose", level: "Beginner", description: "Hip opening seated pose", duration: "Hold 1-2 minutes", keyPoints: "Soles together, Tall spine, Gentle forward fold" },
-          { id: "seated-twist", name: "Seated Spinal Twist", level: "Intermediate", description: "Detoxifying spinal rotation", duration: "Hold 30-60s each side", keyPoints: "Tall spine, Gradual rotation, Breath awareness" },
-          { id: "lotus", name: "Lotus Pose", level: "Advanced", description: "Traditional meditation seat", duration: "Hold 1-5 minutes", keyPoints: "Hip flexibility, Straight spine, Relaxed shoulders" },
-          { id: "hero", name: "Hero Pose", level: "Intermediate", description: "Kneeling meditation pose", duration: "Hold 1-3 minutes", keyPoints: "Knees together, Tall spine, Relaxed arms" },
-          { id: "pigeon", name: "Pigeon Pose", level: "Intermediate", description: "Deep hip opening pose", duration: "Hold 1-2 minutes", keyPoints: "Hip opening, Square hips, Gentle forward fold" }
-        ]
-      },
-      {
-        id: "standing",
-        name: "Standing",
-        motions: [
-          { id: "warrior-1", name: "Warrior I", level: "Beginner", description: "Strong grounding warrior pose", duration: "Hold 30-60s", keyPoints: "Hip square, Strong legs, Lifted chest" },
-          { id: "warrior-2", name: "Warrior II", level: "Beginner", description: "Side-facing warrior pose", duration: "Hold 30-60s", keyPoints: "Wide stance, Bent front knee, Open hips" },
-          { id: "warrior-3", name: "Warrior III", level: "Advanced", description: "Balancing warrior pose", duration: "Hold 15-30s", keyPoints: "Single leg balance, Straight line, Core engagement" },
-          { id: "triangle", name: "Triangle Pose", level: "Intermediate", description: "Side body stretch and strength", duration: "Hold 30-60s", keyPoints: "Long spine, Open chest, Strong legs" },
-          { id: "tree", name: "Tree Pose", level: "Intermediate", description: "Single leg balance pose", duration: "Hold 30-60s", keyPoints: "Root down, Engage core, Steady gaze" },
-          { id: "extended-side-angle", name: "Extended Side Angle", level: "Intermediate", description: "Deep side body stretch", duration: "Hold 30-60s", keyPoints: "Long line, Open chest, Grounded feet" }
-        ]
-      },
-      {
-        id: "flow",
-        name: "Flow",
-        motions: [
-          { id: "sun-salutation-a", name: "Sun Salutation A", level: "Beginner", description: "Classic vinyasa flow sequence", duration: "1-2 minutes", keyPoints: "Breath coordination, Smooth transitions, Alignment" },
-          { id: "sun-salutation-b", name: "Sun Salutation B", level: "Intermediate", description: "Extended vinyasa flow with warriors", duration: "2-3 minutes", keyPoints: "Warrior integration, Breath rhythm, Flow continuity" }
-        ]
-      },
-      {
-        id: "restorative",
-        name: "Restorative",
-        motions: [
-          { id: "childs-pose", name: "Child's Pose", level: "Beginner", description: "Resting and grounding pose", duration: "Hold 1-5 minutes", keyPoints: "Hip connection, Relaxed arms, Deep breathing" },
-          { id: "corpse-pose", name: "Corpse Pose", level: "Beginner", description: "Final relaxation pose", duration: "Hold 5-15 minutes", keyPoints: "Complete relaxation, Natural breath, Mental stillness" }
-        ]
-      }
-    ]
-  },
-  {
-    id: "dance",
-    name: "Dance",
-    description: "Dance moves and choreography",
-    subcategories: [
-      {
-        id: "hip-hop",
-        name: "Hip Hop",
-        motions: [
-          { id: "pop-lock", name: "Pop & Lock", level: "Intermediate", description: "Classic popping and locking", duration: "2-4 seconds", keyPoints: "Sharp movements, Isolation, Rhythm" },
-          { id: "toprock", name: "Toprock", level: "Beginner", description: "Standing breakdance moves", duration: "4-8 seconds", keyPoints: "Footwork, Style, Flow" },
-          { id: "windmill", name: "Windmill", level: "Expert", description: "Classic breakdance power move", duration: "2-4 seconds", keyPoints: "Momentum, Core strength, Timing" }
-        ]
-      },
-      {
-        id: "latin",
-        name: "Latin",
-        motions: [
-          { id: "salsa-basic", name: "Salsa Basic", level: "Beginner", description: "Fundamental salsa step", duration: "4-8 beats", keyPoints: "Timing, Hip movement, Partner connection" },
-          { id: "tango-walk", name: "Tango Walk", level: "Intermediate", description: "Argentine tango walking technique", duration: "2-4 steps", keyPoints: "Posture, Connection, Precision" }
-        ]
-      },
-      {
-        id: "contemporary",
-        name: "Contemporary",
-        motions: [
-          { id: "spiral", name: "Spiral", level: "Intermediate", description: "Contemporary spiral movement", duration: "4-8 seconds", keyPoints: "Fluidity, Core engagement, Spatial awareness" },
-          { id: "floor-work", name: "Floor Work", level: "Advanced", description: "Contemporary floor movement", duration: "8-16 seconds", keyPoints: "Weight shifts, Momentum, Control" }
-        ]
-      },
-      {
-        id: "ballet",
-        name: "Ballet",
-        motions: [
-          { id: "plie", name: "Plié", level: "Beginner", description: "Fundamental ballet knee bend", duration: "2-4 seconds", keyPoints: "Turnout, Alignment, Control" },
-          { id: "arabesque", name: "Arabesque", level: "Intermediate", description: "Classic ballet balance pose", duration: "Hold 5-10s", keyPoints: "Line, Balance, Extension" }
-        ]
-      }
-    ]
-  },
-  {
-    id: "martial-arts",
-    name: "Martial Arts",
-    description: "Martial arts techniques and forms",
-    subcategories: [
-      {
-        id: "striking",
-        name: "Striking Techniques",
-        motions: [
-          { id: "jab", name: "Jab", level: "Beginner", description: "Basic boxing jab technique", duration: "0.5-1 second", keyPoints: "Straight line, Hip rotation, Quick return" },
-          { id: "cross", name: "Cross", level: "Beginner", description: "Power cross punch", duration: "0.5-1 second", keyPoints: "Hip drive, Shoulder turn, Follow-through" },
-          { id: "hook", name: "Hook", level: "Intermediate", description: "Boxing hook punch", duration: "0.5-1 second", keyPoints: "Circular motion, Elbow position, Body rotation" },
-          { id: "uppercut", name: "Uppercut", level: "Intermediate", description: "Upward boxing punch", duration: "0.5-1 second", keyPoints: "Knee bend, Upward drive, Hip thrust" },
-          { id: "overhand", name: "Overhand", level: "Advanced", description: "Looping overhand punch", duration: "0.5-1 second", keyPoints: "Arc motion, Shoulder over, Power generation" },
-          { id: "backfist", name: "Backfist", level: "Intermediate", description: "Reverse knuckle strike", duration: "0.5-1 second", keyPoints: "Whipping motion, Back of hand, Snap back" },
-          { id: "hammer-fist", name: "Hammer Fist", level: "Beginner", description: "Downward striking technique", duration: "0.5-1 second", keyPoints: "Bottom of fist, Downward arc, Full body weight" },
-          { id: "horizontal-elbow", name: "Horizontal Elbow", level: "Intermediate", description: "Side elbow strike", duration: "0.5-1 second", keyPoints: "Hip rotation, Elbow point, Close range" },
-          { id: "upward-elbow", name: "Upward Elbow", level: "Intermediate", description: "Rising elbow strike", duration: "0.5-1 second", keyPoints: "Drive upward, Hip thrust, Close distance" },
-          { id: "downward-elbow", name: "Downward Elbow", level: "Advanced", description: "Downward elbow strike", duration: "0.5-1 second", keyPoints: "Overhead position, Downward drive, Full body weight" },
-          { id: "front-kick", name: "Front Kick", level: "Beginner", description: "Straight forward kick", duration: "1-2 seconds", keyPoints: "Knee chamber, Hip drive, Ball of foot" },
-          { id: "roundhouse", name: "Roundhouse Kick", level: "Intermediate", description: "Circular kicking technique", duration: "1-2 seconds", keyPoints: "Hip turn, Knee chamber, Snap through" },
-          { id: "side-kick", name: "Side Kick", level: "Intermediate", description: "Lateral kicking technique", duration: "1-2 seconds", keyPoints: "Hip turn, Blade of foot, Chamber high" },
-          { id: "back-kick", name: "Back Kick", level: "Advanced", description: "Reverse kicking technique", duration: "1-2 seconds", keyPoints: "Look back, Hip thrust, Heel strike" },
-          { id: "axe-kick", name: "Axe Kick", level: "Advanced", description: "Downward chopping kick", duration: "1-2 seconds", keyPoints: "High chamber, Straight leg, Heel down" },
-          { id: "crescent-kick", name: "Crescent Kick", level: "Intermediate", description: "Arcing kick technique", duration: "1-2 seconds", keyPoints: "Arc motion, Inside edge, Hip flexibility" },
-          { id: "spinning-heel", name: "Spinning Heel Kick", level: "Expert", description: "Spinning back kick variation", duration: "1-2 seconds", keyPoints: "Spin timing, Hip turn, Heel contact" },
-          { id: "straight-knee", name: "Straight Knee", level: "Beginner", description: "Direct knee strike", duration: "0.5-1 second", keyPoints: "Drive upward, Hip thrust, Clinch position" },
-          { id: "diagonal-knee", name: "Diagonal Knee", level: "Intermediate", description: "Angled knee strike", duration: "0.5-1 second", keyPoints: "Angle entry, Hip rotation, Target ribs" },
-          { id: "jumping-knee", name: "Jumping Knee", level: "Advanced", description: "Explosive jumping knee", duration: "1-2 seconds", keyPoints: "Jump timing, Knee drive, Landing control" }
-        ]
-      }
-    ]
-  },
-  {
-    id: "gymnastics",
-    name: "Gymnastics",
-    description: "Gymnastics skills and techniques",
-    subcategories: [
-      {
-        id: "floor",
-        name: "Floor Exercise",
-        motions: [
-          { id: "cartwheel", name: "Cartwheel", level: "Beginner", description: "Basic cartwheel technique", duration: "2-3 seconds", keyPoints: "Straight line, Hand placement, Leg extension" },
-          { id: "handstand", name: "Handstand", level: "Advanced", description: "Freestanding handstand", duration: "Hold 10-30s", keyPoints: "Hollow body, Active shoulders, Balance" },
-          { id: "back-handspring", name: "Back Handspring", level: "Intermediate", description: "Backward tumbling skill", duration: "1-2 seconds", keyPoints: "Sit back, Block, Snap down" },
-          { id: "front-walkover", name: "Front Walkover", level: "Intermediate", description: "Forward flexibility skill", duration: "3-4 seconds", keyPoints: "Kick over, Bridge, Control" },
-          { id: "back-tuck", name: "Back Tuck", level: "Advanced", description: "Backward somersault", duration: "1-2 seconds", keyPoints: "Set, Tuck, Spot landing" }
-        ]
-      },
-      {
-        id: "vault",
-        name: "Vault",
-        motions: [
-          { id: "tsukahara", name: "Tsukahara", level: "Advanced", description: "Half turn vault", duration: "2-3 seconds", keyPoints: "Entry, Half turn, Salto" }
-        ]
-      },
-      {
-        id: "bars",
-        name: "Bars",
-        motions: [
-          { id: "kip", name: "Kip", level: "Intermediate", description: "Cast to support", duration: "2-3 seconds", keyPoints: "Glide, Compression, Push away" },
-          { id: "giant", name: "Giant", level: "Advanced", description: "Full circle around bar", duration: "2-3 seconds", keyPoints: "Tap, Hollow, Timing" }
-        ]
-      },
-      {
-        id: "beam",
-        name: "Beam",
-        motions: [
-          { id: "split-leap", name: "Split Leap", level: "Intermediate", description: "Leap with split position", duration: "1-2 seconds", keyPoints: "Height, Split, Landing" }
+          { id: "kb-row", name: "Kettlebell Row", level: "Beginner", description: "Single arm rowing movement", duration: "1-2 seconds", keyPoints: "Flat back, Elbow drive, Squeeze" }
         ]
       }
     ]
@@ -345,7 +185,7 @@ export const categoriesData: Category[] = [
           { id: "bird-dog", name: "Bird Dog", level: "Beginner", description: "Core stability exercise", duration: "Hold 10-30s", keyPoints: "Opposite arm/leg, Stable spine, Controlled movement" },
           { id: "wall-slides", name: "Wall Slides", level: "Beginner", description: "Shoulder blade mobility", duration: "10-15 reps", keyPoints: "Back to wall, Smooth sliding, Full range" },
           { id: "heel-raises", name: "Heel Raises", level: "Beginner", description: "Calf strengthening", duration: "10-20 reps", keyPoints: "Rise on toes, Controlled descent, Balance" },
-          { id: "side-steps", name: "Side Steps", level: "Beginner", description: "Hip abductor strengthening", duration: "10-15 steps", keyPoints: "Resistance band, Controlled steps, Stable posture" },
+          { id: "side-leg-raises", name: "Side Leg Raises", level: "Beginner", description: "Hip abductor strengthening", duration: "10-15 reps", keyPoints: "Side lying, Controlled lift, Stable core" },
           { id: "marching", name: "Marching in Place", level: "Beginner", description: "Balance and coordination", duration: "30-60 seconds", keyPoints: "High knees, Stable core, Rhythmic movement" },
           { id: "single-leg-stand", name: "Single Leg Stand", level: "Intermediate", description: "Balance training", duration: "Hold 30-60s", keyPoints: "One foot, Stable core, Eyes forward" },
           { id: "step-ups", name: "Step-Ups", level: "Intermediate", description: "Functional leg strengthening", duration: "10-15 reps", keyPoints: "Full step up, Controlled descent, Stable platform" },
