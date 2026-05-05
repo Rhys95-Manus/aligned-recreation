@@ -15,6 +15,8 @@ import SessionHistory from "./pages/SessionHistory";
 import Community from "./pages/Community";
 import Session from "./pages/Session";
 import AudioSettings from "./pages/AudioSettings";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -29,6 +31,8 @@ function Router() {
       <Route path={"/history"} component={SessionHistory} />
       <Route path={"/community"} component={Community} />
       <Route path={"/settings/audio"} component={AudioSettings} />
+      <Route path={"/terms"} component={TermsOfService} />
+      <Route path={"/privacy"} component={PrivacyPolicy} />
   
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

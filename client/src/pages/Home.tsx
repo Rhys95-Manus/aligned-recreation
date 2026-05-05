@@ -87,6 +87,21 @@ export default function Home() {
       </main>
 
       <footer className="text-center py-10 text-slate-400">
+        <div className="flex justify-center gap-6 mb-3 text-sm">
+          <span
+            className="text-slate-500 hover:text-slate-300 cursor-pointer transition-colors"
+            onClick={() => setLocation("/terms")}
+          >
+            Terms of Service
+          </span>
+          <span className="text-slate-600">|</span>
+          <span
+            className="text-slate-500 hover:text-slate-300 cursor-pointer transition-colors"
+            onClick={() => setLocation("/privacy")}
+          >
+            Privacy Policy
+          </span>
+        </div>
         <p className="text-sm">Made with Manus</p>
       </footer>
     </div>

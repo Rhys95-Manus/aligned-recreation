@@ -360,3 +360,11 @@
 - [x] Create LTD section below monthly: Lifetime Starter ($97), Lifetime Plus ($167), Lifetime All Access ($200)
 - [x] Add urgency badge/label on LTD section (Pre-Launch Special)
 - [x] Add messaging: "Lock in lifetime access before we launch — pricing increases once we go live"
+
+## Legal Pages (Terms of Service & Privacy Policy)
+- [x] Draft production-ready Terms of Service for Aligned Motion
+- [x] Draft production-ready Privacy Policy for Aligned Motion
+- [x] Create TermsOfService.tsx page component
+- [x] Create PrivacyPolicy.tsx page component
+- [x] Add routes for /terms and /privacy in App.tsx
+- [x] Add footer links to TOS and Privacy Policy from relevant pages

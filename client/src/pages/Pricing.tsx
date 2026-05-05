@@ -223,8 +223,21 @@ export default function Pricing() {
       </main>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-[#050810] border-t border-slate-800/50 py-4 px-8 flex items-center justify-between">
-        <div className="text-slate-400 text-sm">Aligned</div>
-        <div className="text-slate-500 text-sm">Made with Manus</div>
+        <div className="text-slate-400 text-sm">Aligned Motion</div>
+        <div className="flex gap-4 text-sm">
+          <span
+            className="text-slate-500 hover:text-slate-300 cursor-pointer transition-colors"
+            onClick={() => setLocation("/terms")}
+          >
+            Terms
+          </span>
+          <span
+            className="text-slate-500 hover:text-slate-300 cursor-pointer transition-colors"
+            onClick={() => setLocation("/privacy")}
+          >
+            Privacy
+          </span>
+        </div>
       </footer>
     </div>
   );
