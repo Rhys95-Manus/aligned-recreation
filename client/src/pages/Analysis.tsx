@@ -5,6 +5,7 @@ import { Link, useLocation } from "wouter";
 import { Pose, Results } from "@mediapipe/pose";
 import { getProfessionalReference, calculateMetricScore, getComparisonText } from "@/data/professionalReferences";
 import { getDynamicRecommendations } from "@/data/recommendationLibrary";
+import { getMotionWeights, getMetricWeight, isPriorityMetric } from "@/data/metricWeights";
 import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribution, formatSpineAngle, formatRotationAngle } from "@/utils/rotationCalculations";
 import { detectRepBoundaries } from "@/utils/repDetection";
 import Replay from "./Replay";
@@ -1262,7 +1263,10 @@ export default function Analysis() {
     
     let overallScore = 0; // Calculated from actual data only
     
-    // getProfessionalReference now always returns a reference (never null)
+    // Get motion-specific priority metric weights
+    const weightProfile = getMotionWeights(category, subcategory, motionName);
+    console.log('📊 Weight profile:', weightProfile.motionKey, weightProfile.priorityMetrics.map(p => `${p.metricName}(${p.weight})`));
+    
     // Use PEAK values captured during the motion (not final frame values)
     console.log('=== USING PEAK VALUES FOR SCORING ===');
     console.log(`Peak Hip Rotation: ${peakHipRotation.current.toFixed(1)}°`);
@@ -1284,74 +1288,93 @@ export default function Analysis() {
       { name: "Weight Transfer", value: peakWeightTransfer.current, metricName: "Weight Transfer" }
     ];
     
-    let totalScore = 0;
-    let metricCount = 0;
+    // Weighted scoring: accumulate score * weight for priority metrics
+    let weightedScoreSum = 0;
+    let totalWeight = 0;
     // Track metric scores for dynamic recommendations
     const metricScoresForRecs: Array<{ name: string; score: number; value: number; optimalMin: number; optimalMax: number }> = [];
     
     if (professionalRef) {
       userMetrics.forEach(userMetric => {
         const refMetric = professionalRef.metrics.find(m => m.name === userMetric.metricName);
-        if (refMetric) {
-          const score = calculateMetricScore(userMetric.value, refMetric);
-          
-          // score === -1 means metric was not detected
-          if (score === -1) {
+        if (!refMetric) return;
+        
+        const isPriority = isPriorityMetric(userMetric.name, weightProfile);
+        const metricWeight = getMetricWeight(userMetric.name, weightProfile);
+        const score = calculateMetricScore(userMetric.value, refMetric);
+        
+        // score === -1 means metric was not detected
+        if (score === -1) {
+          if (isPriority) {
+            // Priority metric undetected → scores 0, counts fully against overall
+            weightedScoreSum += 0;
+            totalWeight += metricWeight;
             biomechanicalData.push({
               title: userMetric.name,
               yours: "Not detected",
-              pro: `${refMetric.professionalAverage}${userMetric.name === "Weight Transfer" ? "%" : "°"}`,
+              pro: `${Math.round(refMetric.professionalAverage)}${userMetric.name === "Weight Transfer" ? "%" : "°"}`,
               difference: "N/A",
               recommendation: `Could not detect ${userMetric.name.toLowerCase()} — ensure full body is visible to camera`
             });
-            return; // Skip undetected metrics in scoring
+            // Track as 0 for recommendations
+            metricScoresForRecs.push({
+              name: userMetric.name,
+              score: 0,
+              value: 0,
+              optimalMin: refMetric.optimalRange.min,
+              optimalMax: refMetric.optimalRange.max
+            });
           }
-          
-          totalScore += score;
-          metricCount++;
-          
-          // Track for dynamic recommendations
-          metricScoresForRecs.push({
-            name: userMetric.name,
-            score,
-            value: userMetric.value,
-            optimalMin: refMetric.optimalRange.min,
-            optimalMax: refMetric.optimalRange.max
-          });
-          
-          const difference = Math.abs(userMetric.value - refMetric.professionalAverage);
-          
-          let recommendation = "";
-          const distanceFromOptimal = Math.abs(userMetric.value - refMetric.professionalAverage);
-          
-          if (userMetric.value >= refMetric.optimalRange.min && userMetric.value <= refMetric.optimalRange.max) {
-            if (distanceFromOptimal < 2) {
-              recommendation = `Perfect alignment! Your ${userMetric.name.toLowerCase()} matches professional mechanics`;
-            } else {
-              recommendation = `Great alignment - ${userMetric.name.toLowerCase()} within professional range (${refMetric.optimalRange.min}-${refMetric.optimalRange.max}°)`;
-            }
-          } else {
-            const direction = userMetric.value < refMetric.professionalAverage ? "Increase" : "Reduce";
-            recommendation = `${direction} ${userMetric.name.toLowerCase()} to align with professional average (${refMetric.professionalAverage}°) for optimal performance`;
-          }
-          
-          const unit = userMetric.name === "Weight Transfer" ? "%" : "°";
-          biomechanicalData.push({
-            title: userMetric.name,
-            yours: `${userMetric.value.toFixed(1)}${unit}`,
-            pro: `${refMetric.professionalAverage}${unit}`,
-            difference: `${difference.toFixed(1)}${unit}`,
-            recommendation
-          });
+          // Non-priority metric undetected → ignore entirely
+          return;
         }
+        
+        // Metric was detected
+        if (isPriority) {
+          weightedScoreSum += score * metricWeight;
+          totalWeight += metricWeight;
+        }
+        
+        // Track for dynamic recommendations (all detected metrics)
+        metricScoresForRecs.push({
+          name: userMetric.name,
+          score,
+          value: userMetric.value,
+          optimalMin: refMetric.optimalRange.min,
+          optimalMax: refMetric.optimalRange.max
+        });
+        
+        const difference = Math.abs(userMetric.value - refMetric.professionalAverage);
+        
+        let recommendation = "";
+        
+        if (userMetric.value >= refMetric.optimalRange.min && userMetric.value <= refMetric.optimalRange.max) {
+          if (difference < 2) {
+            recommendation = `Perfect alignment! Your ${userMetric.name.toLowerCase()} matches professional mechanics`;
+          } else {
+            recommendation = `Great alignment - ${userMetric.name.toLowerCase()} within professional range (${Math.round(refMetric.optimalRange.min)}-${Math.round(refMetric.optimalRange.max)}°)`;
+          }
+        } else {
+          const direction = userMetric.value < refMetric.professionalAverage ? "Increase" : "Reduce";
+          recommendation = `${direction} ${userMetric.name.toLowerCase()} to align with professional average (${Math.round(refMetric.professionalAverage)}°) for optimal performance`;
+        }
+        
+        const unit = userMetric.name === "Weight Transfer" ? "%" : "°";
+        biomechanicalData.push({
+          title: userMetric.name,
+          yours: `${Math.round(userMetric.value)}${unit}`,
+          pro: `${Math.round(refMetric.professionalAverage)}${unit}`,
+          difference: `${Math.round(difference)}${unit}`,
+          recommendation
+        });
       });
     }
     
-    // Overall score is weighted average of DETECTED metrics only
-    if (metricCount > 0) {
-      overallScore = Math.round(totalScore / metricCount);
+    // Overall score is WEIGHTED average of priority metrics only
+    if (totalWeight > 0) {
+      overallScore = Math.round(weightedScoreSum / totalWeight);
     } else {
-      overallScore = 0; // No metrics detected
+      overallScore = 0; // No priority metrics detected
     }
     
     // Determine priority focus from the LOWEST scoring metric (worst area)
@@ -1381,7 +1404,7 @@ export default function Analysis() {
       : 0;
     
     // Calculate movement timing from actual captured data
-    const timingScore = metricCount > 0 
+    const timingScore = totalWeight > 0 
       ? Math.round(((peakHipRotation.current > hipRefAvg * 0.7 ? 100 : (peakHipRotation.current / (hipRefAvg * 0.7)) * 100) + (peakSpineAngle.current > 5 ? Math.min(100, (peakSpineAngle.current / 15) * 100) : 50)) / 2)
       : 0;
     
@@ -1429,8 +1452,8 @@ export default function Analysis() {
         .slice(0, 5)
         .map((metric, idx) => {
           const metricScore = metricScoresForRecs.find(m => m.name === metric.title);
-          const currentScore = metricScore ? metricScore.score : 50;
-          const targetScore = Math.min(100, currentScore + 15);
+          const currentScore = metricScore ? Math.round(metricScore.score) : 50;
+          const targetScore = Math.min(100, Math.round(currentScore + 15));
           // Use dynamic recommendations from the library
           const drill = dynamicRecs[idx] 
             ? `${dynamicRecs[idx].title} (${dynamicRecs[idx].prescription})`
@@ -1444,19 +1467,19 @@ export default function Analysis() {
         }),
       biomechanical: biomechanicalData,
       consistency: {
-        score: metricCount > 0 ? Math.min(100, Math.round(overallScore * 1.05)) : 0,
+        score: totalWeight > 0 ? Math.min(100, Math.round(overallScore * 1.05)) : 0,
         trend: overallScore > 80 ? "improving" : overallScore > 60 ? "stable" : "needs work"
       },
       powerGeneration: {
         score: powerScore,
-        peakVelocity: peakHipRotation.current > 0 ? `${((peakHipRotation.current / hipRefAvg) * 100).toFixed(1)}% of professional` : "Not detected",
-        forceTransfer: peakWeightTransfer.current > 0 ? `${peakWeightTransfer.current.toFixed(1)}% weight transfer` : "Not detected",
+        peakVelocity: peakHipRotation.current > 0 ? `${Math.round((peakHipRotation.current / hipRefAvg) * 100)}% of professional` : "Not detected",
+        forceTransfer: peakWeightTransfer.current > 0 ? `${Math.round(peakWeightTransfer.current)}% weight transfer` : "Not detected",
         recommendation: peakWeightTransfer.current < 1 ? "Ensure full body is visible for weight transfer detection" : peakWeightTransfer.current < 60 ? "Increase weight transfer for more power" : "Good power transfer through kinetic chain"
       },
       movementTiming: {
         score: timingScore,
         sequenceOrder: "Hips → Torso → Shoulder → Arm",
-        phaseDurations: `Hip rotation: ${peakHipRotation.current.toFixed(1)}°, Spine angle: ${peakSpineAngle.current.toFixed(1)}°`,
+        phaseDurations: `Hip rotation: ${Math.round(peakHipRotation.current)}°, Spine angle: ${Math.round(peakSpineAngle.current)}°`,
         recommendation: peakHipRotation.current < 1 ? "Could not detect hip rotation — ensure hips are visible" : peakHipRotation.current < hipRefAvg * 0.7 ? "Initiate movement with more hip rotation for better sequencing" : "Good kinetic chain sequencing"
       },
       recordedFrames: recordedFramesRef.current // Include recorded frames for replay
@@ -1744,6 +1767,11 @@ export default function Analysis() {
                   </div>
                 </div>
               )}
+
+              {/* Scoring Disclaimer */}
+              <p className="text-xs text-gray-500 text-center mt-2 italic">
+                For accurate scoring, ensure your full body is visible and you perform the complete motion.
+              </p>
 
               {/* Control Button */}
               <Button

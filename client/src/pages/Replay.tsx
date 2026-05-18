@@ -1899,16 +1899,16 @@ function MetricCard({ title, yours, pro, unit, yoursFormatted, proFormatted }: {
       <h3 className="text-sm font-semibold mb-2 text-gray-400">{title}</h3>
       <div className="flex items-baseline gap-2">
         <span className={`text-2xl font-bold ${colorClass}`}>
-          {yoursFormatted || `${yours.toFixed(1)}${unit}`}
+          {yoursFormatted || `${Math.round(yours)}${unit}`}
         </span>
         <span className="text-sm text-gray-500">vs</span>
         <span className="text-lg text-pink-400">
-          {proFormatted || `${pro.toFixed(1)}${unit}`}
+          {proFormatted || `${Math.round(pro)}${unit}`}
         </span>
       </div>
       <div className="mt-2 flex items-center justify-between">
         <span className="text-xs text-gray-500">
-          Diff: {difference.toFixed(1)}{unit}
+          Diff: {Math.round(difference)}{unit}
         </span>
         <span className={`text-xs font-semibold ${colorClass}`}>
           {statusText}

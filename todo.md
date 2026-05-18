@@ -383,3 +383,15 @@
 - [x] Build motion-specific recommendation library for all Recovery motions
 - [x] Remove football-biased hardcoded recommendations
 - [x] Ensure recommendations only surface when user scores poorly on relevant metric
+
+## Scoring System Overhaul v2 — Motion-Specific Weighted Scoring
+- [x] Round all displayed metric values to whole numbers (no raw floats like 15.015489)
+- [x] Replace scoring with proximity-to-professional-average logic (within range = full, close = partial, far = zero)
+- [x] Build motion-specific priority metric weights for all Sports motions
+- [x] Build motion-specific priority metric weights for all Weightlifting motions
+- [x] Build motion-specific priority metric weights for all Recovery motions
+- [x] Overall score = weighted average of only priority metrics for that motion
+- [x] Undetected priority metric = 0 score, counts fully against overall
+- [x] Undetected non-priority metric = ignored entirely
+- [x] Add disclaimer: "For accurate scoring, ensure your full body is visible and you perform the complete motion"
+- [x] Verify sitting/minimal movement scores near zero
