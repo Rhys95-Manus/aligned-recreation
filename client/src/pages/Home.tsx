@@ -10,21 +10,21 @@ const featuredCategories = [
     name: "Sports",
     description: "Football, basketball, baseball, tennis & more",
     image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/category-sports-MVkeqiyv7nw5Rxpexe3F5r.webp",
-    route: "/categories/sports",
+    route: "/subcategories/sports",
   },
   {
     id: "weightlifting",
     name: "Weightlifting",
     description: "Powerlifting, Olympic lifts & kettlebell training",
     image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/category-weightlifting-98TYa4o5P2N6yisn6dhbXZ.webp",
-    route: "/categories/weightlifting",
+    route: "/subcategories/weightlifting",
   },
   {
     id: "recovery",
     name: "Recovery",
     description: "Physical therapy, stretching & mobility work",
     image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/category-recovery-V2dndiQN4XfRDXnnnwksJk.webp",
-    route: "/categories/recovery",
+    route: "/subcategories/recovery",
   },
 ];
 

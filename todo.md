@@ -368,3 +368,6 @@
 - [x] Create PrivacyPolicy.tsx page component
 - [x] Add routes for /terms and /privacy in App.tsx
 - [x] Add footer links to TOS and Privacy Policy from relevant pages
+
+## Navigation Fix
+- [x] Fix holographic category cards on Home page to navigate to /subcategories/{id} instead of /categories/{id}
