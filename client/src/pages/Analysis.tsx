@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Pose, Results } from "@mediapipe/pose";
 import { getProfessionalReference, calculateMetricScore, getComparisonText } from "@/data/professionalReferences";
+import { getDynamicRecommendations } from "@/data/recommendationLibrary";
 import { calculateRotation, calculateHipShoulderSeparation, formatWeightDistribution, formatSpineAngle, formatRotationAngle } from "@/utils/rotationCalculations";
 import { detectRepBoundaries } from "@/utils/repDetection";
 import Replay from "./Replay";
@@ -1212,18 +1213,19 @@ export default function Analysis() {
     speak("Get ready. Starting in 5 seconds");
   };
   
-  // Helper function to get drill recommendation for a metric
-  const getDrillForMetric = (metricTitle: string): string => {
-    const drills: Record<string, string> = {
-      "Hip Rotation": "Medicine ball rotational throws (3 sets of 10)",
-      "Elbow Angle": "Wall angels with resistance band (3 sets of 15)",
-      "Knee Flexion": "Bodyweight squats focusing on depth (3 sets of 12)",
-      "Spine Angle": "Cat-cow stretches and thoracic extensions (2 sets of 10)",
-      "Shoulder Angle": "Band pull-aparts and external rotations (3 sets of 15)",
-      "Foot Positioning": "Cone drills focusing on foot placement (10 minutes)",
-      "Weight Transfer": "Single-leg balance with weight shifts (3 sets of 30 seconds)"
-    };
-    return drills[metricTitle] || "Practice the motion slowly with focus (10 reps)";
+  // Dynamic drill recommendation using motion-specific recommendation library
+  const getDrillForMetric = (metricTitle: string, metricScores?: Array<{ name: string; score: number; value: number; optimalMin: number; optimalMax: number }>): string => {
+    const category = params.get('category') || '';
+    const subcategory = params.get('subcategory') || '';
+    
+    if (metricScores && metricScores.length > 0) {
+      const recs = getDynamicRecommendations(category, subcategory, motionName, metricScores);
+      // Find a recommendation that matches this metric
+      const matchingRec = recs.find(r => r.title.toLowerCase().includes(metricTitle.toLowerCase().split(' ')[0]));
+      if (matchingRec) return `${matchingRec.title} (${matchingRec.prescription})`;
+      if (recs.length > 0) return `${recs[0].title} (${recs[0].prescription})`;
+    }
+    return "Practice the motion slowly with focus on form (10 reps)";
   };
 
   const stopAndScore = async () => {
@@ -1258,42 +1260,66 @@ export default function Analysis() {
       recommendation: string;
     }> = [];
     
-    let overallScore = 75; // Base score
+    let overallScore = 0; // Calculated from actual data only
+    
+    // getProfessionalReference now always returns a reference (never null)
+    // Use PEAK values captured during the motion (not final frame values)
+    console.log('=== USING PEAK VALUES FOR SCORING ===');
+    console.log(`Peak Hip Rotation: ${peakHipRotation.current.toFixed(1)}°`);
+    console.log(`Peak Elbow Angles: R=${peakRightElbowAngle.current.toFixed(1)}° L=${peakLeftElbowAngle.current.toFixed(1)}°`);
+    console.log(`Peak Knee Flexion: R=${peakRightKneeFlexion.current.toFixed(1)}° L=${peakLeftKneeFlexion.current.toFixed(1)}°`);
+    console.log(`Peak Spine Angle: ${peakSpineAngle.current.toFixed(1)}°`);
+    console.log(`Peak Shoulder Angles: R=${peakRightShoulderAngle.current.toFixed(1)}° L=${peakLeftShoulderAngle.current.toFixed(1)}°`);
+    console.log(`Peak Foot Positioning: ${peakFootPositioning.current.toFixed(1)}°`);
+    console.log(`Peak Weight Transfer: ${peakWeightTransfer.current.toFixed(1)}%`);
+    console.log('=====================================');
+    
+    const userMetrics = [
+      { name: "Hip Rotation", value: peakHipRotation.current, metricName: "Hip Rotation" },
+      { name: "Elbow Angle", value: (peakRightElbowAngle.current + peakLeftElbowAngle.current) / 2, metricName: "Elbow Flexion" },
+      { name: "Knee Flexion", value: (peakRightKneeFlexion.current + peakLeftKneeFlexion.current) / 2, metricName: "Knee Flexion" },
+      { name: "Spine Angle", value: peakSpineAngle.current, metricName: "Spine Extension" },
+      { name: "Shoulder Angle", value: (peakRightShoulderAngle.current + peakLeftShoulderAngle.current) / 2, metricName: "Shoulder External Rotation" },
+      { name: "Foot Positioning", value: peakFootPositioning.current, metricName: "Foot Positioning" },
+      { name: "Weight Transfer", value: peakWeightTransfer.current, metricName: "Weight Transfer" }
+    ];
+    
+    let totalScore = 0;
+    let metricCount = 0;
+    // Track metric scores for dynamic recommendations
+    const metricScoresForRecs: Array<{ name: string; score: number; value: number; optimalMin: number; optimalMax: number }> = [];
     
     if (professionalRef) {
-      // Use PEAK values captured during the motion (not final frame values)
-      console.log('=== USING PEAK VALUES FOR SCORING ===');
-      console.log(`Peak Hip Rotation: ${peakHipRotation.current.toFixed(1)}°`);
-      console.log(`Peak Elbow Angles: R=${peakRightElbowAngle.current.toFixed(1)}° L=${peakLeftElbowAngle.current.toFixed(1)}°`);
-      console.log(`Peak Knee Flexion: R=${peakRightKneeFlexion.current.toFixed(1)}° L=${peakLeftKneeFlexion.current.toFixed(1)}°`);
-      console.log(`Peak Spine Angle: ${peakSpineAngle.current.toFixed(1)}°`);
-      console.log(`Peak Shoulder Angles: R=${peakRightShoulderAngle.current.toFixed(1)}° L=${peakLeftShoulderAngle.current.toFixed(1)}°`);
-      console.log(`Peak Foot Positioning: ${peakFootPositioning.current.toFixed(1)}°`);
-      console.log(`Peak Weight Transfer: ${peakWeightTransfer.current.toFixed(1)}%`);
-      console.log('=====================================');
-      
-      const userMetrics = [
-        { name: "Hip Rotation", value: peakHipRotation.current, metricName: "Hip Rotation" },
-        { name: "Elbow Angle", value: (peakRightElbowAngle.current + peakLeftElbowAngle.current) / 2, metricName: "Elbow Flexion" },
-        { name: "Knee Flexion", value: (peakRightKneeFlexion.current + peakLeftKneeFlexion.current) / 2, metricName: "Knee Flexion" },
-        { name: "Spine Angle", value: peakSpineAngle.current, metricName: "Spine Extension" },
-        { name: "Shoulder Angle", value: (peakRightShoulderAngle.current + peakLeftShoulderAngle.current) / 2, metricName: "Shoulder External Rotation" },
-        { name: "Foot Positioning", value: peakFootPositioning.current, metricName: "Foot Positioning" },
-        { name: "Weight Transfer", value: peakWeightTransfer.current, metricName: "Weight Transfer" }
-      ];
-      
-      let totalScore = 0;
-      let metricCount = 0;
-      
       userMetrics.forEach(userMetric => {
         const refMetric = professionalRef.metrics.find(m => m.name === userMetric.metricName);
         if (refMetric) {
           const score = calculateMetricScore(userMetric.value, refMetric);
+          
+          // score === -1 means metric was not detected
+          if (score === -1) {
+            biomechanicalData.push({
+              title: userMetric.name,
+              yours: "Not detected",
+              pro: `${refMetric.professionalAverage}${userMetric.name === "Weight Transfer" ? "%" : "°"}`,
+              difference: "N/A",
+              recommendation: `Could not detect ${userMetric.name.toLowerCase()} — ensure full body is visible to camera`
+            });
+            return; // Skip undetected metrics in scoring
+          }
+          
           totalScore += score;
           metricCount++;
           
+          // Track for dynamic recommendations
+          metricScoresForRecs.push({
+            name: userMetric.name,
+            score,
+            value: userMetric.value,
+            optimalMin: refMetric.optimalRange.min,
+            optimalMax: refMetric.optimalRange.max
+          });
+          
           const difference = Math.abs(userMetric.value - refMetric.professionalAverage);
-          const comparisonText = getComparisonText(userMetric.value, refMetric);
           
           let recommendation = "";
           const distanceFromOptimal = Math.abs(userMetric.value - refMetric.professionalAverage);
@@ -1319,92 +1345,119 @@ export default function Analysis() {
           });
         }
       });
-      
-      if (metricCount > 0) {
-        overallScore = Math.round(totalScore / metricCount);
-      }
-    } else {
-      // Fallback to mock data if no professional reference available
-      biomechanicalData = [
-        {
-          title: "Hip Rotation",
-          yours: `${hipRotation.toFixed(1)}°`,
-          pro: "61°",
-          difference: `${Math.abs(hipRotation - 61).toFixed(1)}°`,
-          recommendation: "Work on hip rotation for more power"
-        },
-        {
-          title: "Elbow Angle",
-          yours: `${((rightElbowAngle + leftElbowAngle) / 2).toFixed(1)}°`,
-          pro: "100°",
-          difference: `${Math.abs(((rightElbowAngle + leftElbowAngle) / 2) - 100).toFixed(1)}°`,
-          recommendation: "Maintain optimal elbow angle at cocking phase"
-        }
-      ];
     }
+    
+    // Overall score is weighted average of DETECTED metrics only
+    if (metricCount > 0) {
+      overallScore = Math.round(totalScore / metricCount);
+    } else {
+      overallScore = 0; // No metrics detected
+    }
+    
+    // Determine priority focus from the LOWEST scoring metric (worst area)
+    const sortedByScore = [...metricScoresForRecs].sort((a, b) => a.score - b.score);
+    const worstMetric = sortedByScore[0];
+    let priorityFocusText = "Focus on form and technique";
+    if (worstMetric) {
+      const worstBiomech = biomechanicalData.find(m => m.title === worstMetric.name);
+      if (worstBiomech && worstBiomech.recommendation) {
+        priorityFocusText = worstBiomech.recommendation;
+      }
+    }
+    
+    // Get dynamic recommendations from the motion-specific library
+    const dynamicRecs = getDynamicRecommendations(
+      params.get('category') || '',
+      params.get('subcategory') || '',
+      motionName,
+      metricScoresForRecs
+    );
+    
+    // Calculate power generation score from actual hip reference
+    const hipRef = professionalRef?.metrics.find(m => m.name === "Hip Rotation");
+    const hipRefAvg = hipRef?.professionalAverage || 40;
+    const powerScore = peakHipRotation.current > 0 
+      ? Math.min(100, Math.round((peakHipRotation.current / hipRefAvg) * 100))
+      : 0;
+    
+    // Calculate movement timing from actual captured data
+    const timingScore = metricCount > 0 
+      ? Math.round(((peakHipRotation.current > hipRefAvg * 0.7 ? 100 : (peakHipRotation.current / (hipRefAvg * 0.7)) * 100) + (peakSpineAngle.current > 5 ? Math.min(100, (peakSpineAngle.current / 15) * 100) : 50)) / 2)
+      : 0;
     
     // Generate detailed analysis
     const analysis: DetailedAnalysisData = {
       overallScore,
-      priorityFocus: biomechanicalData.length > 0 && biomechanicalData[0].recommendation ? biomechanicalData[0].recommendation : "Focus on form and technique",
+      priorityFocus: priorityFocusText,
       strengths: biomechanicalData
         .filter(metric => {
-          const diff = parseFloat(metric.difference.replace('°', ''));
-          return diff < 10; // Metrics within 10° of professional
+          if (metric.difference === "N/A") return false; // Skip undetected
+          const diff = parseFloat(metric.difference.replace('°', '').replace('%', ''));
+          return !isNaN(diff) && diff < 10; // Metrics within 10° of professional
         })
         .slice(0, 3)
-        .map(metric => ({
-          title: metric.title,
-          score: Math.round(100 - (parseFloat(metric.difference.replace('°', '')) / parseFloat(metric.pro.replace('°', ''))) * 100),
-          description: metric.recommendation
-        })),
-      detailedAreas: biomechanicalData
-        .filter(metric => {
-          const diff = parseFloat(metric.difference.replace('°', ''));
-          return diff >= 10; // Metrics that need improvement
-        })
         .map(metric => {
-          const diff = parseFloat(metric.difference.replace('°', ''));
-          const score = Math.round(100 - (diff / parseFloat(metric.pro.replace('°', ''))) * 100);
+          const metricScore = metricScoresForRecs.find(m => m.name === metric.title);
           return {
             title: metric.title,
-            score: Math.max(0, score),
+            score: metricScore ? metricScore.score : 90,
+            description: metric.recommendation
+          };
+        }),
+      detailedAreas: biomechanicalData
+        .filter(metric => {
+          if (metric.difference === "N/A") return false; // Skip undetected
+          const diff = parseFloat(metric.difference.replace('°', '').replace('%', ''));
+          return !isNaN(diff) && diff >= 10; // Metrics that need improvement
+        })
+        .map(metric => {
+          const diff = parseFloat(metric.difference.replace('°', '').replace('%', ''));
+          const metricScore = metricScoresForRecs.find(m => m.name === metric.title);
+          return {
+            title: metric.title,
+            score: metricScore ? metricScore.score : Math.max(0, 90 - diff),
             description: metric.recommendation,
             priority: diff > 20 ? "High" : "Medium"
           };
         }),
       improvements: biomechanicalData
         .filter(metric => {
-          const diff = parseFloat(metric.difference.replace('°', ''));
-          return diff >= 10;
+          if (metric.difference === "N/A") return false;
+          const diff = parseFloat(metric.difference.replace('°', '').replace('%', ''));
+          return !isNaN(diff) && diff >= 10;
         })
         .slice(0, 5)
-        .map(metric => {
-          const currentScore = Math.round(100 - (parseFloat(metric.difference.replace('°', '')) / parseFloat(metric.pro.replace('°', ''))) * 100);
+        .map((metric, idx) => {
+          const metricScore = metricScoresForRecs.find(m => m.name === metric.title);
+          const currentScore = metricScore ? metricScore.score : 50;
           const targetScore = Math.min(100, currentScore + 15);
+          // Use dynamic recommendations from the library
+          const drill = dynamicRecs[idx] 
+            ? `${dynamicRecs[idx].title} (${dynamicRecs[idx].prescription})`
+            : getDrillForMetric(metric.title, metricScoresForRecs);
           return {
             title: metric.title,
             scoreRange: `${Math.max(0, currentScore)} → ${targetScore}`,
             description: metric.recommendation,
-            drill: getDrillForMetric(metric.title)
+            drill
           };
         }),
       biomechanical: biomechanicalData,
       consistency: {
-        score: 81,
-        trend: "stable"
+        score: metricCount > 0 ? Math.min(100, Math.round(overallScore * 1.05)) : 0,
+        trend: overallScore > 80 ? "improving" : overallScore > 60 ? "stable" : "needs work"
       },
       powerGeneration: {
-        score: Math.round((peakHipRotation.current / 61) * 100), // Based on PEAK hip rotation vs professional average
-        peakVelocity: `${((peakHipRotation.current / 61) * 100).toFixed(1)}% of professional`,
-        forceTransfer: `${peakWeightTransfer.current.toFixed(1)}% weight transfer`,
-        recommendation: peakWeightTransfer.current < 60 ? "Increase weight transfer to front foot for more power" : "Good power transfer through kinetic chain"
+        score: powerScore,
+        peakVelocity: peakHipRotation.current > 0 ? `${((peakHipRotation.current / hipRefAvg) * 100).toFixed(1)}% of professional` : "Not detected",
+        forceTransfer: peakWeightTransfer.current > 0 ? `${peakWeightTransfer.current.toFixed(1)}% weight transfer` : "Not detected",
+        recommendation: peakWeightTransfer.current < 1 ? "Ensure full body is visible for weight transfer detection" : peakWeightTransfer.current < 60 ? "Increase weight transfer for more power" : "Good power transfer through kinetic chain"
       },
       movementTiming: {
-        score: Math.round(((peakHipRotation.current > 40 ? 100 : (peakHipRotation.current / 40) * 100) + (peakSpineAngle.current > 15 ? 100 : (peakSpineAngle.current / 15) * 100)) / 2),
-        sequenceOrder: "Hips → Torso → Shoulder → Elbow",
+        score: timingScore,
+        sequenceOrder: "Hips → Torso → Shoulder → Arm",
         phaseDurations: `Hip rotation: ${peakHipRotation.current.toFixed(1)}°, Spine angle: ${peakSpineAngle.current.toFixed(1)}°`,
-        recommendation: peakHipRotation.current < 40 ? "Initiate movement with hip rotation for better sequencing" : "Good kinetic chain sequencing"
+        recommendation: peakHipRotation.current < 1 ? "Could not detect hip rotation — ensure hips are visible" : peakHipRotation.current < hipRefAvg * 0.7 ? "Initiate movement with more hip rotation for better sequencing" : "Good kinetic chain sequencing"
       },
       recordedFrames: recordedFramesRef.current // Include recorded frames for replay
     };

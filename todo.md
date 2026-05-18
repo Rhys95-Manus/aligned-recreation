@@ -371,3 +371,15 @@
 
 ## Navigation Fix
 - [x] Fix holographic category cards on Home page to navigate to /subcategories/{id} instead of /categories/{id}
+
+## Scoring System & Recommendation Engine Overhaul
+- [x] Audit current scoring logic and identify placeholder/default values
+- [x] Fix scoring to derive scores strictly from biomechanical data (no placeholders)
+- [x] Handle undetected metrics as "Not detected" instead of scoring 0
+- [x] Make overall score a weighted average of actually detected metrics only
+- [x] Make recommendations dynamic based on user's lowest-scoring metrics
+- [x] Build motion-specific recommendation library for all Sports motions
+- [x] Build motion-specific recommendation library for all Weightlifting motions
+- [x] Build motion-specific recommendation library for all Recovery motions
+- [x] Remove football-biased hardcoded recommendations
+- [x] Ensure recommendations only surface when user scores poorly on relevant metric
