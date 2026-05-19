@@ -88,11 +88,11 @@ function createPuntBoneKeyframes(): BoneKeyframes[] {
     boneName: 'mixamorig:RightUpLeg',
     times: puntTimes,
     quaternions: [
-      ...eulerToQuat(-5, 0, 0),       // Stance: slight hip flexion
-      ...eulerToQuat(-5, 0, 0),       // End stance
-      ...eulerToQuat(-35, 0, 0),      // Drop: leg swinging back
-      ...eulerToQuat(-110, 0, 0),     // Contact: aggressive hip flexion forward & up
-      ...eulerToQuat(-130, 0, 0),     // Follow through: leg continues upward
+      ...eulerToQuat(5, 0, 0),        // Stance: slight hip flexion
+      ...eulerToQuat(5, 0, 0),        // End stance
+      ...eulerToQuat(35, 0, 0),       // Drop: leg swinging back
+      ...eulerToQuat(110, 0, 0),      // Contact: aggressive hip flexion forward & up
+      ...eulerToQuat(130, 0, 0),      // Follow through: leg continues upward
     ]
   });
 
@@ -101,11 +101,11 @@ function createPuntBoneKeyframes(): BoneKeyframes[] {
     boneName: 'mixamorig:RightLeg',
     times: puntTimes,
     quaternions: [
-      ...eulerToQuat(-10, 0, 0),      // Stance: slight knee bend
-      ...eulerToQuat(-10, 0, 0),      // End stance
-      ...eulerToQuat(-45, 0, 0),      // Drop: knee loading (bent)
-      ...eulerToQuat(-5, 0, 0),       // Contact: near full extension
-      ...eulerToQuat(-15, 0, 0),      // Follow through: slight re-bend
+      ...eulerToQuat(10, 0, 0),       // Stance: slight knee bend
+      ...eulerToQuat(10, 0, 0),       // End stance
+      ...eulerToQuat(45, 0, 0),       // Drop: knee loading (bent)
+      ...eulerToQuat(5, 0, 0),        // Contact: near full extension
+      ...eulerToQuat(15, 0, 0),       // Follow through: slight re-bend
     ]
   });
 
@@ -117,8 +117,8 @@ function createPuntBoneKeyframes(): BoneKeyframes[] {
       ...eulerToQuat(0, 0, 0),        // Stance: neutral
       ...eulerToQuat(0, 0, 0),        // End stance
       ...eulerToQuat(0, 0, 0),        // Drop: neutral
-      ...eulerToQuat(-20, 0, 0),      // Contact: toe pointed down
-      ...eulerToQuat(-30, 0, 0),      // Follow through: toe still pointed
+      ...eulerToQuat(20, 0, 0),       // Contact: toe pointed down
+      ...eulerToQuat(30, 0, 0),       // Follow through: toe still pointed
     ]
   });
 
@@ -127,11 +127,11 @@ function createPuntBoneKeyframes(): BoneKeyframes[] {
     boneName: 'mixamorig:LeftUpLeg',
     times: puntTimes,
     quaternions: [
-      ...eulerToQuat(-5, 0, 0),       // Stance: slight hip flexion
-      ...eulerToQuat(-5, 0, 0),       // End stance
-      ...eulerToQuat(-20, 0, 0),      // Drop: stepping forward
-      ...eulerToQuat(-15, 0, 0),      // Contact: straightening
-      ...eulerToQuat(-10, 0, 0),      // Follow through: stable
+      ...eulerToQuat(5, 0, 0),        // Stance: slight hip flexion
+      ...eulerToQuat(5, 0, 0),        // End stance
+      ...eulerToQuat(20, 0, 0),       // Drop: stepping forward
+      ...eulerToQuat(15, 0, 0),       // Contact: straightening
+      ...eulerToQuat(10, 0, 0),       // Follow through: stable
     ]
   });
 
@@ -140,11 +140,11 @@ function createPuntBoneKeyframes(): BoneKeyframes[] {
     boneName: 'mixamorig:LeftLeg',
     times: puntTimes,
     quaternions: [
-      ...eulerToQuat(-10, 0, 0),      // Stance: slight knee bend
-      ...eulerToQuat(-10, 0, 0),      // End stance
-      ...eulerToQuat(-25, 0, 0),      // Drop: knee bend on plant
-      ...eulerToQuat(-10, 0, 0),      // Contact: extending for stability
-      ...eulerToQuat(-8, 0, 0),       // Follow through: firm
+      ...eulerToQuat(10, 0, 0),       // Stance: slight knee bend
+      ...eulerToQuat(10, 0, 0),       // End stance
+      ...eulerToQuat(25, 0, 0),       // Drop: knee bend on plant
+      ...eulerToQuat(10, 0, 0),       // Contact: extending for stability
+      ...eulerToQuat(8, 0, 0),        // Follow through: firm
     ]
   });
 
@@ -155,9 +155,9 @@ function createPuntBoneKeyframes(): BoneKeyframes[] {
     quaternions: [
       ...eulerToQuat(0, 0, 0),        // Stance: neutral
       ...eulerToQuat(0, 0, 0),        // End stance
-      ...eulerToQuat(15, 0, 0),       // Drop: heel strike
-      ...eulerToQuat(5, 0, 0),        // Contact: flat
-      ...eulerToQuat(20, 0, 0),       // Follow through: pivoting on toes
+      ...eulerToQuat(-15, 0, 0),      // Drop: heel strike
+      ...eulerToQuat(-5, 0, 0),       // Contact: flat
+      ...eulerToQuat(-20, 0, 0),      // Follow through: pivoting on toes
     ]
   });
 
@@ -300,11 +300,11 @@ function createFieldGoalBoneKeyframes(): BoneKeyframes[] {
     boneName: 'mixamorig:RightUpLeg',
     times: fgTimes,
     quaternions: [
-      ...eulerToQuat(-12, 0, 0),      // Approach: slight knee bend
-      ...eulerToQuat(-12, 0, 0),      // End approach
-      ...eulerToQuat(-30, 0, 0),      // Plant: kicking leg loading back
-      ...eulerToQuat(-95, 0, 0),      // Strike: hip flexion (less than punt, more controlled)
-      ...eulerToQuat(-115, 0, 0),     // Follow through: upward (less extreme than punt)
+      ...eulerToQuat(12, 0, 0),       // Approach: slight knee bend
+      ...eulerToQuat(12, 0, 0),       // End approach
+      ...eulerToQuat(30, 0, 0),       // Plant: kicking leg loading back
+      ...eulerToQuat(95, 0, 0),       // Strike: hip flexion (less than punt, more controlled)
+      ...eulerToQuat(115, 0, 0),      // Follow through: upward (less extreme than punt)
     ]
   });
 
@@ -313,11 +313,11 @@ function createFieldGoalBoneKeyframes(): BoneKeyframes[] {
     boneName: 'mixamorig:RightLeg',
     times: fgTimes,
     quaternions: [
-      ...eulerToQuat(-12, 0, 0),      // Approach: slight bend
-      ...eulerToQuat(-12, 0, 0),      // End approach
-      ...eulerToQuat(-55, 0, 0),      // Plant: deeper knee load than punt
-      ...eulerToQuat(-8, 0, 0),       // Strike: near full extension at contact
-      ...eulerToQuat(-20, 0, 0),      // Follow through: slight re-bend
+      ...eulerToQuat(12, 0, 0),       // Approach: slight bend
+      ...eulerToQuat(12, 0, 0),       // End approach
+      ...eulerToQuat(55, 0, 0),       // Plant: deeper knee load than punt
+      ...eulerToQuat(8, 0, 0),        // Strike: near full extension at contact
+      ...eulerToQuat(20, 0, 0),       // Follow through: slight re-bend
     ]
   });
 
@@ -329,8 +329,8 @@ function createFieldGoalBoneKeyframes(): BoneKeyframes[] {
       ...eulerToQuat(0, 0, 0),        // Approach: neutral
       ...eulerToQuat(0, 0, 0),        // End approach
       ...eulerToQuat(0, 0, 0),        // Plant: neutral
-      ...eulerToQuat(-15, 0, 0),      // Strike: toe slightly up (instep contact)
-      ...eulerToQuat(-20, 0, 0),      // Follow through
+      ...eulerToQuat(15, 0, 0),       // Strike: toe slightly up (instep contact)
+      ...eulerToQuat(20, 0, 0),       // Follow through
     ]
   });
 
@@ -339,11 +339,11 @@ function createFieldGoalBoneKeyframes(): BoneKeyframes[] {
     boneName: 'mixamorig:LeftUpLeg',
     times: fgTimes,
     quaternions: [
-      ...eulerToQuat(-12, 0, 0),      // Approach: slight bend
-      ...eulerToQuat(-12, 0, 0),      // End approach
-      ...eulerToQuat(-25, 0, 0),      // Plant: stepping in firmly
-      ...eulerToQuat(-15, 0, 0),      // Strike: firm and straight
-      ...eulerToQuat(-10, 0, 0),      // Follow through: stable
+      ...eulerToQuat(12, 0, 0),       // Approach: slight bend
+      ...eulerToQuat(12, 0, 0),       // End approach
+      ...eulerToQuat(25, 0, 0),       // Plant: stepping in firmly
+      ...eulerToQuat(15, 0, 0),       // Strike: firm and straight
+      ...eulerToQuat(10, 0, 0),       // Follow through: stable
     ]
   });
 
@@ -352,11 +352,11 @@ function createFieldGoalBoneKeyframes(): BoneKeyframes[] {
     boneName: 'mixamorig:LeftLeg',
     times: fgTimes,
     quaternions: [
-      ...eulerToQuat(-12, 0, 0),      // Approach: slight bend
-      ...eulerToQuat(-12, 0, 0),      // End approach
-      ...eulerToQuat(-30, 0, 0),      // Plant: deeper knee bend than punt
-      ...eulerToQuat(-8, 0, 0),       // Strike: firm and straight
-      ...eulerToQuat(-5, 0, 0),       // Follow through: locked
+      ...eulerToQuat(12, 0, 0),       // Approach: slight bend
+      ...eulerToQuat(12, 0, 0),       // End approach
+      ...eulerToQuat(30, 0, 0),       // Plant: deeper knee bend than punt
+      ...eulerToQuat(8, 0, 0),        // Strike: firm and straight
+      ...eulerToQuat(5, 0, 0),        // Follow through: locked
     ]
   });
 
@@ -367,9 +367,9 @@ function createFieldGoalBoneKeyframes(): BoneKeyframes[] {
     quaternions: [
       ...eulerToQuat(0, 0, 0),        // Approach: neutral
       ...eulerToQuat(0, 0, 0),        // End approach
-      ...eulerToQuat(10, 0, 0),       // Plant: firm plant
-      ...eulerToQuat(5, 0, 0),        // Strike: flat
-      ...eulerToQuat(15, 0, 0),       // Follow through: pivoting
+      ...eulerToQuat(-10, 0, 0),      // Plant: firm plant
+      ...eulerToQuat(-5, 0, 0),       // Strike: flat
+      ...eulerToQuat(-15, 0, 0),      // Follow through: pivoting
     ]
   });
 

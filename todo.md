@@ -439,3 +439,4 @@
 - [x] Ensure hologram color/wireframe/visual properties are identical to throw
 - [x] Ensure wireframe overlay is present from first frame
 - [x] Verify plant foot does not clip through ground plane
+- [x] Fix axis inversion on punt and field goal kick animations (invert X rotation on all leg bones)
