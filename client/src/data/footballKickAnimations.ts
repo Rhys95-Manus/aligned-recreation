@@ -472,6 +472,15 @@ function createFieldGoalBoneKeyframes(): BoneKeyframes[] {
 // ============================================================
 
 /**
+ * Sanitize bone name to match Three.js GLTFLoader's node naming.
+ * GLTFLoader calls PropertyBinding.sanitizeNodeName() which strips reserved chars: [ ] . : /
+ * So 'mixamorig:Hips' becomes 'mixamorigHips' in the loaded scene.
+ */
+function sanitizeBoneName(name: string): string {
+  return name.replace(/[\[\].:/ ]/g, '');
+}
+
+/**
  * Creates the Punt animation clip that can be played on the football model's mixer.
  * Uses smooth quaternion interpolation between keyframes.
  */
@@ -480,8 +489,10 @@ export function createPuntClip(): THREE.AnimationClip {
   const tracks: THREE.KeyframeTrack[] = [];
 
   for (const bone of boneKeyframes) {
+    // Use sanitized bone name to match GLTFLoader's internal node naming
+    const sanitizedName = sanitizeBoneName(bone.boneName);
     const track = new THREE.QuaternionKeyframeTrack(
-      `${bone.boneName}.quaternion`,
+      `${sanitizedName}.quaternion`,
       bone.times,
       bone.quaternions,
       THREE.InterpolateSmooth
@@ -501,8 +512,10 @@ export function createFieldGoalClip(): THREE.AnimationClip {
   const tracks: THREE.KeyframeTrack[] = [];
 
   for (const bone of boneKeyframes) {
+    // Use sanitized bone name to match GLTFLoader's internal node naming
+    const sanitizedName = sanitizeBoneName(bone.boneName);
     const track = new THREE.QuaternionKeyframeTrack(
-      `${bone.boneName}.quaternion`,
+      `${sanitizedName}.quaternion`,
       bone.times,
       bone.quaternions,
       THREE.InterpolateSmooth
