@@ -12,6 +12,7 @@ import {
   getUserSettings,
   upsertUserSettings,
   addPoints,
+  getStreakData,
 } from "./db";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
@@ -93,6 +94,14 @@ export const appRouter = router({
         await updateSessionVideo(input.sessionId, url, fileKey);
         return { url, key: fileKey };
       }),
+  }),
+
+  // ─── Streak ────────────────────────────────────────────────────
+  streak: router({
+    /** Get current user's streak data */
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return getStreakData(ctx.user.id);
+    }),
   }),
 
   // ─── User Settings ─────────────────────────────────────────────

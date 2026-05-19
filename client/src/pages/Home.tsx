@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useAudio } from "@/contexts/AudioContext";
 import AudioSettingsModal from "@/components/AudioSettingsModal";
+import StreakDisplay from "@/components/StreakDisplay";
 
 const featuredCategories = [
   {
@@ -62,6 +63,9 @@ export default function Home() {
             </Button>
           </div>
         </div>
+
+        {/* Streak Display */}
+        <StreakDisplay />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
           {featuredCategories.map((cat) => (

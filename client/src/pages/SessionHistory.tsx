@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { getLoginUrl } from "@/const";
+import ProgressDashboard from "@/components/ProgressDashboard";
 
 interface DisplaySession {
   id: string;
@@ -189,6 +190,11 @@ export default function SessionHistory() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Progress Dashboard */}
+        {!sessionsLoading && sessions.length > 0 && (
+          <ProgressDashboard sessions={sessions} />
         )}
 
         {/* Stats Summary */}

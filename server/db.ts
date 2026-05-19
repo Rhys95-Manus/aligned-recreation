@@ -194,3 +194,92 @@ export async function addPoints(userId: number, points: number) {
   await upsertUserSettings(userId, { totalPoints: newTotal });
   return newTotal;
 }
+
+// ─── Streak Queries ────────────────────────────────────────────────────────
+
+/**
+ * Calculate streak data from the user's sessions.
+ * A streak day = at least one session with overallScore >= 35 in a calendar day.
+ * Consecutive qualifying days build the streak. Missing a day resets to 0.
+ */
+export async function getStreakData(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const allSessions = await db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.userId, userId))
+    .orderBy(desc(sessions.createdAt));
+
+  // Build a set of qualifying dates (days with score >= 35)
+  const qualifyingDates = new Set<string>();
+  allSessions.forEach((s) => {
+    if (s.overallScore && s.overallScore >= 35) {
+      // Use UTC date string as the key
+      const date = new Date(s.createdAt);
+      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      qualifyingDates.add(dateKey);
+    }
+  });
+
+  if (qualifyingDates.size === 0) {
+    return { currentStreak: 0, longestStreak: 0, lastActiveDate: null };
+  }
+
+  // Sort dates descending
+  const sortedDates = Array.from(qualifyingDates).sort().reverse();
+
+  // Calculate current streak (must include today or yesterday)
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+  let currentStreak = 0;
+  if (qualifyingDates.has(todayKey) || qualifyingDates.has(yesterdayKey)) {
+    // Start counting from today or yesterday
+    const startDate = qualifyingDates.has(todayKey) ? today : yesterday;
+    let checkDate = new Date(startDate);
+
+    while (true) {
+      const checkKey = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+      if (qualifyingDates.has(checkKey)) {
+        currentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+  }
+
+  // Calculate longest streak ever
+  let longestStreak = 0;
+  let tempStreak = 0;
+  const allDates = Array.from(qualifyingDates).sort();
+
+  for (let i = 0; i < allDates.length; i++) {
+    if (i === 0) {
+      tempStreak = 1;
+    } else {
+      const prevDate = new Date(allDates[i - 1]);
+      const currDate = new Date(allDates[i]);
+      const diffDays = Math.round(
+        (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (diffDays === 1) {
+        tempStreak++;
+      } else {
+        tempStreak = 1;
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak);
+  }
+
+  return {
+    currentStreak,
+    longestStreak,
+    lastActiveDate: sortedDates[0],
+  };
+}

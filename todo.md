@@ -395,3 +395,22 @@
 - [x] Undetected non-priority metric = ignored entirely
 - [x] Add disclaimer: "For accurate scoring, ensure your full body is visible and you perform the complete motion"
 - [x] Verify sitting/minimal movement scores near zero
+
+## Visual Progress Dashboard (History Page)
+- [x] Add line graph showing score over time, filterable by motion
+- [x] Style graph to match dark/holographic aesthetic
+- [x] Show personal best score callout per motion
+- [x] Show most improved callout (motion with greatest score improvement)
+- [x] Show "Complete more sessions to see your progress trend" for motions with < 2 sessions
+- [x] Use existing session history data (no new data structures)
+
+## Streak System (Home Page)
+- [x] Add streak tracking logic (1+ motion with score >= 35 per calendar day)
+- [x] Consecutive qualifying days build streak, missing a day resets to 0
+- [x] Display current streak prominently on home page with flame/energy icon
+- [x] Show subtitle "Days showing up for yourself"
+- [x] Show longest streak ever as secondary stat
+- [x] Implement milestone badges: Ignited (3d), Locked In (7d), Momentum (14d), Devoted (30d), Relentless (60d), Aligned (100d)
+- [x] Show celebration animation when user hits a new milestone
+- [x] Display earned badges in a row beneath streak counter
+- [x] Show unearned badges as locked/greyed silhouettes with tooltip showing required streak
