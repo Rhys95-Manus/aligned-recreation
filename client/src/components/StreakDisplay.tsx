@@ -1,6 +1,17 @@
 import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import MilestoneBanner from "@/components/MilestoneBanner";
+import {
+  MILESTONE_NOTIFICATIONS,
+  sendMilestoneNotification,
+  getMilestoneNotification,
+  requestNotificationPermission,
+  hasRequestedPermission,
+  markPermissionRequested,
+  getNotificationPermission,
+} from "@/lib/notifications";
+import type { MilestoneNotification } from "@/lib/notifications";
 
 interface MilestoneBadge {
   days: number;
@@ -115,6 +126,7 @@ export default function StreakDisplay() {
   const { isAuthenticated } = useAuth();
   const [celebratingBadge, setCelebratingBadge] = useState<MilestoneBadge | null>(null);
   const [hasShownCelebration, setHasShownCelebration] = useState<Set<number>>(new Set());
+  const [bannerMilestone, setBannerMilestone] = useState<MilestoneNotification | null>(null);
 
   const { data: streakData } = trpc.streak.get.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -131,19 +143,48 @@ export default function StreakDisplay() {
     [longestStreak]
   );
 
-  // Check for new milestone celebration
+  // Request notification permission on first login (not on landing page)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (hasRequestedPermission()) return;
+
+    // Delay permission request slightly so it doesn't fire immediately on page load
+    const timer = setTimeout(() => {
+      requestNotificationPermission().then(() => {
+        markPermissionRequested();
+      });
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated]);
+
+  // Check for new milestone celebration + send notifications
   useEffect(() => {
     if (!streakData) return;
-    const newBadge = MILESTONES.find(
-      (m) => currentStreak >= m.days && !hasShownCelebration.has(m.days)
-    );
+
+    // Find the highest milestone that the current streak has reached
+    // and that we haven't already celebrated this session
+    const newBadge = [...MILESTONES]
+      .reverse()
+      .find((m) => currentStreak >= m.days && !hasShownCelebration.has(m.days));
+
     if (newBadge) {
       // Only celebrate if it's a newly earned badge (check localStorage)
       const celebratedKey = `aligned_celebrated_${newBadge.days}`;
       if (!localStorage.getItem(celebratedKey)) {
+        // 1. Show celebration animation
         setCelebratingBadge(newBadge);
         localStorage.setItem(celebratedKey, "true");
+
+        // 2. Send push notification (if permission granted)
+        const milestoneNotif = getMilestoneNotification(newBadge.days);
+        if (milestoneNotif) {
+          sendMilestoneNotification(milestoneNotif);
+          // 3. Show in-app banner
+          setBannerMilestone(milestoneNotif);
+        }
       }
+
       setHasShownCelebration((prev) => {
         const next = new Set(Array.from(prev));
         next.add(newBadge.days);
@@ -156,6 +197,14 @@ export default function StreakDisplay() {
 
   return (
     <>
+      {/* In-app banner notification */}
+      {bannerMilestone && (
+        <MilestoneBanner
+          milestone={bannerMilestone}
+          onDismiss={() => setBannerMilestone(null)}
+        />
+      )}
+
       {/* Celebration overlay */}
       {celebratingBadge && (
         <CelebrationAnimation

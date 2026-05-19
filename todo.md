@@ -414,3 +414,17 @@
 - [x] Show celebration animation when user hits a new milestone
 - [x] Display earned badges in a row beneath streak counter
 - [x] Show unearned badges as locked/greyed silhouettes with tooltip showing required streak
+
+## Streak Milestone Notifications
+- [x] Implement Web Push Notifications API for browser-based push notifications
+- [x] Request notification permission on first login or first completed motion (not on landing page)
+- [x] Send push notification with badge name + motivational message when milestone is hit
+- [x] Build in-app dropdown banner notification component (slides down from top)
+- [x] Banner shows badge icon, badge name, and motivational message
+- [x] Banner stays 5 seconds then auto-slides up; user can dismiss with X
+- [x] Banner has dark holographic aesthetic with glowing accent border
+- [x] Badge icon glows/pulses briefly when banner appears
+- [x] Smooth slide-down/slide-up animations
+- [x] Only trigger on milestone days (3, 7, 14, 30, 60, 100)
+- [x] Notifications fire at the moment milestone is hit, not on delay
+- [x] If push permission not granted, celebration + banner still work normally
