@@ -428,3 +428,14 @@
 - [x] Only trigger on milestone days (3, 7, 14, 30, 60, 100)
 - [x] Notifications fire at the moment milestone is hit, not on delay
 - [x] If push permission not granted, celebration + banner still work normally
+
+## Punt & Field Goal Kick Hologram Animations
+- [x] Create punt animation data (4 phases, 52 keyframes, 1.8s duration)
+- [x] Create field goal kick animation data (4 phases, 48 keyframes, 1.6s duration)
+- [x] Register as named clips: "punt" and "fieldGoalKick"
+- [x] Use smooth interpolation (THREE.InterpolateSmooth) between keyframes
+- [x] Wire motion detection to trigger correct animation on Punt and Field Goal pages
+- [x] Ensure throw animation remains unchanged
+- [x] Ensure hologram color/wireframe/visual properties are identical to throw
+- [x] Ensure wireframe overlay is present from first frame
+- [x] Verify plant foot does not clip through ground plane

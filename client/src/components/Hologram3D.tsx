@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { createPuntClip, createFieldGoalClip, PUNT_CLIP_DURATION, FIELD_GOAL_CLIP_DURATION } from '@/data/footballKickAnimations';
 
-export type MotionType = 'football_throw' | 'basketball_jumpshot' | 'basketball_dribble' | 'golf_swing' | 'kettlebell' | 'generic';
+export type MotionType = 'football_throw' | 'football_punt' | 'football_fieldgoal' | 'basketball_jumpshot' | 'basketball_dribble' | 'golf_swing' | 'kettlebell' | 'generic';
 
 // CDN URLs for hologram models
 const FOOTBALL_MODEL_URL = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663143408740/Gd6AiijCmPwLtcbfaErCFP/fotball2_b7f18e4a.glb';
@@ -19,6 +20,8 @@ export function getModelUrlForMotion(motionType: MotionType): string {
     case 'basketball_dribble':
       return FOOTBALL_MODEL_URL;
     case 'football_throw':
+    case 'football_punt':
+    case 'football_fieldgoal':
     case 'golf_swing':
     case 'kettlebell':
     case 'generic':
@@ -37,6 +40,13 @@ export function detectMotionType(motionName: string): MotionType {
   if (name.includes('dribbl')) {
     return 'basketball_dribble';
   }
+  // Football kicking motions must be detected BEFORE generic football/throw
+  if (name.includes('punt')) {
+    return 'football_punt';
+  }
+  if (name.includes('field goal') || name.includes('fieldgoal') || name.includes('field-goal')) {
+    return 'football_fieldgoal';
+  }
   if (name.includes('football') || name.includes('throw') || name.includes('quarterback')) {
     return 'football_throw';
   }
@@ -50,6 +60,13 @@ export function detectMotionType(motionName: string): MotionType {
     const path = window.location.pathname.toLowerCase();
     if (path.includes('basketball') && !name.includes('dribbl')) {
       return 'basketball_jumpshot';
+    }
+    // Also detect punt/field goal from URL path
+    if (path.includes('punt')) {
+      return 'football_punt';
+    }
+    if (path.includes('field-goal') || path.includes('fieldgoal') || path.includes('field_goal')) {
+      return 'football_fieldgoal';
     }
   }
   return 'generic';
@@ -236,11 +253,27 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
           });
 
           // Set up animation — time is controlled externally via playbackProgress
-          if (gltf.animations && gltf.animations.length > 0) {
-            const mixer = new THREE.AnimationMixer(model);
-            mixerRef.current = mixer;
-            const clip = gltf.animations[0];
-            clipDurationRef.current = clip.duration;
+          // Select the correct clip based on motion type:
+          // - football_throw: uses the built-in GLB animation (clip index 0)
+          // - football_punt: uses programmatic punt clip
+          // - football_fieldgoal: uses programmatic field goal clip
+          const mixer = new THREE.AnimationMixer(model);
+          mixerRef.current = mixer;
+
+          let clip: THREE.AnimationClip | null = null;
+
+          if (motionType === 'football_punt') {
+            clip = createPuntClip();
+            clipDurationRef.current = PUNT_CLIP_DURATION;
+          } else if (motionType === 'football_fieldgoal') {
+            clip = createFieldGoalClip();
+            clipDurationRef.current = FIELD_GOAL_CLIP_DURATION;
+          } else if (gltf.animations && gltf.animations.length > 0) {
+            clip = gltf.animations[0];
+            clipDurationRef.current = clip!.duration;
+          }
+
+          if (clip) {
             const action = mixer.clipAction(clip);
             action.setLoop(THREE.LoopRepeat, Infinity);
             action.setEffectiveWeight(1);
@@ -409,11 +442,14 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       mixerRef.current = null;
       actionRef.current = null;
     };
-  }, [modelUrl]);
+  }, [modelUrl, motionType]);
 
   // Sync built-in animation to replay timeline via playbackProgress (0.0–1.0)
-  // Professional throw timing: ~1.8s throw, ~0.7s reset, ~2.5s total rep cycle.
   // The hologram plays at natural speed, then snaps to neutral (no rewind).
+  // Timing varies by motion type:
+  //   - football_throw: ~1.8s motion, ~2.5s total cycle
+  //   - football_punt: ~1.8s motion, ~2.3s total cycle
+  //   - football_fieldgoal: ~1.6s motion, ~2.1s total cycle
   const prevProgressRef = useRef(0);
   const isInNeutralRef = useRef(false);
   
@@ -421,12 +457,23 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     if (!mixerRef.current || !actionRef.current || clipDurationRef.current <= 0) return;
     if (!useOriginalMaterialsRef.current) return;
 
-    const clipDuration = clipDurationRef.current; // ~1.73s for football throw
+    const clipDuration = clipDurationRef.current;
     const totalRepDuration = repDuration; // actual recording duration in seconds
     
-    // Professional timing targets
-    const THROW_DURATION = 1.8; // seconds for the throw motion
-    const TOTAL_REP_CYCLE = 2.5; // total seconds for throw + return to neutral
+    // Motion-specific timing targets
+    let MOTION_DURATION: number;
+    let TOTAL_REP_CYCLE: number;
+    
+    if (motionType === 'football_punt') {
+      MOTION_DURATION = PUNT_CLIP_DURATION; // 1.8s
+      TOTAL_REP_CYCLE = 2.3;
+    } else if (motionType === 'football_fieldgoal') {
+      MOTION_DURATION = FIELD_GOAL_CLIP_DURATION; // 1.6s
+      TOTAL_REP_CYCLE = 2.1;
+    } else {
+      MOTION_DURATION = 1.8; // throw
+      TOTAL_REP_CYCLE = 2.5;
+    }
     
     // Convert playbackProgress (0–1) to elapsed seconds
     const elapsedSeconds = playbackProgress * totalRepDuration;
@@ -437,15 +484,14 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
     
     let targetTime: number;
     
-    if (elapsedSeconds <= THROW_DURATION) {
-      // Phase 1: Playing the throw at professional speed (~1.8s)
-      // Map 0–THROW_DURATION seconds to 0–clipDuration
-      const throwFraction = elapsedSeconds / THROW_DURATION;
-      targetTime = Math.min(throwFraction, 0.9999) * clipDuration;
+    if (elapsedSeconds <= MOTION_DURATION) {
+      // Phase 1: Playing the motion at natural speed
+      // Map 0–MOTION_DURATION seconds to 0–clipDuration
+      const motionFraction = elapsedSeconds / MOTION_DURATION;
+      targetTime = Math.min(motionFraction, 0.9999) * clipDuration;
       isInNeutralRef.current = false;
     } else if (elapsedSeconds <= TOTAL_REP_CYCLE) {
       // Phase 2: Quick snap to neutral — NOT a rewind
-      // Instead of playing the animation backwards, just go to frame 0 immediately
       targetTime = 0;
       isInNeutralRef.current = true;
     } else {
@@ -454,14 +500,14 @@ const Hologram3D: React.FC<Hologram3DProps> = ({
       isInNeutralRef.current = true;
     }
     
-    // If user rewound into the throw phase, allow re-playing from that point
-    if (didRewind && elapsedSeconds <= THROW_DURATION) {
+    // If user rewound into the motion phase, allow re-playing from that point
+    if (didRewind && elapsedSeconds <= MOTION_DURATION) {
       isInNeutralRef.current = false;
     }
     
     actionRef.current.time = targetTime;
     mixerRef.current.update(0);
-  }, [playbackProgress, repDuration]);
+  }, [playbackProgress, repDuration, motionType]);
 
   // Handle rotation for original-material models
   useEffect(() => {
