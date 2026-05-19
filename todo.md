@@ -440,3 +440,8 @@
 - [x] Ensure wireframe overlay is present from first frame
 - [x] Verify plant foot does not clip through ground plane
 - [x] Fix axis inversion on punt and field goal kick animations (invert X rotation on all leg bones)
+- [x] Audit throw animation bone set for legs (deformation vs FK vs IK)
+- [x] Rebuild punt/field goal kick to use only the correct bone set (match throw)
+- [x] Reset non-driven leg bones to bind pose
+- [x] Simplify kick to single-plane motion first, verify forward swing
+- [x] Layer back arms/spine/follow-through after confirming leg direction
