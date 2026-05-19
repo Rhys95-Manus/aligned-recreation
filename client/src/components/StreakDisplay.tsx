@@ -152,7 +152,7 @@ export default function StreakDisplay() {
     }
   }, [streakData, currentStreak, hasShownCelebration]);
 
-  if (!isAuthenticated) return null;
+  // Show streak for all users — non-authenticated users see 0 streak as motivation to sign in
 
   return (
     <>

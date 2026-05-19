@@ -64,10 +64,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Streak Display */}
-        <StreakDisplay />
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {featuredCategories.map((cat) => (
             <div
               key={cat.id}
@@ -88,6 +85,9 @@ export default function Home() {
             </div>
           ))}
         </div>
+
+        {/* Streak Display */}
+        <StreakDisplay />
       </main>
 
       <footer className="text-center py-10 text-slate-400">
