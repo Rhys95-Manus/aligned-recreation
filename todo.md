@@ -465,3 +465,7 @@
 - [x] Present the exact deleted and moved file summary before finalizing
 - [x] Remove the authorized stale Session import and delete Session.tsx with PoseAnalysis.tsx in the same change
 - [x] Delete Analysis_old.tsx and Replay_old.tsx as explicitly authorized without further verification
+- [x] Inspect local and remote GitHub main SHAs after the failed checkpoint sync
+- [x] Explicitly push all local commits after GitHub commit 552a78b to user_github/main
+- [x] Verify the exact commit SHA now visible on the GitHub main branch
+- [x] Document why the prior checkpoint did not update GitHub
