@@ -445,3 +445,11 @@
 - [x] Reset non-driven leg bones to bind pose
 - [x] Simplify kick to single-plane motion first, verify forward swing
 - [x] Layer back arms/spine/follow-through after confirming leg direction
+- [x] Capture the pre-change test baseline for the professional-reference schema extension
+- [x] Add an optional backward-compatible phases array to ProfessionalReference
+- [x] Migrate football throw to the five supplied biomechanical phases
+- [x] Correct football throw Hip-Shoulder Separation to a 30–45° late-cocking peak reference
+- [x] Migrate basketball jump shot and free throw phase data without duplicating Free Throw Phase 3
+- [x] Record the future archery release-velocity correction as 175–215 fps (53–65 m/s) without migrating archery in this pass
+- [x] Run the post-change test suite and verify no unrelated project files changed
+- [x] Produce the complete implementation diff for review

@@ -12,12 +12,29 @@ export interface BiomechanicalMetric {
   description: string;
 }
 
+export interface PhaseMetric {
+  name: string;
+  min: number;
+  max: number;
+  unit: string;
+  note: string;
+}
+
+export interface ProfessionalReferencePhase {
+  name: string;
+  cueText: string;
+  instruction: string;
+  approximateDuration: string;
+  metrics: PhaseMetric[];
+}
+
 export interface ProfessionalReference {
   motionName: string;
   category: string;
   subcategory: string;
   metrics: BiomechanicalMetric[];
   source: string;
+  phases?: ProfessionalReferencePhase[];
 }
 
 // ============================================================
@@ -33,10 +50,97 @@ export const footballThrowReference: ProfessionalReference = {
     { name: "Shoulder External Rotation", professionalAverage: 134, optimalRange: { min: 125, max: 145 }, unit: "degrees", description: "Maximum shoulder rotation when arm is cocked back" },
     { name: "Elbow Flexion", professionalAverage: 100, optimalRange: { min: 90, max: 110 }, unit: "degrees", description: "Elbow bend at maximal shoulder external rotation" },
     { name: "Hip Rotation", professionalAverage: 61, optimalRange: { min: 50, max: 70 }, unit: "degrees", description: "Total hip rotation from foot contact to follow-through" },
+    { name: "Hip-Shoulder Separation", professionalAverage: 37.5, optimalRange: { min: 30, max: 45 }, unit: "degrees", description: "Peak dynamic separation between hip and shoulder rotation during late cocking" },
     { name: "Spine Extension", professionalAverage: 23, optimalRange: { min: 18, max: 28 }, unit: "degrees", description: "Lumbar extension at maximal shoulder external rotation" },
     { name: "Knee Flexion", professionalAverage: 38, optimalRange: { min: 30, max: 50 }, unit: "degrees", description: "Stride leg knee bend" },
     { name: "Foot Positioning", professionalAverage: 45, optimalRange: { min: 35, max: 55 }, unit: "degrees", description: "Front foot angle relative to target line" },
     { name: "Weight Transfer", professionalAverage: 70, optimalRange: { min: 60, max: 80 }, unit: "percent", description: "Percentage of weight transferred from back to front foot" }
+  ],
+  phases: [
+    {
+      name: "Neutral / Ready Position",
+      cueText: "Stand sideways to the target with the ball near the chest, a relaxed grip, feet just outside shoulder width, soft knees, balanced weight, and a tall athletic spine.",
+      instruction: "Start tall and balanced with the ball near your chest, standing sideways to the target with a relaxed posture that prepares your body to rotate smoothly.",
+      approximateDuration: "0.25-0.35 sec",
+      metrics: [
+        { name: "Weight Distribution", min: -5, max: 5, unit: "percent", note: "Balanced base" },
+        { name: "Back Knee Flexion", min: 150, max: 170, unit: "degrees", note: "Athletic bend" },
+        { name: "Lead Knee Flexion", min: 150, max: 170, unit: "degrees", note: "Ready to step" },
+        { name: "Spine Angle", min: 0, max: 10, unit: "degrees", note: "Tall posture" },
+        { name: "Hip Rotation", min: 0, max: 10, unit: "degrees", note: "Closed hips" },
+        { name: "Shoulder Rotation", min: 0, max: 10, unit: "degrees", note: "Closed shoulders" },
+        { name: "Throwing Elbow Flexion", min: 80, max: 120, unit: "degrees", note: "Relaxed arm" },
+        { name: "Non-Throwing Elbow Flexion", min: 70, max: 120, unit: "degrees", note: "Balanced counter" }
+      ]
+    },
+    {
+      name: "Early Cocking",
+      cueText: "Shift slightly into the back foot as the throwing arm begins its backstroke, pivot or step the front foot toward the target, let the hips start opening, and keep the shoulders closed with the elbow near shoulder height.",
+      instruction: "Shift slightly into your back leg as your throwing arm moves into its backstroke position, pivoting your front foot toward the target while keeping your shoulders closed.",
+      approximateDuration: "0.20-0.30 sec",
+      metrics: [
+        { name: "Weight Distribution", min: -20, max: -10, unit: "percent", note: "Load the back leg" },
+        { name: "Back Knee Flexion", min: 140, max: 160, unit: "degrees", note: "Absorb load" },
+        { name: "Lead Knee Flexion", min: 150, max: 170, unit: "degrees", note: "Free to pivot" },
+        { name: "Spine Angle", min: 0, max: 10, unit: "degrees", note: "Stay tall" },
+        { name: "Hip Rotation", min: 10, max: 25, unit: "degrees open", note: "Hips start first" },
+        { name: "Shoulder Rotation", min: 0, max: 10, unit: "degrees open", note: "Shoulders stay closed" },
+        { name: "Throwing Elbow Height", min: -5, max: 5, unit: "degrees from shoulder level", note: "Elbow up, not flared" },
+        { name: "Throwing Elbow Flexion", min: 80, max: 100, unit: "degrees", note: "Compact arm" },
+        { name: "Non-Throwing Elbow Flexion", min: 30, max: 70, unit: "degrees", note: "Counterbalance" }
+      ]
+    },
+    {
+      name: "Late Cocking / Max Torque",
+      cueText: "Begin moving weight forward as the hips rotate open, delay the shoulders, form a clean L-shape behind the head, keep the throwing elbow at shoulder height, and maintain a tall spine with only slight backward tilt.",
+      instruction: "Begin shifting your weight forward as your hips rotate open while your shoulders stay closed, creating torque as your throwing arm forms a clean L-shape behind your head.",
+      approximateDuration: "0.20-0.30 sec",
+      metrics: [
+        { name: "Weight Distribution", min: 0, max: 10, unit: "percent", note: "Energy moves forward" },
+        { name: "Back Knee Flexion", min: 150, max: 165, unit: "degrees", note: "Drive from back leg" },
+        { name: "Lead Knee Flexion", min: 140, max: 160, unit: "degrees", note: "Prepare to brace" },
+        { name: "Spine Angle", min: -5, max: 5, unit: "degrees", note: "Tall with control" },
+        { name: "Hip Rotation", min: 30, max: 45, unit: "degrees open", note: "Hips lead power" },
+        { name: "Shoulder Rotation", min: 5, max: 15, unit: "degrees open", note: "Delay shoulders" },
+        { name: "Hip-Shoulder Separation", min: 30, max: 45, unit: "degrees", note: "Peak dynamic torque window" },
+        { name: "Throwing Elbow Flexion", min: 85, max: 100, unit: "degrees", note: "Strong L-shape" },
+        { name: "Throwing Elbow Height", min: -5, max: 5, unit: "degrees from shoulder level", note: "Protect shoulder" },
+        { name: "Non-Throwing Elbow Extension", min: 30, max: 70, unit: "degrees", note: "Pull torso through" }
+      ]
+    },
+    {
+      name: "Acceleration / Release",
+      cueText: "Square the hips before the shoulders, rotate the shoulders aggressively, drive the throwing elbow along the target line, extend through the target, snap the wrist downward, and release just before full elbow extension.",
+      instruction: "Drive your hips square to lead your shoulders, then whip your elbow forward in a straight line and extend your arm through the target as you release the ball.",
+      approximateDuration: "0.15-0.25 sec",
+      metrics: [
+        { name: "Weight Distribution", min: 20, max: 40, unit: "percent on lead foot", note: "Finish into throw" },
+        { name: "Lead Knee Extension", min: 150, max: 180, unit: "degrees", note: "Dynamic brace from 150 degrees toward 170-180 degrees" },
+        { name: "Back Knee Extension", min: 150, max: 180, unit: "degrees", note: "Dynamic drive from 150 degrees toward 170-180 degrees" },
+        { name: "Spine Angle", min: 0, max: 10, unit: "degrees", note: "No collapse" },
+        { name: "Hip Rotation", min: 45, max: 60, unit: "degrees", note: "Hips finish first" },
+        { name: "Shoulder Rotation", min: 45, max: 60, unit: "degrees", note: "Shoulders whip" },
+        { name: "Throwing Elbow Extension", min: 90, max: 180, unit: "degrees", note: "Dynamic extension toward 170-180 degrees; elbow leads hand" },
+        { name: "Throwing Elbow Alignment", min: -5, max: 5, unit: "degrees from target line", note: "Throw straight" },
+        { name: "Non-Throwing Elbow Flexion", min: 40, max: 90, unit: "degrees", note: "Pull torso through" },
+        { name: "Wrist Flexion", min: 20, max: 40, unit: "degrees", note: "Tight spiral" }
+      ]
+    },
+    {
+      name: "Follow-Through",
+      cueText: "Let the arm decelerate naturally across the body with the palm down, rotate the shoulders and back hip fully through, lean slightly forward, and finish with weight on the front foot.",
+      instruction: "Let your arm naturally follow through across your body with your palm down as your shoulders and hips rotate fully, finishing your weight on the front foot with a relaxed forward lean.",
+      approximateDuration: "0.30-0.45 sec",
+      metrics: [
+        { name: "Weight Distribution", min: 60, max: 80, unit: "percent on lead foot", note: "Complete transfer" },
+        { name: "Lead Knee Extension", min: 170, max: 180, unit: "degrees", note: "Stable finish" },
+        { name: "Back Knee Flexion", min: 150, max: 170, unit: "degrees", note: "Trail release" },
+        { name: "Spine Angle", min: 5, max: 15, unit: "degrees forward", note: "Natural deceleration" },
+        { name: "Shoulder Rotation", min: 60, max: 90, unit: "degrees", note: "Full rotation" },
+        { name: "Throwing Elbow Extension", min: 170, max: 180, unit: "degrees", note: "Full release" },
+        { name: "Non-Throwing Elbow Flexion", min: 30, max: 70, unit: "degrees", note: "Absorb rotation" }
+      ]
+    }
   ]
 };
 
@@ -84,6 +188,89 @@ export const jumpShotReference: ProfessionalReference = {
     { name: "Spine Extension", professionalAverage: 8, optimalRange: { min: 0, max: 15 }, unit: "degrees", description: "Natural forward lean during dip" },
     { name: "Weight Transfer", professionalAverage: 10, optimalRange: { min: 0, max: 20 }, unit: "percent", description: "Centered to slight forward bias" },
     { name: "Foot Positioning", professionalAverage: 30, optimalRange: { min: 15, max: 45 }, unit: "degrees", description: "Shoulder-width stance with shooting foot slightly ahead" }
+  ],
+  phases: [
+    {
+      name: "Ready Pocket / Stance",
+      cueText: "Start the ball in a true lower-to-mid-chest shooting pocket with both hands aligned, a comfortably bent shooting elbow, a tall or slightly forward spine, soft knees, centered weight, and the hips and ball connected.",
+      instruction: "Start in a relaxed chest-level pocket with your elbow softly bent and your spine tall so your body feels connected and ready to flow smoothly into your dip.",
+      approximateDuration: "Within 0.9-1.2 sec total motion",
+      metrics: [
+        { name: "Shooting Elbow Flexion", min: 60, max: 80, unit: "degrees", note: "True chest pocket" },
+        { name: "Off-Hand Elbow Flexion", min: 60, max: 90, unit: "degrees", note: "Can be slightly looser than shooting elbow" },
+        { name: "Shooting Knee Flexion", min: 160, max: 175, unit: "degrees", note: "Soft, athletic bend" },
+        { name: "Non-Shooting Knee Flexion", min: 160, max: 175, unit: "degrees", note: "Should closely match shooting knee" },
+        { name: "Shoulder Rotation", min: 5, max: 20, unit: "degrees", note: "Mild open stance toward shooting side" },
+        { name: "Spine Lean", min: 0, max: 10, unit: "degrees", note: "Tall or slight forward lean" },
+        { name: "Weight Transfer", min: -10, max: 10, unit: "percent", note: "Centered over both feet" },
+        { name: "Elbow Height Index", min: 30, max: 50, unit: "index (0-100)", note: "Elbow at lower-mid chest level" }
+      ]
+    },
+    {
+      name: "Dip / Load",
+      cueText: "Drop the hips and ball together to the lower chest or upper stomach, let the elbows extend only slightly, maintain a smooth rhythm, lean the spine naturally forward, bend both knees, and keep balance near center.",
+      instruction: "Lower into your dip by dropping your hips and letting the ball move with them down to your lower chest or stomach, keeping a natural forward lean 15-20 degrees and elbows only slightly extended as everything stays connected.",
+      approximateDuration: "Within 0.9-1.2 sec total motion",
+      metrics: [
+        { name: "Shooting Elbow Flexion", min: 80, max: 100, unit: "degrees", note: "Slight extension from pocket, never straight" },
+        { name: "Off-Hand Elbow Flexion", min: 80, max: 110, unit: "degrees", note: "Can extend slightly more than shooting elbow" },
+        { name: "Shooting Knee Flexion", min: 90, max: 120, unit: "degrees", note: "Strong loading bend" },
+        { name: "Non-Shooting Knee Flexion", min: 90, max: 120, unit: "degrees", note: "Should be similar to shooting knee" },
+        { name: "Shoulder Rotation", min: 10, max: 25, unit: "degrees", note: "Stable open stance" },
+        { name: "Spine Lean", min: 10, max: 25, unit: "degrees", note: "Ideal lean is 15-20 degrees" },
+        { name: "Weight Transfer", min: -10, max: 20, unit: "percent", note: "Slight front or shooting-side bias is acceptable" },
+        { name: "Elbow Height Index", min: 20, max: 40, unit: "index (0-100)", note: "Elbow and ball around lower chest to upper stomach" },
+        { name: "Hip-Ball Synch Score", min: 0.8, max: 1, unit: "score (0-1)", note: "Hip center and ball or wrist vertical motion are tightly synchronized" }
+      ]
+    },
+    {
+      name: "Rise to Set Point",
+      cueText: "Drive straight up through the floor as the hips and ball rise together, bring the spine back toward vertical, slide the shooting elbow under the ball into a compact L-shape, and reach an upper-chest to forehead set point in one continuous flow.",
+      instruction: "As you drive up, push through the floor so your body rises straight up. Drive up so your hips and the ball rise together into a strong set point near your forehead, lifting your chest back toward center and sliding your shooting elbow under the ball into a clean L-shape.",
+      approximateDuration: "Within 0.9-1.2 sec total motion",
+      metrics: [
+        { name: "Shooting Elbow Flexion", min: 80, max: 110, unit: "degrees", note: "True compact L-shape pocket" },
+        { name: "Off-Hand Elbow Flexion", min: 80, max: 120, unit: "degrees", note: "Supportive guide hand, slightly looser" },
+        { name: "Shooting Knee Flexion", min: 120, max: 160, unit: "degrees", note: "Extending out of dip, not yet fully straight" },
+        { name: "Non-Shooting Knee Flexion", min: 120, max: 160, unit: "degrees", note: "Should track shooting knee closely" },
+        { name: "Shoulder Rotation", min: 10, max: 25, unit: "degrees", note: "Open stance maintained" },
+        { name: "Spine Lean", min: 0, max: 10, unit: "degrees", note: "Chest returns toward vertical" },
+        { name: "Weight Transfer", min: -10, max: 20, unit: "percent", note: "Mostly centered with a mild front bias" },
+        { name: "Elbow Height Index", min: 50, max: 70, unit: "index (0-100)", note: "Elbow and ball around upper chest level" },
+        { name: "Hip-Ball Synch Score", min: 0.8, max: 1, unit: "score (0-1)", note: "Hips and ball rise in sync" }
+      ]
+    },
+    {
+      name: "Release",
+      cueText: "Release just before the top of the jump with nearly straight but unlocked legs, a fully extending shooting arm, a separating guide hand, an upright spine, a high release, and a relaxed wrist snap.",
+      instruction: "Release the ball as you near the top of your jump, extending through your legs and shooting arm while keeping your spine tall so the ball flows out of the same smooth upward motion. Finish with a relaxed, high follow-through, wrist snapping down toward the rim.",
+      approximateDuration: "Within 0.9-1.2 sec total motion",
+      metrics: [
+        { name: "Shooting Elbow Flexion", min: 160, max: 180, unit: "degrees", note: "Almost fully extended at release" },
+        { name: "Off-Hand Elbow Flexion", min: 140, max: 180, unit: "degrees", note: "Guide hand releases and relaxes" },
+        { name: "Shooting Knee Flexion", min: 150, max: 178, unit: "degrees", note: "Nearly straight without hyperextension" },
+        { name: "Non-Shooting Knee Flexion", min: 150, max: 178, unit: "degrees", note: "Similar to shooting knee" },
+        { name: "Shoulder Rotation", min: 10, max: 25, unit: "degrees", note: "No sudden twist" },
+        { name: "Spine Lean", min: 0, max: 5, unit: "degrees", note: "Very upright at release" },
+        { name: "Weight Transfer", min: -5, max: 20, unit: "percent", note: "Slight forward bias is acceptable" },
+        { name: "Elbow Height Index", min: 70, max: 90, unit: "index (0-100)", note: "Elbow at chin-to-eye level with a high release point above the head" }
+      ]
+    },
+    {
+      name: "Flight, Landing & Follow-Through",
+      cueText: "Hold the follow-through briefly with fingers toward the rim, land softly near the takeoff point with both knees absorbing force, and return to a balanced stance ready for the next play.",
+      instruction: "Hold your follow-through with your fingers pointing at the rim, land softly near where you took off, and settle into a balanced stance so you're ready to move on the next play.",
+      approximateDuration: "Within 0.9-1.2 sec total motion",
+      metrics: [
+        { name: "Shooting Elbow Flexion", min: 30, max: 180, unit: "degrees", note: "Begins at 160-180 degrees with fingers toward the rim, then relaxes to a 30-60 degree gooseneck" },
+        { name: "Off-Hand Elbow Flexion", min: 60, max: 120, unit: "degrees", note: "Off-hand fully free and relaxed" },
+        { name: "Shooting Knee Flexion", min: 110, max: 150, unit: "degrees", note: "Absorbing landing" },
+        { name: "Non-Shooting Knee Flexion", min: 110, max: 150, unit: "degrees", note: "Similar absorption on both legs" },
+        { name: "Shoulder Rotation", min: 5, max: 20, unit: "degrees", note: "Returns to a comfortable open stance" },
+        { name: "Spine Lean", min: 0, max: 10, unit: "degrees", note: "Returns to mostly vertical" },
+        { name: "Weight Transfer", min: -10, max: 10, unit: "percent", note: "Re-centered over both feet" }
+      ]
+    }
   ]
 };
 
@@ -97,6 +284,75 @@ const basketballFreeThrowReference: ProfessionalReference = {
     { name: "Spine Extension", professionalAverage: 5, optimalRange: { min: 0, max: 12 }, unit: "degrees", description: "Minimal trunk lean" },
     { name: "Weight Transfer", professionalAverage: 8, optimalRange: { min: 0, max: 18 }, unit: "percent", description: "Slight forward bias" },
     { name: "Foot Positioning", professionalAverage: 25, optimalRange: { min: 15, max: 40 }, unit: "degrees", description: "Comfortable stance width" }
+  ],
+  phases: [
+    {
+      name: "Set / Alignment",
+      cueText: "Establish balance, alignment, and rhythm before motion begins.",
+      instruction: "Stand relaxed and balanced at the line. The shooting hand is under the ball, guide hand on the side. Knees are soft, spine tall, eyes locked on the rim. No tension yet - this is a calm setup.",
+      approximateDuration: "0.6-1.0 sec",
+      metrics: [
+        { name: "Weight Distribution", min: -5, max: 5, unit: "percent", note: "Balanced base" },
+        { name: "Lead Knee Flexion", min: 150, max: 170, unit: "degrees", note: "Soft knees" },
+        { name: "Back Knee Flexion", min: 150, max: 170, unit: "degrees", note: "Even stance" },
+        { name: "Spine Angle", min: 0, max: 10, unit: "degrees", note: "Tall posture" },
+        { name: "Hip Rotation", min: 0, max: 5, unit: "degrees", note: "Square hips" },
+        { name: "Shoulder Rotation", min: 0, max: 5, unit: "degrees", note: "Square shoulders" },
+        { name: "Shooting Elbow Flexion", min: 80, max: 100, unit: "degrees", note: "Ball supported" },
+        { name: "Guide Elbow Flexion", min: 90, max: 120, unit: "degrees", note: "Gentle support" }
+      ]
+    },
+    {
+      name: "Dip / Load",
+      cueText: "Load the legs and synchronize the ball and body.",
+      instruction: "The knees and hips bend smoothly as the ball lowers slightly with the body. The torso stays upright. The shooting elbow remains under the ball while the guide hand stays passive.",
+      approximateDuration: "0.6-1.0 sec",
+      metrics: [
+        { name: "Weight Distribution", min: 0, max: 10, unit: "percent", note: "Stay centered" },
+        { name: "Lead Knee Flexion", min: 95, max: 150, unit: "degrees", note: "Dynamic load from about 150 degrees to 95-115 degrees" },
+        { name: "Back Knee Flexion", min: 95, max: 150, unit: "degrees", note: "Dynamic even dip matching the lead knee" },
+        { name: "Hip Flexion", min: 10, max: 25, unit: "degrees", note: "Controlled sit" },
+        { name: "Spine Angle", min: 10, max: 20, unit: "degrees", note: "Slight lean only" },
+        { name: "Shooting Elbow Flexion", min: 80, max: 100, unit: "degrees", note: "Compact pocket" },
+        { name: "Guide Elbow Flexion", min: 90, max: 110, unit: "degrees", note: "Quiet guide" }
+      ]
+    },
+    {
+      name: "Rise / Upward Flow",
+      cueText: "Transfer energy upward smoothly without breaking rhythm.",
+      instruction: "As the legs extend, the ball rises with the body. The spine returns to vertical. The shooting elbow stays under the ball, forming a clean L-shape. No pause - this is one continuous motion.",
+      approximateDuration: "0.5-0.8 sec",
+      metrics: [
+        { name: "Weight Distribution", min: 10, max: 20, unit: "percent", note: "Move upward" },
+        { name: "Lead Knee Extension", min: 95, max: 180, unit: "degrees", note: "Dynamic leg drive from 95-115 degrees to 170-180 degrees" },
+        { name: "Back Knee Extension", min: 95, max: 180, unit: "degrees", note: "Dynamic balanced rise matching the lead knee" },
+        { name: "Hip Extension", min: 25, max: 180, unit: "degrees", note: "Dynamic extension toward 170-180 degrees; stand tall" },
+        { name: "Spine Angle", min: 0, max: 20, unit: "degrees", note: "Dynamic return from 15-20 degrees to vertical" },
+        { name: "Shooting Elbow Flexion", min: 80, max: 90, unit: "degrees", note: "Ready to release" },
+        { name: "Guide Elbow Flexion", min: 90, max: 110, unit: "degrees", note: "Still passive" }
+      ]
+    },
+    {
+      name: "Release",
+      cueText: "The supplied source defines this phase's timing but does not provide release cue text.",
+      instruction: "The supplied source does not provide an instruction sentence for this phase.",
+      approximateDuration: "0.15-0.25 sec",
+      metrics: []
+    },
+    {
+      name: "Hold / Follow-Through",
+      cueText: "Stabilize and confirm shot mechanics.",
+      instruction: "Hold the follow-through. Shooting arm stays extended, wrist relaxed. Body remains still and balanced until the ball reaches the rim.",
+      approximateDuration: "0.5-0.9 sec",
+      metrics: [
+        { name: "Weight Distribution", min: 30, max: 40, unit: "percent", note: "Stable finish" },
+        { name: "Shooting Elbow Extension", min: 170, max: 180, unit: "degrees", note: "Full follow-through" },
+        { name: "Guide Elbow Flexion", min: 100, max: 130, unit: "degrees", note: "Relaxed release" },
+        { name: "Shoulder Elevation", min: 160, max: 180, unit: "degrees", note: "Arm stays high" },
+        { name: "Spine Angle", min: 0, max: 5, unit: "degrees", note: "Still and centered" },
+        { name: "Hold Duration", min: 0.5, max: 0.9, unit: "seconds", note: "Discipline and consistency" }
+      ]
+    }
   ]
 };
 
@@ -298,6 +554,8 @@ const archeryDrawReference: ProfessionalReference = {
   ]
 };
 
+// Future phase migration correction: use an arrow release velocity of
+// 175-215 fps (53-65 m/s), not the source document's 200-230 fps range.
 const archeryReleaseReference: ProfessionalReference = { ...archeryDrawReference, motionName: "Release", source: "Archery Release Mechanics" };
 
 // ============================================================
