@@ -13,7 +13,6 @@ import Analysis from "./pages/Analysis";
 import Pricing from "./pages/Pricing";
 import SessionHistory from "./pages/SessionHistory";
 import Community from "./pages/Community";
-import Session from "./pages/Session";
 import AudioSettings from "./pages/AudioSettings";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";

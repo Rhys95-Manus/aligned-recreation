@@ -453,3 +453,15 @@
 - [x] Record the future archery release-velocity correction as 175–215 fps (53–65 m/s) without migrating archery in this pass
 - [x] Run the post-change test suite and verify no unrelated project files changed
 - [x] Produce the complete implementation diff for review
+- [x] Capture the pre-cleanup full test baseline
+- [x] Verify Session.tsx references and stop after finding the stale App.tsx import
+- [x] Verify Analysis_old.tsx has no imports or runtime references, then delete it
+- [x] Verify Replay_old.tsx has no imports or runtime references, then delete it
+- [x] Verify PoseAnalysis.tsx has no imports or runtime references, then delete it
+- [x] Inventory root-level motion-extraction scripts and large pose-data dumps without touching client or server contents
+- [x] Move retained one-off research artifacts into the top-level research-archive folder
+- [x] Run the post-cleanup full test suite and confirm the same tests pass
+- [x] Verify every App.tsx route and routed import remains unchanged
+- [x] Present the exact deleted and moved file summary before finalizing
+- [x] Remove the authorized stale Session import and delete Session.tsx with PoseAnalysis.tsx in the same change
+- [x] Delete Analysis_old.tsx and Replay_old.tsx as explicitly authorized without further verification
