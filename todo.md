@@ -465,3 +465,16 @@
 - [x] Present the exact deleted and moved file summary before finalizing
 - [x] Remove the authorized stale Session import and delete Session.tsx with PoseAnalysis.tsx in the same change
 - [x] Delete Analysis_old.tsx and Replay_old.tsx as explicitly authorized without further verification
+- [x] Inspect local and remote GitHub main SHAs after the failed checkpoint sync
+- [x] Explicitly push all local commits after GitHub commit 552a78b to user_github/main
+- [x] Verify the exact commit SHA now visible on the GitHub main branch
+- [x] Document why the prior checkpoint did not update GitHub
+- [x] Capture the baseline tests and audit existing verified, generic, and duplicated professional references
+- [x] Add the supplied interior-joint-angle convention header without changing scoring behavior
+- [x] Add verificationLevel with research-verified, coaching-standard, and unverified values without breaking the flat metrics contract
+- [x] Migrate verified phase data for back squat, deadlift, bench press, overhead press, front squat, sumo deadlift, and incline bench
+- [x] Migrate verified phase data for kettlebell swing, snatch, clean, press, Turkish get-up, windmill, goblet squat, deadlift, and row
+- [x] Apply every numeric and instructional override from Aligned_Metrics_Corrections.md, including bench Shoulder Abduction
+- [x] Assign research-verified, coaching-standard, and unverified classifications exactly as specified in the corrections file
+- [x] Run an external regression audit for phase completeness, alias integrity, verification levels, and distinct motion references without editing test files
+- [x] Run TypeScript and full Vitest validation and prepare the complete migration audit
