@@ -16,6 +16,7 @@ import Community from "./pages/Community";
 import AudioSettings from "./pages/AudioSettings";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import MocapPreview from "./pages/MocapPreview";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -32,6 +33,7 @@ function Router() {
       <Route path={"/settings/audio"} component={AudioSettings} />
       <Route path={"/terms"} component={TermsOfService} />
       <Route path={"/privacy"} component={PrivacyPolicy} />
+      <Route path={"/test/mocap-preview"} component={MocapPreview} />
   
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

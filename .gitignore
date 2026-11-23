@@ -106,3 +106,7 @@ temp/
 *.sqlite
 *.sqlite3
 .project-config.json
+
+# Historical evaluation data belongs in managed storage or external backups.
+qb_video.mp4
+pose_data_full.json
