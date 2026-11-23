@@ -77,3 +77,11 @@ Both file paths were removed from branch history using `git filter-repo --invert
 ## Validation
 
 TypeScript, production build, all 135 existing Vitest tests, and `git diff --check` pass. Existing test interpolation warnings and the production bundle-size advisory are not new functional failures. Protected production files are additionally verified by SHA-256 against the pre-rewrite baseline.
+
+## Managed checkpoint limitation
+
+The repaired branch was successfully pushed to `user_github/main` and independently confirmed at `03fcf6ecd0b27addeda8cb7001f07c3c76dcd6d1` before the checkpoint attempt. The managed WebDev checkpoint tool then fetched its separate S3-backed `origin/main`, still at original commit `74e11897cd757707ab59d5dd5e1666bdce004226`, and refused to save because that history diverges from the cleaned branch.
+
+A normal merge was deliberately not performed: it would make the oversized historical blobs reachable from the cleaned branch again. Terminal access to this managed S3 remote is intentionally unavailable; credentials are confined to the checkpoint tool. The available tool exposes no forced managed-branch replacement option. Independent WebDev diagnostics confirmed that the managed repository needs a supported adoption/import of the clean history before checkpointing can succeed. No new project was created and no publish action was attempted.
+
+The existing managed repository therefore still contains the old history, while the repaired local `main` and GitHub `main` are clean. GitHub is the durable source of the restored evaluation code. The final delivery reports its exact verified SHA and supplies a full source archive outside the repository; it does not claim that a new managed checkpoint was saved.

@@ -12,6 +12,8 @@
 - [x] Preserve a pre-rewrite repository bundle outside the project.
 - [x] Remove both oversized file paths from Git history and verify protected production file hashes.
 - [x] Pass TypeScript, production build, 135 tests, and diff checks.
-- [ ] Push rewritten completed main to user_github/main with force-with-lease.
-- [ ] Save the required managed WebDev checkpoint.
-- [ ] Verify final GitHub main matches the final checkpoint SHA and report it.
+- [x] Push rewritten completed main to user_github/main with force-with-lease.
+
+GitHub independently confirmed commit `03fcf6ecd0b27addeda8cb7001f07c3c76dcd6d1` after the repaired code push. Managed checkpoint saving and final remote-SHA verification follow this record; the final checkpoint result and exact GitHub SHA are reported in the task delivery.
+
+Checkpoint status: blocked by divergent managed S3 origin/main at 74e11897. The normal merge was not performed because it would undo the authorized historical-blob purge. Direct S3 access is unavailable by platform design, and no managed-history replacement tool is exposed. The cleaned, validated code is pushed to GitHub. A final documentation commit and independent GitHub SHA verification complete the task's available work; managed checkpoint saving remains unresolved.
