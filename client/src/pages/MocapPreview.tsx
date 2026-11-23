@@ -8,12 +8,14 @@ import MocapPhaseReport from "@/components/MocapPhaseReport";
 import { DEFAULT_MOCAP_CLIP_ID, getActivePhaseIndex, getMocapClip, mocapClips, sourceTimeToClipTime, validateMocapConfig, type MocapClipConfig } from "@/data/mocapClips";
 import { MOCAP_ANGLE_LABELS, measureMocapAngles, type MocapAngleId, type MocapAngleMeasurements } from "@/lib/mocapAngles";
 import { prepareMocapClip, sampleMocapPhaseMarkers, type MocapPhaseMarkerReport } from "@/lib/mocapPipeline";
+import { bakeMetricCorrectedClip, type CorrectedMocap } from "@/lib/mocapCorrection";
 
 const READOUT_BONES = ["mixamorigSpine", "mixamorigRightArm", "mixamorigRightForeArm"] as const;
 const buttonClass = "rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:opacity-40";
 type Readout = Record<string, { x: number; y: number; z: number }>;
 type ClipInfo = { originalDuration: number; duration: number; sourceTargets: number; matchedTargets: number; missing: string[] };
-type Runtime = { seek: (time: number) => void; playing: boolean; time: number; duration: number };
+type PlaybackMode = "raw" | "corrected";
+type Runtime = { seek: (time: number) => void; switchMode: (mode: PlaybackMode) => void; playing: boolean; time: number; duration: number };
 
 function signedDegrees(radians: number) {
   const degrees = THREE.MathUtils.radToDeg(radians);
@@ -61,6 +63,9 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
   const [readouts, setReadouts] = useState<Readout>({});
   const [angles, setAngles] = useState<MocapAngleMeasurements | null>(null);
   const [phaseReports, setPhaseReports] = useState<MocapPhaseMarkerReport[]>([]);
+  const [correctedReports, setCorrectedReports] = useState<MocapPhaseMarkerReport[]>([]);
+  const [correction, setCorrection] = useState<CorrectedMocap | null>(null);
+  const [mode, setMode] = useState<PlaybackMode>("raw");
   const [selectedPhase, setSelectedPhase] = useState(0);
   const fps = config.fps ?? 24;
 
@@ -159,11 +164,23 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
         sourceRig = prepared.sourceRig;
         targetBones = prepared.targetMesh.skeleton.bones;
         for (const name of READOUT_BONES) if (!model.getObjectByName(name)) console.warn(`[MocapPreview] Readout bone missing on hologram: ${name}`);
+        stage = "Baking conservative metric corrections";
+        const baked = bakeMetricCorrectedClip(model, prepared.targetMesh, prepared.clip, config);
+        setCorrection(baked);
         mixer = new THREE.AnimationMixer(prepared.targetMesh);
-        const action = mixer.clipAction(prepared.clip);
-        action.setLoop(THREE.LoopOnce, 1);
-        action.clampWhenFinished = true;
+        const actions = { raw: mixer.clipAction(prepared.clip), corrected: mixer.clipAction(baked.clip) };
+        for (const candidate of Object.values(actions)) {
+          candidate.setLoop(THREE.LoopOnce, 1);
+          candidate.clampWhenFinished = true;
+        }
+        let action = actions.raw;
         action.play();
+        const activate = (nextMode: PlaybackMode, nextTime: number) => {
+          mixer?.stopAllAction();
+          action = actions[nextMode];
+          action.reset().play();
+          seekPose(nextTime);
+        };
         const seekPose = (nextTime: number) => {
           if (!mixer) return;
           action.paused = false;
@@ -174,6 +191,9 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
         stage = "World-position phase sampling";
         const reports = sampleMocapPhaseMarkers(model, targetBones, config, prepared.clip.duration, seekPose);
         setPhaseReports(reports);
+        activate("corrected", 0);
+        setCorrectedReports(sampleMocapPhaseMarkers(model, targetBones, config, baked.clip.duration, seekPose));
+        activate("raw", 0);
         // The sampler restores time zero: quarterback playback remains unchanged.
         scene.add(model);
         model.updateMatrixWorld(true);
@@ -191,6 +211,11 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
           time: 0,
           duration: prepared.clip.duration,
           playing: false,
+          switchMode: (nextMode) => {
+            if (!runtimeRef.current) return;
+            activate(nextMode, runtimeRef.current.time);
+            publishReadouts();
+          },
           seek: (nextTime) => {
             if (!runtimeRef.current) return;
             const clamped = THREE.MathUtils.clamp(nextTime, 0, prepared.clip.duration);
@@ -252,6 +277,11 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
   const progress = info ? time / info.duration * 100 : 0;
   const activePhase = getActivePhaseIndex(config, time);
   const markerPercent = (sourceTime: number) => info ? sourceTimeToClipTime(config, sourceTime, info.duration) / info.duration * 100 : 0;
+  const switchMode = (nextMode: PlaybackMode) => {
+    if (!runtimeRef.current) return;
+    runtimeRef.current.switchMode(nextMode);
+    setMode(nextMode);
+  };
 
   return (
     <main className="min-h-screen bg-[#061019] px-4 py-7 text-slate-100 sm:px-8">
@@ -274,6 +304,11 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
             <div className="space-y-4 border-t border-slate-700 p-5">
               <p role="status" className={error ? "text-sm text-red-300" : "text-sm text-cyan-200"}>{status}</p>
               {error && <p role="alert" className="break-words text-sm text-red-200">{error}</p>}
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Playback mode">
+                <button className={`${buttonClass} ${mode === "raw" ? "border-cyan-300 bg-cyan-950" : ""}`} aria-pressed={mode === "raw"} disabled={!info} onClick={() => switchMode("raw")}>Raw mocap</button>
+                <button className={`${buttonClass} ${mode === "corrected" ? "border-cyan-300 bg-cyan-950" : ""}`} aria-pressed={mode === "corrected"} disabled={!info} onClick={() => switchMode("corrected")}>Metric-corrected</button>
+              </div>
+              <p className="text-xs text-slate-400">Separate baked clip · nearest boundary +2° · maximum 20° per elbow / total spine twist. Unsafe frames stay raw; safe offsets ease over 80 ms. Knees are report-only.</p>
               <div className="flex flex-wrap items-center gap-2">
                 <button className={buttonClass} onClick={togglePlay} disabled={!info}>{playing ? "Pause" : "Play"}</button>
                 <button className={buttonClass} onClick={() => seek(0)} disabled={!info}>Reset</button>
@@ -322,7 +357,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
             </details>
           </aside>
         </div>
-        <MocapPhaseReport config={config} reports={phaseReports} selectedIndex={selectedPhase} onSelect={selectPhase} />
+        <MocapPhaseReport config={config} reports={phaseReports} correctedReports={correctedReports} correction={correction} selectedIndex={selectedPhase} onSelect={selectPhase} />
         <p className="mt-5 text-xs text-slate-500">Evaluation only. No production analysis, replay, scoring, or coaching behavior is connected to this route.</p>
       </div>
     </main>
