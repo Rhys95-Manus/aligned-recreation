@@ -478,3 +478,6 @@
 - [x] Assign research-verified, coaching-standard, and unverified classifications exactly as specified in the corrections file
 - [x] Run an external regression audit for phase completeness, alias integrity, verification levels, and distinct motion references without editing test files
 - [x] Run TypeScript and full Vitest validation and prepare the complete migration audit
+- [x] Push checkpoint 74e11897 and all current work explicitly to user_github/main
+- [x] Verify the exact GitHub main SHA independently after the push
+- [x] Retain explicit user_github push and SHA reporting as the default completion practice
