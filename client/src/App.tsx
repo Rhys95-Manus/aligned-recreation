@@ -33,6 +33,7 @@ function Router() {
       <Route path={"/settings/audio"} component={AudioSettings} />
       <Route path={"/terms"} component={TermsOfService} />
       <Route path={"/privacy"} component={PrivacyPolicy} />
+      <Route path={"/test/mocap-preview/:motionId"} component={MocapPreview} />
       <Route path={"/test/mocap-preview"} component={MocapPreview} />
   
       <Route path={"/404"} component={NotFound} />
