@@ -10,13 +10,15 @@ import { MOCAP_ANGLE_LABELS, measureMocapAngles, type MocapAngleId, type MocapAn
 import { prepareMocapClip, sampleMocapPhaseMarkers, type MocapPhaseMarkerReport } from "@/lib/mocapPipeline";
 import { bakeMetricCorrectedClip, type CorrectedMocap } from "@/lib/mocapCorrection";
 import { anchorMocapPhases, type AnchoredMocap } from "@/lib/mocapPhaseAnchors";
+import { applyMocapHologramLook, configureMocapHologramScene } from "@/lib/mocapHologramLook";
+import { createMocapSkeletonOverlay, getMocapOverlayFrame, type MocapSkeletonOverlay } from "@/lib/mocapSkeletonOverlay";
 
 const READOUT_BONES = ["mixamorigSpine", "mixamorigRightArm", "mixamorigRightForeArm"] as const;
 const buttonClass = "rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:opacity-40";
 type Readout = Record<string, { x: number; y: number; z: number }>;
 type ClipInfo = { originalDuration: number; duration: number; sourceTargets: number; matchedTargets: number; missing: string[] };
 type PlaybackMode = "raw" | "corrected";
-type Runtime = { seek: (time: number) => void; switchMode: (mode: PlaybackMode) => void; playing: boolean; time: number; duration: number };
+type Runtime = { seek: (time: number) => void; switchMode: (mode: PlaybackMode) => void; setOverlayVisible: (visible: boolean) => void; playing: boolean; time: number; duration: number };
 
 function signedDegrees(radians: number) {
   const degrees = THREE.MathUtils.radToDeg(radians);
@@ -24,17 +26,25 @@ function signedDegrees(radians: number) {
 }
 
 function disposeObject(root: THREE.Object3D) {
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  const textures = new Set<THREE.Texture>();
+  const skeletons = new Set<THREE.Skeleton>();
   root.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
-    mesh.geometry?.dispose();
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    for (const material of materials) {
+    if (mesh.geometry) geometries.add(mesh.geometry);
+    if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) skeletons.add((mesh as THREE.SkinnedMesh).skeleton);
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
       if (!material) continue;
-      for (const value of Object.values(material)) if (value instanceof THREE.Texture) value.dispose();
-      material.dispose();
+      materials.add(material);
+      for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
     }
   });
+  geometries.forEach(geometry => geometry.dispose());
+  textures.forEach(texture => texture.dispose());
+  materials.forEach(material => material.dispose());
+  skeletons.forEach(skeleton => skeleton.dispose());
 }
 
 /** URL routing wrapper; an unknown id never silently loads another motion. */
@@ -70,6 +80,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
   const [resolvedConfig, setResolvedConfig] = useState<MocapClipConfig>(config);
   const [anchoredReport, setAnchoredReport] = useState<AnchoredMocap | null>(null);
   const [selectedPhase, setSelectedPhase] = useState(0);
+  const [overlayVisible, setOverlayVisible] = useState(true);
   const fps = config.fps ?? 24;
 
   useEffect(() => {
@@ -87,6 +98,8 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
     let fbx: THREE.Group | undefined;
     let sourceRig: THREE.Object3D | undefined;
     let mixer: THREE.AnimationMixer | undefined;
+    let overlay: MocapSkeletonOverlay | undefined;
+    let liveConfig = config;
     let targetBones: THREE.Bone[] = [];
     let renderer: THREE.WebGLRenderer;
     try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false }); }
@@ -95,30 +108,31 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x07131d);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setClearColor(0x0a0e27);
     container.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
+    configureMocapHologramScene(scene, renderer);
     const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100);
     camera.position.set(3, 1.8, 4);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.target.set(0, 0.9, 0);
-    scene.add(new THREE.HemisphereLight(0xb6e9ff, 0x1b3044, 2.2));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 3);
-    keyLight.position.set(3, 5, 4);
-    scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0x38cfff, 2);
-    rimLight.position.set(-3, 3, -3);
-    scene.add(rimLight);
-    const grid = new THREE.GridHelper(8, 32, 0x235267, 0x122d3c);
+    const grid = new THREE.GridHelper(8, 32, 0x24214e, 0x14182e);
+    (grid.material as THREE.Material).transparent = true;
+    (grid.material as THREE.Material).opacity = 0.35;
     scene.add(grid);
+    const updateOverlay = () => {
+      if (!model || !overlay || !runtimeRef.current) return;
+      const current = getMocapOverlayFrame(model, targetBones, liveConfig, runtimeRef.current.time);
+      overlay.update(current, camera, container!.clientWidth, container!.clientHeight);
+    };
     const resize = () => {
       const width = Math.max(container.clientWidth, 1);
       const height = Math.max(container.clientHeight, 1);
       renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      updateOverlay();
     };
     const observer = new ResizeObserver(resize);
     observer.observe(container);
@@ -135,6 +149,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
       setReadouts(values);
       setAngles(measureMocapAngles(model, targetBones));
       setTime(runtimeRef.current.time);
+      updateOverlay();
     };
     const render = () => {
       if (cancelled) return;
@@ -147,6 +162,9 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
         if (runtime.time >= runtime.duration) { runtime.playing = false; setPlaying(false); }
       }
       controls.update();
+      // Overlay world positions, values and current-phase colors update every
+      // rendered frame, including orbiting while paused; seeks also update now.
+      updateOverlay();
       renderer.render(scene, camera);
       const now = performance.now();
       if (now - lastReadout > 80) { publishReadouts(); lastReadout = now; }
@@ -198,6 +216,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
           model.updateWorldMatrix(true, true);
         }
         setResolvedConfig(anchored.config);
+        liveConfig = anchored.config;
         setAnchoredReport(anchored);
         stage = "Baking conservative metric corrections";
         const baked = bakeMetricCorrectedClip(model, prepared.targetMesh, prepared.clip, anchored.config);
@@ -236,16 +255,21 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
         const extent = Math.max(size.x, size.y, size.z, 1.5);
-        const distance = extent / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.55;
+        const distance = extent / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.25;
         controls.target.copy(center);
         camera.position.copy(center).add(new THREE.Vector3(0.65, 0.22, 1).normalize().multiplyScalar(distance));
         grid.position.y = box.min.y;
         camera.lookAt(center);
         controls.update();
+        // Appearance is applied AFTER retargeting/detection/correction/sampling.
+        // The same skeleton drives the wireframe; overlay cannot affect the bake.
+        applyMocapHologramLook(model);
+        overlay = createMocapSkeletonOverlay(scene, container!);
         runtimeRef.current = {
           time: 0,
           duration: prepared.clip.duration,
           playing: false,
+          setOverlayVisible: (visible) => { overlay?.setVisible(visible); updateOverlay(); },
           switchMode: (nextMode) => {
             if (!runtimeRef.current) return;
             activate(nextMode, runtimeRef.current.time);
@@ -278,6 +302,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
       observer.disconnect();
       controls.dispose();
       mixer?.stopAllAction();
+      overlay?.dispose();
       runtimeRef.current = null;
       if (model) disposeObject(model);
       if (fbx) disposeObject(fbx);
@@ -320,6 +345,11 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
     runtimeRef.current.switchMode(nextMode);
     setMode(nextMode);
   };
+  const toggleOverlay = () => {
+    const visible = !overlayVisible;
+    runtimeRef.current?.setOverlayVisible(visible);
+    setOverlayVisible(visible);
+  };
 
   return (
     <main className="min-h-screen bg-[#061019] px-4 py-7 text-slate-100 sm:px-8">
@@ -337,8 +367,8 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
           </div>
         </header>
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <section className="overflow-hidden rounded-2xl border border-slate-700 bg-[#07131d]">
-            <div ref={containerRef} className="h-[440px] w-full sm:h-[560px]" aria-label="Interactive retargeted hologram viewer" />
+          <section className="overflow-hidden rounded-2xl border border-slate-700 bg-[#0a0e27]">
+            <div ref={containerRef} className="relative h-[440px] w-full sm:h-[560px]" aria-label="Interactive retargeted hologram viewer" />
             <div className="space-y-4 border-t border-slate-700 p-5">
               <p role="status" className={error ? "text-sm text-red-300" : "text-sm text-cyan-200"}>{status}</p>
               {error && <p role="alert" className="break-words text-sm text-red-200">{error}</p>}
@@ -346,6 +376,11 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
                 <button className={`${buttonClass} ${mode === "raw" ? "border-cyan-300 bg-cyan-950" : ""}`} aria-pressed={mode === "raw"} disabled={!info} onClick={() => switchMode("raw")}>Raw mocap</button>
                 <button className={`${buttonClass} ${mode === "corrected" ? "border-cyan-300 bg-cyan-950" : ""}`} aria-pressed={mode === "corrected"} disabled={!info} onClick={() => switchMode("corrected")}>Metric-corrected</button>
               </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <button className={`${buttonClass} ${overlayVisible ? "border-green-400/70 bg-green-950/50" : ""}`} aria-pressed={overlayVisible} aria-label="Show skeleton and live angle overlay" disabled={!info} onClick={toggleOverlay}>{overlayVisible ? "Hide skeleton + angles" : "Show skeleton + angles"}</button>
+                <p className="text-xs text-slate-300"><span className="text-[#00ff00]">Green: in range</span> · <span className="text-[#ff4d4d]">Red: out of range</span> · <span className="text-[#b0bdcf]">Gray: no reference</span></p>
+              </div>
+              <p className="text-xs text-slate-400">Live labels follow the current playback phase and mode, not the selected report card. Limb angles: 180° = straight. Hip–shoulder label is horizontal separation, not a spine joint angle. Colors compare existing ranges, including unverified references—not a validated movement score.</p>
               <p className="text-xs text-slate-400">Separate baked clip · nearest boundary +2° · maximum 20° per elbow / total spine twist. Unsafe frames stay raw; safe offsets ease over 80 ms. Knees are report-only.</p>
               <div className="flex flex-wrap items-center gap-2">
                 <button className={buttonClass} onClick={togglePlay} disabled={!info}>{playing ? "Pause" : "Play"}</button>
