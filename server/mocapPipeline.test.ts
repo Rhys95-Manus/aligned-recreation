@@ -64,7 +64,7 @@ describe("Mocap clip config and source timeline", () => {
   it("keeps the proven quarterback assets, trim, and unit scale", () => {
     expect(qb.trimStart).toBe(23.33); expect(qb.trimEnd).toBe(25.33); expect(qb.scale).toBe(0.01);
     expect(qb.fbxUrl).toBe("/manus-storage/Football_Quarterback_mixamo_25080ba4.fbx");
-    expect(qb.targetModel).toContain("MaleHologram_quant_d74b85d9.glb"); expect(qb.phases).toHaveLength(5);
+    expect(qb.targetModel).toContain("MaleHologram_quant_d74b85d9.glb"); expect(qb.phases).toHaveLength(6);
   });
   it("validates all registry entries and unique ids", () => {
     expect(new Set(mocapClips.map((item) => item.id)).size).toBe(mocapClips.length);
@@ -93,7 +93,7 @@ describe("Mocap clip config and source timeline", () => {
   });
   it("assigns a boundary to the next phase and reports gaps explicitly", () => {
     expect(getActivePhaseIndex(qb, 23.60 - qb.trimStart)).toBe(1);
-    expect(getActivePhaseIndex(qb, 1.96)).toBe(4);
+    expect(getActivePhaseIndex(qb, 1.96)).toBe(5);
     expect(getActivePhaseIndex({ ...qb, phases: [] }, 0)).toBe(-1);
   });
 });
@@ -158,7 +158,7 @@ describe("Phase-specific reference comparisons", () => {
     expect(rows.find((row) => row.metric.name === "Hip-Shoulder Separation")!.status).toBe("in-range");
   });
   it("maps flexion and extension labels to the same interior elbow angle", () => {
-    const rows = compareMocapPhase(qb, qb.phases[3], measured(175));
+    const rows = compareMocapPhase(qb, qb.phases[4], measured(175));
     const row = rows.find((item) => item.metric.name === "Throwing Elbow Extension")!;
     expect(row.value).toBe(175); expect(row.status).toBe("in-range");
   });
@@ -169,7 +169,7 @@ describe("Phase-specific reference comparisons", () => {
     expect(row.value).toBe(90); expect(row.status).toBe("in-range");
   });
   it("does not fabricate rotation, wrist, weight, or target-line comparisons", () => {
-    const rows = compareMocapPhase(qb, qb.phases[3], measured(100));
+    const rows = compareMocapPhase(qb, qb.phases[4], measured(100));
     for (const name of ["Weight Distribution", "Hip Rotation", "Shoulder Rotation", "Throwing Elbow Alignment", "Wrist Flexion", "Spine Angle"]) {
       const row = rows.find((item) => item.metric.name === name)!;
       expect(row.status).toBe("unavailable"); expect(row.difference).toBeNull(); expect(row.reason).toBeTruthy();

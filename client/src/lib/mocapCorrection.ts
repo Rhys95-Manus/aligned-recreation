@@ -153,6 +153,7 @@ export function bakeMetricCorrectedClip(model: THREE.Object3D, mesh: THREE.Skinn
   for (const phase of config.phases) {
     timeSet.add(sourceTimeToClipTime(config, phase.startTime, rawClip.duration));
     timeSet.add(sourceTimeToClipTime(config, phase.endTime, rawClip.duration));
+    if (phase.checkpointTime !== undefined) timeSet.add(sourceTimeToClipTime(config, phase.checkpointTime, rawClip.duration));
   }
   const times = Array.from(timeSet).filter((time) => time >= 0 && time <= rawClip.duration).sort((a, b) => a - b);
   const frames: FramePlan[] = [];

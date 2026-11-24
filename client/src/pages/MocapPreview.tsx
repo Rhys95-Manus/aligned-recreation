@@ -9,6 +9,7 @@ import { DEFAULT_MOCAP_CLIP_ID, getActivePhaseIndex, getMocapClip, mocapClips, s
 import { MOCAP_ANGLE_LABELS, measureMocapAngles, type MocapAngleId, type MocapAngleMeasurements } from "@/lib/mocapAngles";
 import { prepareMocapClip, sampleMocapPhaseMarkers, type MocapPhaseMarkerReport } from "@/lib/mocapPipeline";
 import { bakeMetricCorrectedClip, type CorrectedMocap } from "@/lib/mocapCorrection";
+import { anchorMocapPhases, type AnchoredMocap } from "@/lib/mocapPhaseAnchors";
 
 const READOUT_BONES = ["mixamorigSpine", "mixamorigRightArm", "mixamorigRightForeArm"] as const;
 const buttonClass = "rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:opacity-40";
@@ -66,6 +67,8 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
   const [correctedReports, setCorrectedReports] = useState<MocapPhaseMarkerReport[]>([]);
   const [correction, setCorrection] = useState<CorrectedMocap | null>(null);
   const [mode, setMode] = useState<PlaybackMode>("raw");
+  const [resolvedConfig, setResolvedConfig] = useState<MocapClipConfig>(config);
+  const [anchoredReport, setAnchoredReport] = useState<AnchoredMocap | null>(null);
   const [selectedPhase, setSelectedPhase] = useState(0);
   const fps = config.fps ?? 24;
 
@@ -164,8 +167,40 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
         sourceRig = prepared.sourceRig;
         targetBones = prepared.targetMesh.skeleton.bones;
         for (const name of READOUT_BONES) if (!model.getObjectByName(name)) console.warn(`[MocapPreview] Readout bone missing on hologram: ${name}`);
+        stage = "Detecting phase anchors from raw motion";
+        // Detect on the uncorrected clip only. Restore every local transform before
+        // the bake captures its baseline; never leave live mixer bindings behind.
+        const initialPose: { object: THREE.Object3D; position: THREE.Vector3; quaternion: THREE.Quaternion; scale: THREE.Vector3 }[] = [];
+        model.traverse((object) => initialPose.push({ object, position: object.position.clone(), quaternion: object.quaternion.clone(), scale: object.scale.clone() }));
+        const rawMixer = new THREE.AnimationMixer(prepared.targetMesh);
+        let anchored: AnchoredMocap;
+        try {
+          const rawAction = rawMixer.clipAction(prepared.clip);
+          rawAction.setLoop(THREE.LoopOnce, 1);
+          rawAction.clampWhenFinished = true;
+          rawAction.play();
+          const seekRaw = (nextTime: number) => {
+            rawAction.paused = false;
+            rawAction.enabled = true;
+            rawMixer.setTime(THREE.MathUtils.clamp(nextTime, 0, prepared.clip.duration));
+            model?.updateWorldMatrix(true, true);
+          };
+          anchored = anchorMocapPhases(model, targetBones, config, prepared.clip.duration, seekRaw, Array.from(prepared.clip.tracks[0].times));
+        } finally {
+          rawMixer.stopAllAction();
+          rawMixer.uncacheClip(prepared.clip);
+          rawMixer.uncacheRoot(prepared.targetMesh);
+          for (const pose of initialPose) {
+            pose.object.position.copy(pose.position);
+            pose.object.quaternion.copy(pose.quaternion);
+            pose.object.scale.copy(pose.scale);
+          }
+          model.updateWorldMatrix(true, true);
+        }
+        setResolvedConfig(anchored.config);
+        setAnchoredReport(anchored);
         stage = "Baking conservative metric corrections";
-        const baked = bakeMetricCorrectedClip(model, prepared.targetMesh, prepared.clip, config);
+        const baked = bakeMetricCorrectedClip(model, prepared.targetMesh, prepared.clip, anchored.config);
         setCorrection(baked);
         mixer = new THREE.AnimationMixer(prepared.targetMesh);
         const actions = { raw: mixer.clipAction(prepared.clip), corrected: mixer.clipAction(baked.clip) };
@@ -189,12 +224,12 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
           model?.updateMatrixWorld(true);
         };
         stage = "World-position phase sampling";
-        const reports = sampleMocapPhaseMarkers(model, targetBones, config, prepared.clip.duration, seekPose);
+        const reports = sampleMocapPhaseMarkers(model, targetBones, anchored.config, prepared.clip.duration, seekPose);
         setPhaseReports(reports);
         activate("corrected", 0);
-        setCorrectedReports(sampleMocapPhaseMarkers(model, targetBones, config, baked.clip.duration, seekPose));
+        setCorrectedReports(sampleMocapPhaseMarkers(model, targetBones, anchored.config, baked.clip.duration, seekPose));
         activate("raw", 0);
-        // The sampler restores time zero: quarterback playback remains unchanged.
+        // Both samplers use the same saved checkpoints and restore time zero.
         scene.add(model);
         model.updateMatrixWorld(true);
         const box = new THREE.Box3().setFromObject(model, true);
@@ -262,7 +297,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
     runtime.seek(nextTime);
   };
   const selectPhase = (index: number) => {
-    const report = phaseReports[index];
+    const report = (mode === "corrected" ? correctedReports : phaseReports)[index];
     if (!report) return;
     setSelectedPhase(index);
     seek(report.clipTime);
@@ -275,8 +310,11 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
     setPlaying(runtime.playing);
   };
   const progress = info ? time / info.duration * 100 : 0;
-  const activePhase = getActivePhaseIndex(config, time);
-  const markerPercent = (sourceTime: number) => info ? sourceTimeToClipTime(config, sourceTime, info.duration) / info.duration * 100 : 0;
+  const activePhase = getActivePhaseIndex(resolvedConfig, time);
+  const markerPercent = (sourceTime: number) => info ? sourceTimeToClipTime(resolvedConfig, sourceTime, info.duration) / info.duration * 100 : 0;
+  const seekSource = (sourceTime: number) => {
+    if (info) seek(sourceTimeToClipTime(resolvedConfig, sourceTime, info.duration));
+  };
   const switchMode = (nextMode: PlaybackMode) => {
     if (!runtimeRef.current) return;
     runtimeRef.current.switchMode(nextMode);
@@ -316,17 +354,17 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
                 <button className={buttonClass} onClick={() => seek((runtimeRef.current?.time ?? 0) + 1 / fps)} disabled={!info} aria-label="Next frame">+1 frame</button>
                 <span className="ml-auto font-mono text-sm text-slate-300">{time.toFixed(2)} / {info?.duration.toFixed(2) ?? "—"} s</span>
               </div>
-              <label className="block text-sm text-slate-300" htmlFor="mocap-scrubber">Motion progress · {progress.toFixed(1)}%{activePhase >= 0 ? ` · ${config.phases[activePhase].name}` : ""}</label>
+              <label className="block text-sm text-slate-300" htmlFor="mocap-scrubber">Motion progress · {progress.toFixed(1)}%{activePhase >= 0 ? ` · ${resolvedConfig.phases[activePhase].name}` : ""}</label>
               <input id="mocap-scrubber" type="range" min="0" max="100" step="0.01" value={progress} disabled={!info} onChange={(event) => seek(Number(event.target.value) / 100 * (info?.duration ?? 0))} className="w-full accent-cyan-300" />
               <div className="relative mx-2 h-9" aria-label="Scrubber phase markers">
-                {config.phases.map((phase, index) => (
+                {resolvedConfig.phases.map((phase, index) => (
                   <div key={phase.name}>
                     <div className={`absolute top-0 h-1 ${activePhase === index ? "bg-cyan-300" : "bg-slate-600"}`} style={{ left: `${markerPercent(phase.startTime)}%`, width: `${Math.max(0, markerPercent(phase.endTime) - markerPercent(phase.startTime))}%` }} />
-                    <button disabled={!info} onClick={() => selectPhase(index)} aria-label={`Seek to phase ${index + 1}: ${phase.name}`} title={`${phase.name}: ${phase.startTime.toFixed(2)}–${phase.endTime.toFixed(2)} s (source)`} className={`absolute top-1 -translate-x-1/2 rounded-b px-2 pb-1 pt-2 font-mono text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:opacity-30 ${selectedPhase === index ? "bg-cyan-900 text-cyan-100" : "bg-slate-800 text-slate-300"}`} style={{ left: `${markerPercent(phase.startTime)}%` }}>{index + 1}</button>
+                    <button disabled={!info} onClick={() => selectPhase(index)} aria-label={`Seek to checkpoint ${index + 1}: ${phase.name}`} title={`${phase.name}: interval ${phase.startTime.toFixed(2)}–${phase.endTime.toFixed(2)} s · checkpoint ${(phase.checkpointTime ?? phase.startTime).toFixed(2)} s (source)`} className={`absolute top-1 -translate-x-1/2 rounded-b px-2 pb-1 pt-2 font-mono text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:opacity-30 ${selectedPhase === index ? "bg-cyan-900 text-cyan-100" : "bg-slate-800 text-slate-300"}`} style={{ left: `${markerPercent(phase.checkpointTime ?? phase.startTime)}%` }}>{index + 1}</button>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-slate-400">Numbered phase markers seek and pause. Drag to orbit · scroll to zoom · frame steps use {fps} fps.</p>
+              <p className="text-xs text-slate-400">Bars show resolved phase intervals; numbered markers seek and pause at saved checkpoints, which may differ from interval starts. Drag to orbit · scroll to zoom · frame steps use {fps} fps.</p>
             </div>
           </section>
           <aside className="space-y-5">
@@ -334,11 +372,20 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
               <h2 className="mb-4 font-semibold">Motion window</h2>
               <dl className="space-y-3 text-sm">
                 <div className="flex justify-between gap-3"><dt className="text-slate-400">Original clip</dt><dd className="font-mono">{info?.originalDuration.toFixed(2) ?? "—"} s</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-slate-400">Source interval</dt><dd className="font-mono">{config.trimStart.toFixed(2)}–{config.trimEnd.toFixed(2)} s</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-slate-400">Current source time</dt><dd className="font-mono">{(config.trimStart + time).toFixed(2)} s</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-slate-400">Source interval</dt><dd className="font-mono">{resolvedConfig.trimStart.toFixed(2)}–{resolvedConfig.trimEnd.toFixed(2)} s</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-slate-400">Current source time</dt><dd className="font-mono">{(resolvedConfig.trimStart + time).toFixed(2)} s</dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-slate-400">Binding coverage</dt><dd className="font-mono">{info ? `${info.matchedTargets}/${info.sourceTargets}` : "—"}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-slate-400">Timing selection</dt><dd className="text-right">{resolvedConfig.phaseTiming === "manual" ? "Manual override" : resolvedConfig.eventDetection ? "Raw event anchors / fallback" : "Configured checkpoints"}</dd></div>
+                {resolvedConfig.eventDetection && <div className="flex justify-between gap-3"><dt className="text-slate-400">Detection sampling</dt><dd className="font-mono">{anchoredReport ? `${anchoredReport.detection.sampleRate} Hz` : "Pending"}</dd></div>}
+                {resolvedConfig.laterality && <>
+                  <div className="flex justify-between gap-3"><dt className="text-slate-400">Active side</dt><dd className="capitalize">{resolvedConfig.laterality.activeSide}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-slate-400">Lead leg</dt><dd className="capitalize">{resolvedConfig.laterality.leadLeg}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-slate-400">Laterality confidence</dt><dd className="capitalize">{resolvedConfig.laterality.confidence}</dd></div>
+                </>}
               </dl>
-              <p className="mt-4 text-xs leading-relaxed text-slate-400">{config.timingNote ?? "Phase timing is manually configured on the source timeline, not automatically detected."}</p>
+              {resolvedConfig.laterality && <p className="mt-4 text-xs leading-relaxed text-slate-400"><span className="font-medium text-slate-300">Laterality evidence:</span> {resolvedConfig.laterality.evidence}</p>}
+              <p className="mt-4 text-xs leading-relaxed text-slate-400">{resolvedConfig.timingNote ?? "Checkpoints are resolved once from raw motion when event detection is configured. Manual baselines remain visible; failed detections retain configured times."}</p>
+              <p className="mt-3 text-xs leading-relaxed text-amber-200">Release / strike checkpoints are kinematic proxies, not verified ball release or contact. The retargeted rig alone cannot establish object separation or impact.</p>
               {info?.missing.map((name) => <p key={name} className="mt-3 break-words text-xs text-amber-200">Source-only target: {name} (reported in console)</p>)}
             </section>
             <section className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5" aria-label="Current world-space angles">
@@ -357,7 +404,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
             </details>
           </aside>
         </div>
-        <MocapPhaseReport config={config} reports={phaseReports} correctedReports={correctedReports} correction={correction} selectedIndex={selectedPhase} onSelect={selectPhase} />
+        <MocapPhaseReport config={resolvedConfig} reports={phaseReports} correctedReports={correctedReports} correction={correction} selectedIndex={selectedPhase} onSelect={selectPhase} timing={anchoredReport?.timing} detection={anchoredReport?.detection} onSeekSource={info ? seekSource : undefined} />
         <p className="mt-5 text-xs text-slate-500">Evaluation only. No production analysis, replay, scoring, or coaching behavior is connected to this route.</p>
       </div>
     </main>

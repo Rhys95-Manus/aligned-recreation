@@ -81,16 +81,16 @@ export function prepareMocapClip(model: THREE.Object3D, fbx: THREE.Group, config
   return { sourceRig, targetMesh, clip, originalDuration: sourceClip.duration, sourceTargets: targets.length, matchedTargets: targets.length - missing.length, missing };
 }
 
-/** Sample each phase's START marker and the separation peak within its phase interval. */
+/** Sample each resolved checkpoint and the separation peak within its phase interval. */
 export function sampleMocapPhaseMarkers(model: THREE.Object3D, bones: readonly THREE.Bone[], config: MocapClipConfig, duration: number, seek: (time: number) => void): MocapPhaseMarkerReport[] {
   const fps = config.fps ?? 24;
   const reports = config.phases.map((phase) => {
-    const clipTime = sourceTimeToClipTime(config, phase.startTime, duration);
+    const clipTime = sourceTimeToClipTime(config, phase.checkpointTime ?? phase.startTime, duration);
     seek(clipTime);
     const angles = measureMocapAngles(model, bones);
     let separationPeak: MocapPhaseMarkerReport["separationPeak"] = null;
     const end = sourceTimeToClipTime(config, phase.endTime, duration);
-    for (let sampleTime = clipTime; sampleTime < end; sampleTime += 1 / fps) {
+    for (let sampleTime = sourceTimeToClipTime(config, phase.startTime, duration); sampleTime < end; sampleTime += 1 / fps) {
       seek(sampleTime);
       const value = measureMocapAngles(model, bones).hipShoulderSeparation.value;
       if (value !== null && (!separationPeak || value > separationPeak.value)) separationPeak = { value, sourceTime: config.trimStart + sampleTime };

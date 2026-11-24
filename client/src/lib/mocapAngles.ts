@@ -108,7 +108,18 @@ export function getMocapReference(config: MocapClipConfig): ProfessionalReferenc
 }
 
 export function getMocapReferencePhase(config: MocapClipConfig, phase: MocapPhase) {
-  return getMocapReference(config)?.phases?.find((item) => item.name === (phase.referenceName ?? phase.name));
+  const reference = getMocapReference(config);
+  const structured = reference?.phases?.find((item) => item.name === (phase.referenceName ?? phase.name));
+  if (structured) return structured;
+  // Flat ranges are NEVER substituted automatically. A motion config must name
+  // the exact metrics and checkpoint explicitly; the original ranges stay intact.
+  if (!reference || reference.phases?.length || !phase.referenceMetrics?.length) return undefined;
+  const metrics = phase.referenceMetrics.flatMap(name => {
+    const metric = reference.metrics.find(item => item.name === name);
+    return metric ? [{ name, min: metric.optimalRange.min, max: metric.optimalRange.max, unit: metric.unit, note: `UNVERIFIED flat reference assigned explicitly to this checkpoint: ${metric.description}` }] : [];
+  });
+  if (!metrics.length) return undefined;
+  return { name: phase.name, cueText: "Explicit flat-reference checkpoint comparison (unverified)", instruction: "These are existing unverified flat ranges, not validated phase-specific benchmarks. Release and strike may be motion proxies.", approximateDuration: "Not supplied by reference", metrics };
 }
 
 export function compareAngleToRange(value: number, min: number, max: number): RangeComparison | null {
