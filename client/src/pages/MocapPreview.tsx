@@ -11,14 +11,19 @@ import { prepareMocapClip, sampleMocapPhaseMarkers, type MocapPhaseMarkerReport 
 import { bakeMetricCorrectedClip, type CorrectedMocap } from "@/lib/mocapCorrection";
 import { anchorMocapPhases, type AnchoredMocap } from "@/lib/mocapPhaseAnchors";
 import { applyMocapHologramLook, configureMocapHologramScene } from "@/lib/mocapHologramLook";
-import { createMocapSkeletonOverlay, getMocapOverlayFrame, type MocapSkeletonOverlay } from "@/lib/mocapSkeletonOverlay";
+import { createMocapSkeletonOverlay, getMocapOverlayFrame, type MocapSkeletonOverlay, type MocapOverlayMode } from "@/lib/mocapSkeletonOverlay";
+import { createMocapHologramV2 } from "@/lib/mocapHologramV2";
+import { createMocapMeasurementBaseline, measureMocapMeasurements, NEW_MEASUREMENT_LABELS, type MocapMeasurementBaseline, type MocapMeasurements, type NewMocapMeasurementId } from "@/lib/mocapMeasurements";
+import { sampleAuditedMocapCheckpoints, type AuditedMocapCheckpoint } from "@/lib/mocapAuditedComparisons";
+import MocapAuditedReport from "@/components/MocapAuditedReport";
 
 const READOUT_BONES = ["mixamorigSpine", "mixamorigRightArm", "mixamorigRightForeArm"] as const;
 const buttonClass = "rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:opacity-40";
 type Readout = Record<string, { x: number; y: number; z: number }>;
 type ClipInfo = { originalDuration: number; duration: number; sourceTargets: number; matchedTargets: number; missing: string[] };
 type PlaybackMode = "raw" | "corrected";
-type Runtime = { seek: (time: number) => void; switchMode: (mode: PlaybackMode) => void; setOverlayVisible: (visible: boolean) => void; playing: boolean; time: number; duration: number };
+type HologramLook = "production" | "v2";
+type Runtime = { seek: (time: number) => void; switchMode: (mode: PlaybackMode) => void; setOverlayMode: (mode: MocapOverlayMode) => void; setLook: (look: HologramLook) => void; setFlicker: (enabled: boolean) => void; playing: boolean; time: number; duration: number };
 
 function signedDegrees(radians: number) {
   const degrees = THREE.MathUtils.radToDeg(radians);
@@ -80,7 +85,12 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
   const [resolvedConfig, setResolvedConfig] = useState<MocapClipConfig>(config);
   const [anchoredReport, setAnchoredReport] = useState<AnchoredMocap | null>(null);
   const [selectedPhase, setSelectedPhase] = useState(0);
-  const [overlayVisible, setOverlayVisible] = useState(true);
+  const [overlayMode, setOverlayMode] = useState<MocapOverlayMode>("key");
+  const [look, setLook] = useState<HologramLook>("production");
+  const [flicker, setFlicker] = useState(false);
+  const [measurements, setMeasurements] = useState<MocapMeasurements | null>(null);
+  const [auditedRaw, setAuditedRaw] = useState<AuditedMocapCheckpoint[]>([]);
+  const [auditedCorrected, setAuditedCorrected] = useState<AuditedMocapCheckpoint[]>([]);
   const fps = config.fps ?? 24;
 
   useEffect(() => {
@@ -99,6 +109,8 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
     let sourceRig: THREE.Object3D | undefined;
     let mixer: THREE.AnimationMixer | undefined;
     let overlay: MocapSkeletonOverlay | undefined;
+    let hologramV2: ReturnType<typeof createMocapHologramV2> | undefined;
+    let baseline: MocapMeasurementBaseline | undefined;
     let liveConfig = config;
     let targetBones: THREE.Bone[] = [];
     let renderer: THREE.WebGLRenderer;
@@ -122,8 +134,8 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
     (grid.material as THREE.Material).opacity = 0.35;
     scene.add(grid);
     const updateOverlay = () => {
-      if (!model || !overlay || !runtimeRef.current) return;
-      const current = getMocapOverlayFrame(model, targetBones, liveConfig, runtimeRef.current.time);
+      if (!model || !overlay || !runtimeRef.current || !baseline) return;
+      const current = getMocapOverlayFrame(model, targetBones, liveConfig, runtimeRef.current.time, baseline);
       overlay.update(current, camera, container!.clientWidth, container!.clientHeight);
     };
     const resize = () => {
@@ -132,6 +144,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
       renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      hologramV2?.setSize(width, height);
       updateOverlay();
     };
     const observer = new ResizeObserver(resize);
@@ -148,6 +161,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
       }
       setReadouts(values);
       setAngles(measureMocapAngles(model, targetBones));
+      if (baseline) setMeasurements(measureMocapMeasurements(model, targetBones, baseline, liveConfig.laterality?.leadLeg, liveConfig.eventDetection?.kind === "throw" ? liveConfig.eventDetection.side : undefined));
       setTime(runtimeRef.current.time);
       updateOverlay();
     };
@@ -165,7 +179,8 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
       // Overlay world positions, values and current-phase colors update every
       // rendered frame, including orbiting while paused; seeks also update now.
       updateOverlay();
-      renderer.render(scene, camera);
+      if (hologramV2) hologramV2.render(delta);
+      else renderer.render(scene, camera);
       const now = performance.now();
       if (now - lastReadout > 80) { publishReadouts(); lastReadout = now; }
     };
@@ -243,10 +258,14 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
           model?.updateMatrixWorld(true);
         };
         stage = "World-position phase sampling";
+        activate("raw", 0);
+        baseline = createMocapMeasurementBaseline(model, targetBones);
         const reports = sampleMocapPhaseMarkers(model, targetBones, anchored.config, prepared.clip.duration, seekPose);
         setPhaseReports(reports);
+        setAuditedRaw(sampleAuditedMocapCheckpoints(model, targetBones, anchored.config, prepared.clip.duration, seekPose, baseline));
         activate("corrected", 0);
         setCorrectedReports(sampleMocapPhaseMarkers(model, targetBones, anchored.config, baked.clip.duration, seekPose));
+        setAuditedCorrected(sampleAuditedMocapCheckpoints(model, targetBones, anchored.config, baked.clip.duration, seekPose, baseline));
         activate("raw", 0);
         // Both samplers use the same saved checkpoints and restore time zero.
         scene.add(model);
@@ -265,11 +284,16 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
         // The same skeleton drives the wireframe; overlay cannot affect the bake.
         applyMocapHologramLook(model);
         overlay = createMocapSkeletonOverlay(scene, container!);
+        overlay.setMode("key");
+        hologramV2 = createMocapHologramV2(scene, renderer, camera, model, box.min.y);
+        hologramV2.setSize(container!.clientWidth, container!.clientHeight);
         runtimeRef.current = {
           time: 0,
           duration: prepared.clip.duration,
           playing: false,
-          setOverlayVisible: (visible) => { overlay?.setVisible(visible); updateOverlay(); },
+          setOverlayMode: (nextMode) => { overlay?.setMode(nextMode); updateOverlay(); },
+          setLook: (nextLook) => { hologramV2?.setEnabled(nextLook === "v2"); },
+          setFlicker: (enabled) => { hologramV2?.setFlicker(enabled); },
           switchMode: (nextMode) => {
             if (!runtimeRef.current) return;
             activate(nextMode, runtimeRef.current.time);
@@ -303,6 +327,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
       controls.dispose();
       mixer?.stopAllAction();
       overlay?.dispose();
+      hologramV2?.dispose();
       runtimeRef.current = null;
       if (model) disposeObject(model);
       if (fbx) disposeObject(fbx);
@@ -345,10 +370,13 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
     runtimeRef.current.switchMode(nextMode);
     setMode(nextMode);
   };
-  const toggleOverlay = () => {
-    const visible = !overlayVisible;
-    runtimeRef.current?.setOverlayVisible(visible);
-    setOverlayVisible(visible);
+  const selectOverlayMode = (nextMode: MocapOverlayMode) => {
+    runtimeRef.current?.setOverlayMode(nextMode);
+    setOverlayMode(nextMode);
+  };
+  const selectLook = (nextLook: HologramLook) => {
+    runtimeRef.current?.setLook(nextLook);
+    setLook(nextLook);
   };
 
   return (
@@ -377,10 +405,11 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
                 <button className={`${buttonClass} ${mode === "corrected" ? "border-cyan-300 bg-cyan-950" : ""}`} aria-pressed={mode === "corrected"} disabled={!info} onClick={() => switchMode("corrected")}>Metric-corrected</button>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <button className={`${buttonClass} ${overlayVisible ? "border-green-400/70 bg-green-950/50" : ""}`} aria-pressed={overlayVisible} aria-label="Show skeleton and live angle overlay" disabled={!info} onClick={toggleOverlay}>{overlayVisible ? "Hide skeleton + angles" : "Show skeleton + angles"}</button>
+                <div role="group" aria-label="Overlay mode" className="flex gap-1">{(["off", "key", "full"] as const).map(value => <button key={value} className={`${buttonClass} ${overlayMode === value ? "border-green-400/70 bg-green-950/50" : ""}`} aria-pressed={overlayMode === value} disabled={!info} onClick={() => selectOverlayMode(value)}>{value.charAt(0).toUpperCase() + value.slice(1)}</button>)}</div>
                 <p className="text-xs text-slate-300"><span className="text-[#00ff00]">Green: in range</span> · <span className="text-[#ff4d4d]">Red: out of range</span> · <span className="text-[#b0bdcf]">Gray: no reference</span></p>
               </div>
-              <p className="text-xs text-slate-400">Live labels follow the current playback phase and mode, not the selected report card. Limb angles: 180° = straight. Hip–shoulder label is horizontal separation, not a spine joint angle. Colors compare existing ranges, including unverified references—not a validated movement score.</p>
+              <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Hologram look"><button className={`${buttonClass} ${look === "production" ? "border-cyan-300 bg-cyan-950" : ""}`} aria-pressed={look === "production"} disabled={!info} onClick={() => selectLook("production")}>Production-matching</button><button className={`${buttonClass} ${look === "v2" ? "border-cyan-300 bg-cyan-950" : ""}`} aria-pressed={look === "v2"} disabled={!info} onClick={() => selectLook("v2")}>Hologram v2</button><label className="flex items-center gap-2 text-xs text-slate-300"><input type="checkbox" checked={flicker} disabled={!info || look !== "v2"} onChange={event => { runtimeRef.current?.setFlicker(event.target.checked); setFlicker(event.target.checked); }} />Faint flicker</label></div>
+              <p className="text-xs text-slate-400">Key shows only reference-bound metrics for the current phase, with a quiet skeleton. Full adds every sound live measurement. Labels use audited conventions: flexion labels convert 180° − interior angle; ambiguous metrics stay neutral. New measurements are report-only. Existing corrected motion is unchanged.</p>
               <p className="text-xs text-slate-400">Separate baked clip · nearest boundary +2° · maximum 20° per elbow / total spine twist. Unsafe frames stay raw; safe offsets ease over 80 ms. Knees are report-only.</p>
               <div className="flex flex-wrap items-center gap-2">
                 <button className={buttonClass} onClick={togglePlay} disabled={!info}>{playing ? "Pause" : "Play"}</button>
@@ -430,6 +459,7 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
               </dl>
               <p className="mt-4 text-xs leading-relaxed text-slate-400">Computed from bone world positions. Straight elbows/knees = 180°. Separation is the unsigned horizontal pelvis/shoulder axis difference.</p>
             </section>
+            <section className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5" aria-label="New report-only measurements"><h2 className="mb-4 font-semibold">Report-only measurements</h2><dl className="space-y-3 text-sm">{(Object.keys(NEW_MEASUREMENT_LABELS) as NewMocapMeasurementId[]).filter(id => !Object.prototype.hasOwnProperty.call(MOCAP_ANGLE_LABELS,id)).map(id => <div key={id} className="flex justify-between gap-3"><dt className="max-w-[190px] text-slate-400">{NEW_MEASUREMENT_LABELS[id]}</dt><dd className="font-mono" title={measurements?.[id].reason}>{measurements?.[id].value != null ? `${measurements[id].value!.toFixed(1)}${id === "weightTransfer" ? "%" : "°"}` : "Unavailable"}</dd></div>)}</dl><p className="mt-4 text-xs text-amber-200">Hip and shoulder rotations share the first raw-frame pelvis zero; not target-line open/closed angles. Lead proxy is geometric, not force. Axial proxy requires a bent throwing elbow and is not clinical shoulder external rotation.</p></section>
             <details className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5">
               <summary className="cursor-pointer font-semibold">Local Euler debug readouts</summary>
               <div className="mt-4">
@@ -439,7 +469,10 @@ function ConfiguredMocapPreview({ config }: { config: MocapClipConfig }) {
             </details>
           </aside>
         </div>
+        <MocapAuditedReport config={resolvedConfig} raw={auditedRaw} corrected={auditedCorrected} selectedIndex={selectedPhase} />
+        <details className="mt-5"><summary className="cursor-pointer text-sm text-slate-400">Legacy correction report · retained behavior, unaudited original bindings</summary><p className="mt-2 text-xs text-amber-200">This legacy report explains the existing baked correction only. Its original convention assumptions are not the new audited results. No new corrections or reference values are introduced in this task.</p>
         <MocapPhaseReport config={resolvedConfig} reports={phaseReports} correctedReports={correctedReports} correction={correction} selectedIndex={selectedPhase} onSelect={selectPhase} timing={anchoredReport?.timing} detection={anchoredReport?.detection} onSeekSource={info ? seekSource : undefined} />
+        </details>
         <p className="mt-5 text-xs text-slate-500">Evaluation only. No production analysis, replay, scoring, or coaching behavior is connected to this route.</p>
       </div>
     </main>

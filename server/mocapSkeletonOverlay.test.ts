@@ -538,7 +538,7 @@ describe("createMocapSkeletonOverlay lifecycle with a minimal fake DOM", () => {
     expect(dots.geometry.drawRange.count).toBe(0);
     expect(root.style.pointerEvents).toBe("none");
     expect(root.getAttribute("aria-label")).toContain("world-space");
-    expect([...labels.keys()]).toEqual(angleIds);
+    expect([...labels.keys()]).toEqual([...angleIds, "trunkTilt", "hipRotation", "shoulderTurn", "weightTransfer", "rightShoulderExternalRotationProxy", "leftShoulderExternalRotationProxy"]);
   });
 
   it("updates line and dot draw counts and buffer coordinates from only actually available world positions", () => {

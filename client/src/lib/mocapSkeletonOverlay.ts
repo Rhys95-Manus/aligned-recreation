@@ -4,6 +4,8 @@ import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeome
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { getActivePhaseIndex, type MocapClipConfig } from "@/data/mocapClips";
 import { compareMocapPhase, measureMocapAngles, type MocapAngleId, type MocapAngleMeasurements } from "@/lib/mocapAngles";
+import { measureMocapMeasurements, type MocapMeasurementId, type MocapMeasurementBaseline } from "./mocapMeasurements";
+import { compareAuditedMocapPhase } from "./mocapAuditedComparisons";
 
 /** Read-only visualization for the isolated preview. No pose, clip, or range edits. */
 export const MOCAP_OVERLAY_JOINTS = [
@@ -36,14 +38,27 @@ const LABEL_DEFINITIONS: readonly { id: MocapAngleId; name: string; bone: string
   { id: "leftKneeAngle", name: "L knee", bone: "mixamorigLeftLeg" },
   { id: "hipShoulderSeparation", name: "Hip–shoulder", bone: "mixamorigSpine1" },
 ];
+const NEW_LABEL_DEFINITIONS: readonly { id: MocapMeasurementId; name: string; bone: string }[] = [
+  { id: "trunkTilt", name: "Trunk tilt", bone: "mixamorigSpine2" },
+  { id: "hipRotation", name: "Hip Δ", bone: "mixamorigHips" },
+  { id: "shoulderTurn", name: "Shoulder Δ", bone: "mixamorigSpine2" },
+  { id: "weightTransfer", name: "Lead proxy", bone: "mixamorigHips" },
+  { id: "rightShoulderExternalRotationProxy", name: "R axial proxy", bone: "mixamorigRightArm" },
+  { id: "leftShoulderExternalRotationProxy", name: "L axial proxy", bone: "mixamorigLeftArm" },
+];
+export type MocapOverlayMode = "off" | "key" | "full";
 export interface MocapOverlayLabel {
-  id: MocapAngleId;
+  id: MocapMeasurementId;
   name: string;
   value: number | null;
   status: OverlayAngleStatus;
   anchor?: THREE.Vector3;
   ranges: { name: string; min: number; max: number }[];
   reason: string;
+  /** An exact bound reference occurrence exists even when convention is ambiguous. */
+  referenceApplies?: boolean;
+  unit?: "degrees" | "percent";
+  convention?: string;
 }
 export interface MocapOverlayFrame {
   positions: Map<string, THREE.Vector3>;
@@ -54,7 +69,7 @@ export interface MocapOverlayFrame {
 }
 const finitePosition = (v: THREE.Vector3) => [v.x, v.y, v.z].every(Number.isFinite);
 
-export function getMocapOverlayFrame(model: THREE.Object3D, bones: readonly THREE.Bone[], config: MocapClipConfig, clipTime: number): MocapOverlayFrame {
+export function getMocapOverlayFrame(model: THREE.Object3D, bones: readonly THREE.Bone[], config: MocapClipConfig, clipTime: number, baseline?: MocapMeasurementBaseline): MocapOverlayFrame {
   // This updates world matrices, but never changes local transforms or animation.
   const measurements = measureMocapAngles(model, bones);
   const byName = new Map(bones.map(b => [b.name.replace(/:/g, ""), b]));
@@ -83,6 +98,22 @@ export function getMocapOverlayFrame(model: THREE.Object3D, bones: readonly THRE
     const anchor = positions.get(bone) ?? (id === "hipShoulderSeparation" ? positions.get("mixamorigSpine") : undefined);
     return { id, name, value, status, anchor, ranges, reason };
   });
+  if (baseline) {
+    const measured = measureMocapMeasurements(model, bones, baseline, config.laterality?.leadLeg, config.eventDetection?.kind === "throw" ? config.eventDetection.side : undefined);
+    const audited = phase ? compareAuditedMocapPhase(config, phase, measured) : [];
+    const expanded = [...LABEL_DEFINITIONS, ...NEW_LABEL_DEFINITIONS].map(({ id, name, bone }): MocapOverlayLabel => {
+      const assigned = audited.filter(row => row.measurer === id);
+      const valid = assigned.filter(row => row.status !== "unavailable");
+      const converted = valid[0];
+      const value = converted?.value ?? measured[id].value;
+      const status: OverlayAngleStatus = !valid.length || value === null ? "neutral" : valid.some(row => row.status === "out-of-range") ? "out-of-range" : "in-range";
+      const joint = id.includes("ElbowAngle") || id.includes("KneeAngle");
+      const convention = converted?.audit.convention ?? (joint ? "interior" : assigned[0]?.audit.convention);
+      const displayName = joint ? name.replace("knee", convention === "flexion" ? "knee flex" : "knee int").replace("elbow", convention === "flexion" ? "elbow flex" : "elbow int") : name;
+      return { id, name: displayName, value, status, anchor: positions.get(bone), ranges: valid.map(row => ({ name: row.audit.metricName, min: row.min, max: row.max })), reason: assigned.map(row => `${row.conversion}; ${row.reason}`).join(" · ") || measured[id].reason || "No applicable reference", referenceApplies: assigned.length > 0, unit: id === "weightTransfer" ? "percent" : "degrees", convention };
+    });
+    return { positions, measurements, phaseIndex, phaseName: phase?.name ?? null, labels: expanded };
+  }
   return { positions, measurements, phaseIndex, phaseName: phase?.name ?? null, labels };
 }
 
@@ -93,19 +124,20 @@ export function projectMocapOverlayPoint(point: THREE.Vector3, camera: THREE.Cam
   if (!finitePosition(projected) || projected.z < -1 || projected.z > 1 || Math.abs(projected.x) > 1 || Math.abs(projected.y) > 1) return null;
   return { x: (projected.x + 1) * width / 2, y: (1 - projected.y) * height / 2 };
 }
-export interface PositionedMocapLabel { id: MocapAngleId; x: number; y: number; left: number; top: number; width: number; height: number }
+export interface PositionedMocapLabel { id: MocapMeasurementId; x: number; y: number; left: number; top: number; width: number; height: number }
 
 /** Screen-space callouts remain tethered to 3D joints, with collision-aware placement. */
-export function layoutMocapOverlayLabels(points: { id: MocapAngleId; x: number; y: number }[], width: number, height: number): PositionedMocapLabel[] {
+export function layoutMocapOverlayLabels(points: { id: MocapMeasurementId; x: number; y: number }[], width: number, height: number): PositionedMocapLabel[] {
   if (!Number.isFinite(width) || !Number.isFinite(height) || width < 32 || height < 32) return [];
   const placed: PositionedMocapLabel[] = [];
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
   for (const point of points) {
     if (![point.x, point.y].every(Number.isFinite)) continue;
-    const w = Math.min(point.id === "hipShoulderSeparation" ? 150 : 114, width - 16);
-    const h = Math.min(28, height - 16);
+    const w = Math.min(point.id === "hipShoulderSeparation" || point.id.includes("Proxy") ? 126 : 112, width - 16);
+    const h = Math.min(23, height - 16);
     const leftSide = point.id.startsWith("left");
-    const preferredLeft = point.id === "hipShoulderSeparation" ? point.x - w / 2 : point.x + (leftSide ? -w - 18 : 18);
+    const torso = ["hipShoulderSeparation", "trunkTilt", "hipRotation", "shoulderTurn", "weightTransfer"].includes(point.id);
+    const preferredLeft = point.x + (leftSide || (torso && point.id !== "hipRotation" && point.id !== "shoulderTurn") ? -w - 26 : 26);
     const left = clamp(preferredLeft, 8, width - w - 8);
     let top = clamp(point.y - (point.id === "hipShoulderSeparation" ? 44 : h / 2), 8, height - h - 8);
     for (let attempt = 0; attempt < 32; attempt++) {
@@ -123,6 +155,7 @@ export function layoutMocapOverlayLabels(points: { id: MocapAngleId; x: number; 
 export interface MocapSkeletonOverlay {
   group: THREE.Group;
   setVisible: (visible: boolean) => void;
+  setMode: (mode: MocapOverlayMode) => void;
   update: (frame: MocapOverlayFrame, camera: THREE.Camera, width: number, height: number) => void;
   dispose: () => void;
 }
@@ -152,6 +185,7 @@ export function createMocapSkeletonOverlay(scene: THREE.Scene, container: HTMLEl
   dots.renderOrder = 1001;
   dots.frustumCulled = false;
   group.add(dots);
+  group.traverse(object => object.layers.enable(2));
   scene.add(group);
   const root = document.createElement("div");
   root.dataset.mocapSkeletonOverlay = "true";
@@ -163,14 +197,14 @@ export function createMocapSkeletonOverlay(scene: THREE.Scene, container: HTMLEl
   svg.setAttribute("aria-hidden", "true");
   Object.assign(svg.style, { position: "absolute", inset: "0" });
   root.appendChild(svg);
-  const elements = new Map<MocapAngleId, { label: HTMLDivElement; tether: SVGLineElement }>();
-  for (const definition of LABEL_DEFINITIONS) {
+  const elements = new Map<MocapMeasurementId, { label: HTMLDivElement; tether: SVGLineElement }>();
+  for (const definition of [...LABEL_DEFINITIONS, ...NEW_LABEL_DEFINITIONS]) {
     const label = document.createElement("div");
     label.dataset.mocapAngle = definition.id;
     Object.assign(label.style, {
-      position: "absolute", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-      font: "600 12px ui-monospace, SFMono-Regular, monospace", whiteSpace: "nowrap", border: "1px solid", borderRadius: "6px",
-      background: "rgba(10,14,39,0.92)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+      position: "absolute", display: "none", alignItems: "center", justifyContent: "center", gap: "4px",
+      font: "500 10px ui-monospace, SFMono-Regular, monospace", whiteSpace: "nowrap", border: "1px solid", borderRadius: "4px",
+      background: "rgba(10,14,39,0.76)", boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
     });
     const tether = document.createElementNS("http://www.w3.org/2000/svg", "line");
     tether.setAttribute("stroke-width", "1");
@@ -181,10 +215,18 @@ export function createMocapSkeletonOverlay(scene: THREE.Scene, container: HTMLEl
   }
   container.appendChild(root);
   let visible = true;
+  let mode: MocapOverlayMode = "full";
   let disposed = false;
   return {
     group,
     setVisible(nextVisible) { visible = nextVisible; group.visible = nextVisible; root.hidden = !nextVisible; },
+    setMode(nextMode) {
+      mode = nextMode; visible = mode !== "off"; group.visible = visible; root.hidden = !visible;
+      root.dataset.mode = mode;
+      lineMaterial.linewidth = mode === "key" ? 1 : 2;
+      lineMaterial.opacity = mode === "key" ? 0.38 : 0.9;
+      dots.visible = mode === "full";
+    },
     update(frame, camera, width, height) {
       if (disposed || !visible) return;
       const start = lineGeometry.getAttribute("instanceStart") as THREE.InterleavedBufferAttribute;
@@ -205,7 +247,9 @@ export function createMocapSkeletonOverlay(scene: THREE.Scene, container: HTMLEl
       dotPositions.needsUpdate = true;
       dotGeometry.setDrawRange(0, dotCount);
       root.dataset.phase = frame.phaseName ?? "No active phase";
+      elements.forEach(({ label, tether }) => { label.style.display = "none"; tether.style.display = "none"; });
       const projected = frame.labels.flatMap(label => {
+        if (mode === "key" && !(label.referenceApplies ?? label.ranges.length > 0)) return [];
         const point = label.anchor && projectMocapOverlayPoint(label.anchor, camera, width, height);
         return point && label.value !== null ? [{ id: label.id, ...point }] : [];
       });
@@ -219,7 +263,8 @@ export function createMocapSkeletonOverlay(scene: THREE.Scene, container: HTMLEl
         label.dataset.value = state.value?.toFixed(6) ?? "";
         label.dataset.phase = frame.phaseName ?? "No active phase";
         label.dataset.reference = state.ranges.map(r => `${r.min}–${r.max}°`).join("; ");
-        label.textContent = `${state.name} ${state.value === null ? "—" : `${state.value.toFixed(1)}°`}`;
+        label.dataset.convention = state.convention ?? "interior";
+        label.textContent = `${state.name} ${state.value === null ? "—" : `${state.value.toFixed(1)}${state.unit === "percent" ? "%" : "°"}`}`;
         const description = `${label.textContent}; ${frame.phaseName ?? "No active phase"}; ${state.status === "neutral" ? "neutral" : state.status.replace(/-/g, " ")}; ${state.reason}`;
         label.title = description;
         label.setAttribute("aria-label", description);
